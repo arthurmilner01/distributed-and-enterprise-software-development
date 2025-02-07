@@ -22,7 +22,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: uni_hub_db
-      MYSQL_USER: admin
+      MYSQL_USER: user
       MYSQL_PASSWORD: password
 
     volumes:

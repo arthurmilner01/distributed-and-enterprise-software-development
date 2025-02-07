@@ -5,7 +5,7 @@ echo "Waiting for MySQL Service to start..."
 # ...https://docs.docker.com/compose/startup-order/
 # Script from ./wait-for is from:
 #...https://github.com/vishnubob/wait-for-it/blob/master/wait-for-it.sh
-./wait-for mysql:3306 -s -v
+./wait-for mysql:3306 -s
 
 python uni_hub/manage.py makemigrations
 python uni_hub/manage.py migrate --fake-initial
