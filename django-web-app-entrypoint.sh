@@ -8,7 +8,7 @@ echo "Waiting for MySQL Service to start..."
 ./wait-for mysql:3306 -s
 
 python uni_hub/manage.py makemigrations
-python uni_hub/manage.py migrate --fake-initial
+python uni_hub/manage.py migrate
 
 # Explanation for why we should run on 0.0.0.0 instead of 127.0.0.1 as default
 # ...https://itecnote.com/tecnote/docker-app-server-ip-address-127-0-0-1-difference-of-0-0-0-0-ip/
