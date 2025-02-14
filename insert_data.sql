@@ -1,7 +1,7 @@
 
 
 
-INSERT INTO app_university(university_name, university_domain, university_logo_path)
+INSERT INTO app_university(university_name, university_domain, university_logo)
 VALUES 
 ('University of Cambridge', 'cam.ac.uk', ''),
 ('University of Oxford', 'ox.ac.uk', ''),
@@ -26,7 +26,7 @@ INSERT INTO app_user(
     bio,
     interests,
     role,
-    profile_picture_path,
+    profile_picture,
     university_id
 ) 
 VALUES 

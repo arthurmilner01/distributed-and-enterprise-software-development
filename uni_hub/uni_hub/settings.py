@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "app",
+    #External
     'rest_framework',
     'djoser',
     'rest_framework_simplejwt'
@@ -67,11 +68,30 @@ REST_FRAMEWORK = {
     ],
 }
 
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_COOKIE": "access_token", #HttpOnly cookie for security (can only be edited server side)
+    "AUTH_COOKIE_SECURE": False, #True in production for HTTPS
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_PATH": "/",
+    "AUTH_COOKIE_SAMESITE": "Lax",
+}
+
 DJOSER = {
-    #Using JWT don't need Djoser's token model.
-    'TOKEN_MODEL': None, 
-    'SERIALIZERS': {
-         'user_create': 'app.serializers.UserAuthSerializer',
+    "USER_ID_FIELD": "username",
+    "LOGIN_FIELD": "username",
+    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
+    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": False, #TODO: Set true and setup SMTP server for verification
+    "SERIALIZERS": {
+        "user_create": "app.serializers.CustomUserCreateSerializer",
+        "user": "app.serializers.CustomUserSerializer",
     },
 }
 
@@ -148,3 +168,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "app/media/"
