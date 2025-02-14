@@ -11,5 +11,5 @@ class User(AbstractUser):
     bio = models.CharField(max_length=200, null=True, blank=True)
     interests = models.CharField(max_length=200, null=True, blank=True)
     role = models.CharField(max_length=1)
-    profile_picture_path = models.CharField(max_length = 200)
+    profile_picture_path = models.CharField(max_length = 200, null=True, blank=True)
     university = models.ForeignKey(University, on_delete=models.CASCADE)

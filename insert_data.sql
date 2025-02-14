@@ -8,9 +8,9 @@ VALUES
 ('Imperial College London', 'imperial.ac.uk', ''),
 ('University College London', 'ucl.ac.uk', ''),
 ('University of the West of England', 'uwe.ac.uk', ''),
-('Gmail', 'gmail.com'),
-('test1', 'test.com'),
-('test2', 'test.test');
+('Gmail', 'gmail.com', ''),
+('test1', 'test.com', ''),
+('test2', 'test.test', '');
 
 
 INSERT INTO app_user(
