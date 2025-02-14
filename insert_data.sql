@@ -1,4 +1,4 @@
-INSERT INTO app_students (name, email, password)
+INSERT INTO app_user (name, email, password)
 VALUES
     ('John Doe', 'john.doe@example.com', 'password123'),
     ('Jane Smith', 'jane.smith@example.com', 'password456'),

@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "app"
+    "app",
+    'rest_framework',
+    'djoser',
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -52,6 +55,25 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "uni_hub.urls"
+
+AUTH_USER_MODEL = 'app.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+DJOSER = {
+    #Using JWT don't need Djoser's token model.
+    'TOKEN_MODEL': None, 
+    'SERIALIZERS': {
+         'user_create': 'app.serializers.UserAuthSerializer',
+    },
+}
 
 TEMPLATES = [
     {
