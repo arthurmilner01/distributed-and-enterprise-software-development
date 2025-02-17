@@ -6,10 +6,3 @@ from .models import *
 from .serializers import *
 
 # Create your views here.
-class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        serializer = UserSerializer(user)
-        return Response(serializer.data)

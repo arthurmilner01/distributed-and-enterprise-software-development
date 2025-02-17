@@ -5,7 +5,6 @@ from .views import *
 
 
 urlpatterns = [
-    path("student/", UserProfileView.as_view(), name="user-profile"),
 
 ]
 
