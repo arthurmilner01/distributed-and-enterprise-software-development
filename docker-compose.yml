@@ -12,6 +12,18 @@ services:
     depends_on:
       - db
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "5174:5173"
+    networks:
+      - mynetwork
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - django-web-app
+
   db:
     image: mysql:9.2.0
     ports:
@@ -24,7 +36,6 @@ services:
       MYSQL_DATABASE: uni_hub_db
       MYSQL_USER: user
       MYSQL_PASSWORD: password
-
     volumes:
       - my-sql-data:/var/lib/mysql
 volumes:
