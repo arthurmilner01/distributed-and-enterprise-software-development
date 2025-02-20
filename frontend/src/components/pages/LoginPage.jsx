@@ -9,10 +9,13 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/auth/jwt/create/", {
-        username,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:8000/auth/jwt/create/",
+        {
+          username,
+          password,
+        }
+      );
 
       localStorage.setItem("token", response.data.access);
       console.log("Login SUCCCESS");
