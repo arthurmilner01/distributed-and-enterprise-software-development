@@ -5,7 +5,10 @@ WORKDIR /app
 COPY package.json .
 COPY package-lock.json .
 
-RUN npm install
+#TODO: Get this to work. NPM install doesnt work. have to manually install packages
+#IMPORTANT --> Have to run npm install for all packages inside of docker frontend shell manually
+RUN npm install 
+RUN npm install bootstrap react-router-dom axios @popperjs/core
 
 COPY . .
 
