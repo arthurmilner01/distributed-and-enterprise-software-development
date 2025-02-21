@@ -5,7 +5,7 @@ const PublicRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <p>Loading...</p>; //Prevent UI flashing
+    return <p></p>; //Prevents UI flashing TODO: replacing with loading spinner component
   }
 
   return isAuthenticated ? <Navigate to="/dashboard" /> : <Outlet />;
