@@ -7,6 +7,7 @@ urlpatterns = [
     path("auth/jwt/create/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
     path("auth/jwt/refresh", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
     path("protected/", protected_view, name="protected-view"),
+    path("event/", event_view, name="event-view"),
 ]
 
 

@@ -1,13 +1,14 @@
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
+from .permissions import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from .models import *
 from .serializers import *
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import status
 from django.conf import settings
+from django.utils import timezone
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -18,9 +19,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if response.status_code == 200:
             #Grab refresh token from response
             refresh = response.data.pop("refresh", None)
-            #Access token added to response
-            access = response.data["access"]
-
+            
+            
             #Storing in http cookie using simple jwt settings
             response.set_cookie(
                 key="refresh_token",
@@ -29,6 +29,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", False),
                 samesite=settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Lax"),
                 path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),  
+                expires= timezone.now() + settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
             )
 
         return response
@@ -50,8 +51,6 @@ class CustomTokenRefreshView(TokenRefreshView):
             #Remove existing refresh from response
             new_refresh = response.data.pop("refresh", None)  
 
-            #Include new access token in response
-            new_access = response.data["access"] 
 
             #Store new refresh token in HttpOnly cookie
             response.set_cookie(
@@ -60,7 +59,8 @@ class CustomTokenRefreshView(TokenRefreshView):
                 httponly=True,
                 secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", False),
                 samesite=settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Lax"),
-                path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),
+                path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),  
+                expires= timezone.now() + settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
             )
 
         return response
@@ -82,3 +82,20 @@ def protected_view(request):
         )
     elif request.method == 'POST':
         return Response({"message": "POST request successful!"}, status=200)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated, IsEventManager])
+def event_view(request):
+    if request.method == 'GET':
+        return Response(
+            {
+                "message": "You have accessed an event manager view!",
+                "user": {
+                    "username": request.user.username,
+                    "email": request.user.email
+                }
+            },
+            status=200
+        )
+    elif request.method == 'POST':
+        return Response({"message": "POST request successful, event manager!"}, status=200)
