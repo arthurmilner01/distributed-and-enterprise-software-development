@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
 
 
@@ -34,7 +35,20 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
         user = User.objects.create_user(**validated_data)
         return user
-    
+
+
+#Add custom claims to the token
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def get_token(self, user):
+        token = super().get_token(user)
+
+        token["username"] = user.username
+        token["email"] = user.email
+        token["role"] = user.role
+
+        return token
+
+
 class CustomUserSerializer(UserSerializer):
     university = UniversitySerializer()
 

@@ -94,6 +94,7 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_COOKIE_PATH": "/",
     "AUTH_COOKIE_SAMESITE": "Lax",
+    "TOKEN_OBTAIN_SERIALIZER": "app.serializers.CustomTokenObtainPairSerializer",
 }
 
 DJOSER = {

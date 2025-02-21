@@ -12,6 +12,9 @@ from django.utils import timezone
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
+    #Use custom serializer
+    serializer_class = CustomTokenObtainPairSerializer  
+    
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         
