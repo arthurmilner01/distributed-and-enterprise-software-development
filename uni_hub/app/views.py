@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -9,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import status
 from django.conf import settings
 from django.utils import timezone
+import requests
+from django.urls import reverse
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -38,6 +40,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return response
     
 
+#When getting new access/refresh tokens, refresh will store in http only cookie
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh_token")
@@ -68,6 +71,23 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         return response
 
+#View which will send post request to djoser user activation when a user clicks their activation link
+#Adapted from:
+#https://stackoverflow.com/questions/59508580/how-to-handle-activation-url-with-django-djoser
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def activate_user(request, uid, token):
+    activation_url = request.build_absolute_uri(reverse("user-activation"))  #Dynamically fetches djoser activation URL
+    payload = {"uid": uid, "token": token}
+
+    #Sending post request using requests
+    response = requests.post(activation_url, json=payload)
+
+    #If success or fail
+    if response.status_code == 204:
+        return Response({"message": "Account successfully activated!"}, status=200)
+    else:
+        return Response(response.json(), status=response.status_code)
 
 @api_view(['GET', 'POST'])  #Allowed http methods
 @permission_classes([IsAuthenticated])  #Require login

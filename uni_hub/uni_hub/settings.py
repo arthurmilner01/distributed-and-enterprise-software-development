@@ -100,9 +100,9 @@ SIMPLE_JWT = {
 DJOSER = {
     "USER_ID_FIELD": "username",
     "LOGIN_FIELD": "username",
-    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
-    "ACTIVATION_URL": "activate/{uid}/{token}",
-    "SEND_ACTIVATION_EMAIL": False, #TODO: Set true and setup SMTP server for verification
+    "PASSWORD_RESET_CONFIRM_URL": "auth/users/password-reset-link/{uid}/{token}",
+    "ACTIVATION_URL": "auth/activation-link/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": True,
     "SERIALIZERS": {
         "user_create": "app.serializers.CustomUserCreateSerializer",
         "user": "app.serializers.CustomUserSerializer",
@@ -185,3 +185,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "app/media/"
+
+#Mailhog configuration
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mailhog"
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False

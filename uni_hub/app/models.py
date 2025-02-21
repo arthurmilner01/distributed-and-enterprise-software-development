@@ -8,6 +8,7 @@ class University(models.Model):
     university_logo = models.ImageField(upload_to="university_logos/", max_length = 200, null=True, blank=True)
 
 class User(AbstractUser):
+    is_active = models.BooleanField(default=False)  #Require activation for new user
     bio = models.CharField(max_length=200, null=True, blank=True)
     interests = models.CharField(max_length=200, null=True, blank=True)
     role = models.CharField(max_length=1, default='S') #S for student, E for event manager, C for community leader

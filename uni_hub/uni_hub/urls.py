@@ -4,10 +4,9 @@ from rest_framework_simplejwt.views import TokenVerifyView, TokenBlacklistView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('app.urls')),
     path('auth/', include('djoser.urls')),
-    path('jwt/verify/', TokenVerifyView.as_view(), name='token-verify'),
-    path('jwt/blacklist/', TokenBlacklistView.as_view(), name='token-blacklist'),
+    path('auth/jwt/verify/', TokenVerifyView.as_view(), name='token-verify'),
+    path('auth/jwt/blacklist/', TokenBlacklistView.as_view(), name='token-blacklist'),
     path("", include("app.urls")),
 ]
 

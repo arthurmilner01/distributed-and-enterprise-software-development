@@ -4,6 +4,9 @@ services:
     entrypoint: ["./django-web-app-entrypoint.sh"]
     ports:
       - "8000:8000"
+    environment:
+      - EMAIL_HOST=mailhog
+      - EMAIL_PORT=1025
     networks:
       - mynetwork
     restart: unless-stopped
@@ -23,6 +26,13 @@ services:
       - /app/node_modules
     depends_on:
       - django-web-app
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+    - "8025:8025"
+    networks:
+    - mynetwork
 
   db:
     image: mysql:9.2.0
