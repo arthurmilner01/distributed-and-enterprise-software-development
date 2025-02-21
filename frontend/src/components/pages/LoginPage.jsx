@@ -1,30 +1,35 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { refreshAccessToken, loading } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8000/auth/jwt/create/",
-        {
-          username,
-          password,
-        }
+        { username, password },
+        { withCredentials: true }
       );
 
-      localStorage.setItem("token", response.data.access);
-      console.log("Login SUCCCESS");
-      setError("");
+      await refreshAccessToken();
+      navigate("/dashboard");
     } catch (err) {
       setError("Invalid login");
       console.error(err);
     }
   };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="container mt-5">

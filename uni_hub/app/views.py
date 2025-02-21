@@ -6,6 +6,7 @@ from .models import *
 from .serializers import *
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework import status
 from django.conf import settings
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
@@ -25,34 +26,43 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 key="refresh_token",
                 value=refresh,
                 httponly=True,
-                secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", True),
+                secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", False),
                 samesite=settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Lax"),
                 path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),  
             )
 
         return response
     
-#Custom token refresh which gets new access token and replaces refresh token with old token
+
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        #If no refresh token found, send 400
+        if not refresh_token:
+            return Response({"error": "No refresh token provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.data["refresh"] = refresh_token
+
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == 200:
-            #Get the newly generated refresh token
-            refresh = response.data.pop("refresh", None)
-            #Access token added to response
-            access = response.data["access"]
+            #Remove existing refresh from response
+            new_refresh = response.data.pop("refresh", None)  
 
-            #Storing in http cookie using simple jwt settings
+            #Include new access token in response
+            new_access = response.data["access"] 
+
+            #Store new refresh token in HttpOnly cookie
             response.set_cookie(
                 key="refresh_token",
-                value=refresh,
+                value=new_refresh,
                 httponly=True,
-                secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", True),
+                secure=settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", False),
                 samesite=settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Lax"),
-                path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),  
+                path=settings.SIMPLE_JWT.get("AUTH_COOKIE_PATH", "/"),
             )
-        
+
         return response
 
 

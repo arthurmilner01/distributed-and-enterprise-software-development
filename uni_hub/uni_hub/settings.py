@@ -61,6 +61,13 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+#Allow sending credentials (cookies)
+CORS_ALLOW_CREDENTIALS = True  
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5174",  
+]
+
 ROOT_URLCONF = "uni_hub.urls"
 
 AUTH_USER_MODEL = 'app.User'
