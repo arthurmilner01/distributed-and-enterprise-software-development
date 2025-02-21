@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 from .models import *
 from .serializers import *
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -54,3 +54,21 @@ class CustomTokenRefreshView(TokenRefreshView):
             )
         
         return response
+
+
+@api_view(['GET', 'POST'])  #Allowed http methods
+@permission_classes([IsAuthenticated])  #Require login
+def protected_view(request):
+    if request.method == 'GET':
+        return Response(
+            {
+                "message": "You have accessed a protected view!",
+                "user": {
+                    "username": request.user.username,
+                    "email": request.user.email
+                }
+            },
+            status=200
+        )
+    elif request.method == 'POST':
+        return Response({"message": "POST request successful!"}, status=200)
