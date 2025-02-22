@@ -101,7 +101,10 @@ DJOSER = {
     "USER_ID_FIELD": "username",
     "LOGIN_FIELD": "username",
     "PASSWORD_RESET_CONFIRM_URL": "auth/users/password-reset-link/{uid}/{token}",
-    "ACTIVATION_URL": "auth/activation-link/{uid}/{token}",
+    "ACTIVATION_URL": "auth/activate?uid={uid}&token={token}",
+    "EMAIL": {
+        "activation": "app.email_templates.ActivationEmail"
+    },
     "SEND_ACTIVATION_EMAIL": True,
     "SERIALIZERS": {
         "user_create": "app.serializers.CustomUserCreateSerializer",
@@ -112,7 +115,7 @@ DJOSER = {
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "app/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

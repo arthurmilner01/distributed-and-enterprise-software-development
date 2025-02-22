@@ -71,23 +71,6 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         return response
 
-#View which will send post request to djoser user activation when a user clicks their activation link
-#Adapted from:
-#https://stackoverflow.com/questions/59508580/how-to-handle-activation-url-with-django-djoser
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def activate_user(request, uid, token):
-    activation_url = request.build_absolute_uri(reverse("user-activation"))  #Dynamically fetches djoser activation URL
-    payload = {"uid": uid, "token": token}
-
-    #Sending post request using requests
-    response = requests.post(activation_url, json=payload)
-
-    #If success or fail
-    if response.status_code == 204:
-        return Response({"message": "Account successfully activated!"}, status=200)
-    else:
-        return Response(response.json(), status=response.status_code)
 
 @api_view(['GET', 'POST'])  #Allowed http methods
 @permission_classes([IsAuthenticated])  #Require login

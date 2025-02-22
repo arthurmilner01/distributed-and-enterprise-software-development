@@ -1,0 +1,16 @@
+{% block subject %}
+Activate Your Account on Uni Hub
+{% endblock subject %}
+
+{% block text_body %}
+Hi {{ user.username }},
+
+Click the link below to activate your account:
+
+http://localhost:5174/auth/activate?uid={{ uid }}&token={{ token }}
+
+If you didn't request this, you can ignore this email.
+
+Thanks,  
+Uni Hub
+{% endblock text_body %}

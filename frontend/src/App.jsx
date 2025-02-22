@@ -6,6 +6,8 @@ import LoginPage from "./components/pages/LoginPage";
 import Dashboard from "./components/pages/Dashboard";
 import MainLayout from "./components/layout/MainLayout";
 import RoleBasedRoute from "./routes/RoleBasedRoute";
+import RegisterPage from "./components/pages/RegisterPage";
+import AccountActivation from "./components/pages/AccountActivation";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
           {/*Public Routes (No Layout)*/}
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/auth/activate" element={<AccountActivation />} />
           </Route>
 
           {/*Private Routes (With MainLayout) */}
