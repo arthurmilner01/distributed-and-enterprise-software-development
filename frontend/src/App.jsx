@@ -3,11 +3,11 @@ import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./routes/PrivateRoute";
 import PublicRoute from "./routes/PublicRoute";
 import LoginPage from "./components/pages/LoginPage";
-import Dashboard from "./components/pages/Dashboard";
+import DashboardPage from "./components/pages/DashboardPage";
 import MainLayout from "./components/layout/MainLayout";
 import RoleBasedRoute from "./routes/RoleBasedRoute";
 import RegisterPage from "./components/pages/RegisterPage";
-import AccountActivation from "./components/pages/AccountActivation";
+import AccountActivationPage from "./components/pages/AccountActivationPage";
 
 function App() {
   return (
@@ -18,13 +18,13 @@ function App() {
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/auth/activate" element={<AccountActivation />} />
+            <Route path="/auth/activate" element={<AccountActivationPage />} />
           </Route>
 
           {/*Private Routes (With MainLayout) */}
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<MainLayout />}>
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="dashboard" element={<DashboardPage />} />
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>

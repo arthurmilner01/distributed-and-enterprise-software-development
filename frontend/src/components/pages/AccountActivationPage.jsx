@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const AccountActivation = () => {
+const AccountActivationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -41,4 +41,4 @@ const AccountActivation = () => {
   );
 };
 
-export default AccountActivation;
+export default AccountActivationPage;

@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 
-const Dashboard = () => {
+const DashboardPage = () => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated || !user) {
@@ -24,4 +24,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardPage;
