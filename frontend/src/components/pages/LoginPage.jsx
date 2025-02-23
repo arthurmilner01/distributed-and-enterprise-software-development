@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
@@ -71,6 +71,12 @@ const LoginPage = () => {
                   Login
                 </button>
               </form>
+              <div className="mt-3 text-center">
+                    <p>
+                        Forgotten your password?
+                        <Link to="/auth/password-reset" className="text-primary" style={{ marginLeft: "5px" }}>Reset password.</Link>
+                    </p>
+                </div>
             </div>
           </div>
         </div>
