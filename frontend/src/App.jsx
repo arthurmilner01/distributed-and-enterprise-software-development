@@ -8,6 +8,7 @@ import MainLayout from "./components/layout/MainLayout";
 import RoleBasedRoute from "./routes/RoleBasedRoute";
 import RegisterPage from "./components/pages/RegisterPage";
 import AccountActivationPage from "./components/pages/AccountActivationPage";
+import PasswordResetPage from "./components/pages/PasswordResetPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/activate" element={<AccountActivationPage />} />
+            <Route path="/auth/password-reset-confirm" element={<PasswordResetPage />} />
           </Route>
 
           {/*Private Routes (With MainLayout) */}

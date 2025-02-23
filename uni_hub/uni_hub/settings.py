@@ -100,10 +100,11 @@ SIMPLE_JWT = {
 DJOSER = {
     "USER_ID_FIELD": "username",
     "LOGIN_FIELD": "username",
-    "PASSWORD_RESET_CONFIRM_URL": "auth/users/password-reset-link/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "auth/password-reset-confirm?uid={uid}&token={token}",
     "ACTIVATION_URL": "auth/activate?uid={uid}&token={token}",
     "EMAIL": {
-        "activation": "app.email_templates.ActivationEmail"
+        "activation": "app.email_templates.CustomActivationEmail",
+        "password_reset":"app.email_templates.CustomPasswordResetEmail"
     },
     "SEND_ACTIVATION_EMAIL": True,
     "SERIALIZERS": {
