@@ -6,21 +6,27 @@ const PasswordResetPage = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setLoading(true);
+    setMessage("Sending password reset email...");
 
     try {
       await axios.post("http://0.0.0.0:8000/auth/users/reset_password/", {
         email: email,
       });
-      setMessage("Password reset link has been sent to your email. Redirecting to login...");
+      setMessage("Password reset link has been sent to your email.");
       setTimeout(() => navigate("/login"), 3000);
     } 
     catch (err)
     {
       setError("Error sending password reset email. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -31,7 +37,7 @@ const PasswordResetPage = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h2 className="text-center mb-4">Login</h2>
+              <h2 className="text-center mb-4">Request Password Reset</h2>
               {error && <div className="alert alert-danger">{error}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
@@ -47,8 +53,12 @@ const PasswordResetPage = () => {
                         required
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary w-100">
-                        Request Password Reset
+                    <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                    disabled={loading}
+                    >
+                      {loading ? "Sending email..." : "Request Password Reset"}
                     </button>
                 </form>
                 {message && <p className="text-center text-red-500">{message}</p>}

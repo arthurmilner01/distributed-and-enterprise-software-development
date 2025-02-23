@@ -42,47 +42,57 @@ const PasswordResetConfirmPage = () => {
         {
             const errorDetails = error.response.data;
             setMessage(errorDetails.new_password[0])
+            setLoading(false);
         }
-    }
-    finally
-    {
-        setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-semibold text-center mb-4">Enter New Password:</h2>
-        {message && <p className="text-center text-red-500">{message}</p>}
-  
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <label className="mb-1 font-medium">New Password</label>
-          <input
-            type="password"
-            className="p-2 border rounded mb-3"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-  
-          <label className="mb-1 font-medium">Confirm New Password</label>
-          <input
-            type="password"
-            className="p-2 border rounded mb-3"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-  
-          <button
-            type="submit"
-            className="bg-blue-500 text-white p-2 rounded mt-3"
-            disabled={loading}
-          >
-            {loading ? "Resetting..." : "Reset Password"}
-          </button>
-        </form>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h2 className="text-center mb-4">Change Password</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="confirmPassword" className="form-label">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="confirm-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <button
+                type="submit"
+                className="btn btn-primary w-100"
+                disabled={loading}
+                >
+                  {loading ? "Resetting..." : "Reset Password"}
+                </button>
+              </form>
+              {message && <p className="text-center text-red-500">{message}</p>}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
