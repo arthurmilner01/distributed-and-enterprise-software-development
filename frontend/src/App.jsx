@@ -33,7 +33,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<MainLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="profile" element={<ProfilePage />} />
+              <Route path="profile/:userId" element={<ProfilePage />} />
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>

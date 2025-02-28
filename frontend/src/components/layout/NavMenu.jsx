@@ -77,11 +77,12 @@ const NavMenu = () => {
           </li>
           
           <li>
-            <Link to="/profile">
+            <Link to={`/profile/${user?.id}`}>
               <span className="icon"><User size={20} /></span>
               <span className="title">Profile</span>
             </Link>
           </li>
+
           
           <li>
             <Link to="/communities">

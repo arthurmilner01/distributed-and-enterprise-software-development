@@ -91,6 +91,18 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         return response
 
+#View for fetching user details
+class GetProfileDetailsView(APIView):
+    permission_classes = [IsAuthenticated] 
+    serializer_class = CustomUserSerializer
+    #Only allow GET
+    def get(self, request, *args, **kwargs):
+        # Retrieve the user object by id from URL
+        user = User.objects.get(id=kwargs['id'])
+        serializer = self.serializer_class(user)
+        return Response(serializer.data)
+
+
 #View for updating user first name, last name, bio, and interests
 class UserProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]

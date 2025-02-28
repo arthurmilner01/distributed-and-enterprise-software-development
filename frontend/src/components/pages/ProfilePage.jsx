@@ -1,71 +1,113 @@
 import { useAuth } from "../../context/AuthContext";
-import { useState } from "react"; 
+import { useState, useEffect } from "react"; 
 import { Edit, Check, X } from "lucide-react";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
-
+import { useParams } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { user, isAuthenticated, accessToken, refreshAccessToken } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { userId } = useParams(); // Get userId from URL
+  //For whether or not editing options are shown
+  //Edits are still validated in backend so not a problem just hiding the buttons here
+  const isOwner = user.id === parseInt(userId);
   const [currentTab, setCurrentTab] = useState("posts");
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const api = useApi();
-
-  //For pre-populating edit fields and for sending in API request
+  const [fetchedUser, setFetchedUser] = useState(null);
   const [editableUser, setEditableUser] = useState({
-    first_name: user?.first_name || "",
-    last_name: user?.last_name || "",
-    bio: user?.bio || "",
-    interests: user?.interests || "",
+    first_name: "",
+    last_name: "",
+    bio: "",
+    interests: "",
+    profile_picture: "",
   });
 
-  if (!isAuthenticated || !user) {
+  //Fetching user details from the api using ID
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+          const response = await api.get(`user/${userId}/`);
+          setFetchedUser(response.data);
+          //Only update if not updating details
+          setEditableUser({
+            id: response.data.id,
+            first_name: response.data.first_name || "Unknown",
+            last_name: response.data.last_name || "Unknown",
+            bio: response.data.bio || "This user hasn't added a bio...",
+            interests: response.data.interests || "This user hasn't added any interests...",
+            profile_picture: response.data.profile_picture || default_profile_picture,
+          });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setErrorMessage("Failed to load user data.");
+      }
+    };
+    if (userId) {
+      //If not editing
+      if(!isEditing)
+      {
+        fetchUserData();
+      }
+    }
+
+  }, [userId, api]);
+
+  if (!isAuthenticated || !fetchedUser) {
     return <p>Loading profile data...</p>;
   }
 
-  //When user is changing details update editableUser
+  //When the user edits profile details
   const handleInputChange = (e) => {
     setEditableUser({ ...editableUser, [e.target.name]: e.target.value });
   };
 
-  //When user saves changes (API Call)
+  //When user confirms
   const handleSaveChanges = async () => {
-    //Make API call to update and then update access token with new details
+    //Have to use FormData because of profile picture
+    const updatedUser = new FormData();
+    // Append the text fields
+    updatedUser.append('first_name', editableUser.first_name);
+    updatedUser.append('last_name', editableUser.last_name);
+    updatedUser.append('bio', editableUser.bio);
+    updatedUser.append('interests', editableUser.interests);
+    //If profile picture has been updated
+    if (editableUser.profile_picture && editableUser.profile_picture !== default_profile_picture) {
+      updatedUser.append('profile_picture', editableUser.profile_picture);
+    }
+
     try {
-      const response = await api.patch(`user/update/${user.id}/`, editableUser);
-      await refreshAccessToken();
-      setIsEditing(false);
+      const response = await api.patch(`user/update/${userId}/`, updatedUser);
       setErrorMessage("");
       setSuccessMessage("Profile successfully updated.");
-    } 
-    catch (error) 
-    {
+      setIsEditing(false);
+    } catch (error) {
       console.error("Error updating profile:", error);
       setErrorMessage("Failed to update profile. Please try again.");
       setSuccessMessage("");
     }
   };
 
-  //When user cancels changes, reset fields to actual values
+  // Handle cancel action
   const handleCancel = () => {
     setEditableUser({
-      first_name: user.first_name || "",
-      last_name: user.last_name || "",
-      bio: user.bio || "",
-      interests: user.interests || "",
+      first_name: fetchedUser.first_name || "Unknown",
+      last_name: fetchedUser.last_name || "Unknown",
+      bio: fetchedUser.bio || "This user hasn't added a bio...",
+      interests: fetchedUser.interests || "This user hasn't added any interests...",
+      profile_picture: fetchedUser.profile_picture || default_profile_picture,
     });
     setIsEditing(false);
   };
 
-  //Using isEditing to show/hide edit fields
   return (
     <div className="container mt-5">
       <div className="row">
         <div className="col-md-3 text-center">
           <img
-            src={user.profile_picture || default_profile_picture}
+            src={editableUser.profile_picture}
             alt="Profile"
             className="img-fluid rounded-circle border border-3 text-info"
             style={{ width: "200px", height: "200px" }}
@@ -94,11 +136,11 @@ const ProfilePage = () => {
                 </>
               ) : (
                 <>
-                  {user.first_name || "Unknown"} {user.last_name || "Unknown"}
+                  {fetchedUser.first_name || "Unknown"} {fetchedUser.last_name || "Unknown"}
                 </>
               )}
               
-              {!isEditing && (
+              {isOwner && !isEditing && (
                 <button
                   className="btn text-info p-0 ms-2"
                   onClick={() => setIsEditing(true)}
@@ -108,7 +150,7 @@ const ProfilePage = () => {
               )}
             </h2>
 
-            <p className="text-muted">{user.email || "Unknown"}</p>
+            <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
             <hr />
 
             <div className="mb-3">
@@ -121,7 +163,7 @@ const ProfilePage = () => {
                   className="form-control"
                 />
               ) : (
-                <p>{user.bio || "User has not provided a bio..."}</p>
+                <p>{fetchedUser.bio || "User has not provided a bio..."}</p>
               )}
             </div>
 
@@ -135,14 +177,14 @@ const ProfilePage = () => {
                   className="form-control"
                 />
               ) : (
-                <p>{user.interests || "User has not provided any interests..."}</p>
+                <p>{fetchedUser.interests || "User hasn't provided any interests..."}</p>
               )}
             </div>
 
             {errorMessage && <p className="text-danger">{errorMessage}</p>}
             {successMessage && <p className="text-success">{successMessage}</p>}
 
-            {isEditing && (
+            {isOwner && isEditing && (
               <div className="d-flex gap-2 mt-2 mb-3">
                 <button className="btn btn-success" onClick={handleSaveChanges}>
                   <Check size={20} /> Confirm
