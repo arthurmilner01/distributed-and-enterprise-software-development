@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -10,7 +10,7 @@ const RegisterPage = () => {
     password: "",
     confirm_password: "",
   });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({}); // Store multiple errors
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
@@ -19,11 +19,11 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setErrors({});
     setSuccess(false);
 
     if (formData.password !== formData.confirm_password) {
-      setError("Passwords do not match");
+      setErrors({ confirm_password: "Passwords do not match" });
       return;
     }
 
@@ -36,7 +36,11 @@ const RegisterPage = () => {
       });
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.email || "Registration failed");
+      if (err.response && err.response.data) {
+        setErrors(err.response.data); // Capture all validation errors
+      } else {
+        setErrors({ general: "Registration failed. Please try again." });
+      }
     }
   };
 
@@ -47,36 +51,110 @@ const RegisterPage = () => {
           <div className="card">
             <div className="card-body">
               <h2 className="text-center mb-4">Register</h2>
-              {success && <div className="alert alert-success">Account created! Check your email to activate.</div>}
-              {error && <div className="alert alert-danger">{error}</div>}
+              
+              {success && (
+                <div className="alert alert-success">
+                  Account created! Check your email to activate.
+                </div>
+              )}
+
+              {errors.general && (
+                <div className="alert alert-danger">{errors.general}</div>
+              )}
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">First Name</label>
-                  <input type="text" className="form-control" name="first_name" value={formData.first_name} onChange={handleChange} required />
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.first_name && (
+                    <small className="text-danger">{errors.first_name}</small>
+                  )}
                 </div>
+
                 <div className="mb-3">
                   <label className="form-label">Last Name</label>
-                  <input type="text" className="form-control" name="last_name" value={formData.last_name} onChange={handleChange} required />
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.last_name && (
+                    <small className="text-danger">{errors.last_name}</small>
+                  )}
                 </div>
+
                 <div className="mb-3">
                   <label className="form-label">Email</label>
-                  <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required />
+                  <input
+                    type="email"
+                    className="form-control"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.email && (
+                    <small className="text-danger">{errors.email}</small>
+                  )}
                 </div>
+
                 <div className="mb-3">
                   <label className="form-label">Password</label>
-                  <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required />
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.password && (
+                    <small className="text-danger">{errors.password}</small>
+                  )}
                 </div>
+
                 <div className="mb-3">
                   <label className="form-label">Confirm Password</label>
-                  <input type="password" className="form-control" name="confirm_password" value={formData.confirm_password} onChange={handleChange} required />
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="confirm_password"
+                    value={formData.confirm_password}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.confirm_password && (
+                    <small className="text-danger">
+                      {errors.confirm_password}
+                    </small>
+                  )}
                 </div>
-                <button type="submit" className="btn btn-info text-white w-100">Register</button>
+
+                <button type="submit" className="btn btn-info text-white w-100">
+                  Register
+                </button>
               </form>
+
               <div className="mt-3 text-center">
                 <p>
                   Already have an account?
-                  <Link to="/login" className="text-primary" style={{ marginLeft: "5px" }}>Login here.</Link>
+                  <Link
+                    to="/login"
+                    className="text-primary"
+                    style={{ marginLeft: "5px" }}
+                  >
+                    Login here.
+                  </Link>
                 </p>
               </div>
             </div>
