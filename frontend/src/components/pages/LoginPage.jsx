@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -15,21 +15,16 @@ const LoginPage = () => {
     try {
       await axios.post(
         "http://localhost:8000/auth/jwt/create/",
-        { username, password },
+        { email, password },
         { withCredentials: true }
       );
-
+      
       await refreshAccessToken();
       navigate("/dashboard");
     } catch (err) {
       setError("Invalid login");
-      console.error(err);
     }
   };
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
 
   return (
     <div className="container mt-5">
@@ -42,41 +37,25 @@ const LoginPage = () => {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="username" className="form-label">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
+                  <label className="form-label">Email</label>
+                  <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="password" className="form-label">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <label className="form-label">Password</label>
+                  <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                <button type="submit" className="btn btn-info text-white w-100">
-                  Login
-                </button>
+                <button type="submit" className="btn btn-info text-white w-100">Login</button>
               </form>
               <div className="mt-3 text-center">
-                    <p>
-                        Forgotten your password?
-                        <Link to="/auth/password-reset" className="text-primary" style={{ marginLeft: "5px" }}>Reset password.</Link>
-                    </p>
-                </div>
+                <p>
+                  Forgotten your password?
+                  <Link to="/auth/password-reset" className="text-primary" style={{ marginLeft: "5px" }}>Reset password.</Link>
+                </p>
+                <p>
+                  Don't have an account yet?
+                  <Link to="/register" className="text-primary" style={{ marginLeft: "5px" }}>Sign up here.</Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
