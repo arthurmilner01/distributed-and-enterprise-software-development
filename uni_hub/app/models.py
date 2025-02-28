@@ -6,9 +6,6 @@ class University(models.Model):
     university_name = models.CharField(max_length = 200)
     university_domain = models.CharField(max_length = 100, unique = True)
     university_logo = models.ImageField(upload_to="university_logos/", max_length = 200, null=True, blank=True)
-    
-
-    from django.contrib.auth.models import BaseUserManager
 
 #Custom user manager to allow no username
 class CustomUserManager(BaseUserManager):
