@@ -10,6 +10,7 @@ import RegisterPage from "./components/pages/RegisterPage";
 import AccountActivationPage from "./components/pages/AccountActivationPage";
 import PasswordResetPage from "./components/pages/PasswordResetPage";
 import PasswordResetConfirmPage from "./components/pages/PasswordResetConfirmPage";
+import UnauthLayout from "./components/layout/UnauthLayout";
 
 function App() {
   return (
@@ -18,11 +19,13 @@ function App() {
         <Routes>
           {/*Public Routes (No Layout)*/}
           <Route element={<PublicRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/auth/activate" element={<AccountActivationPage />} />
-            <Route path="/auth/password-reset" element={<PasswordResetPage />} />
-            <Route path="/auth/password-reset-confirm" element={<PasswordResetConfirmPage />} />
+            <Route path="/" element={<UnauthLayout />}>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/auth/activate" element={<AccountActivationPage />} />
+                  <Route path="/auth/password-reset" element={<PasswordResetPage />} />
+                  <Route path="/auth/password-reset-confirm" element={<PasswordResetConfirmPage />} />
+            </Route>
           </Route>
 
           {/*Private Routes (With MainLayout) */}
