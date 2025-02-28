@@ -7,14 +7,18 @@ import {
   Users,
   Calendar,
   Bell,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react';
 import '../../assets/styles/NavMenu.css';
+import { useAuth } from "../../context/AuthContext";
 
 
 const NavMenu = () => {
   const [isActive, setIsActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user && user.role === 'A';
  
   //Handle menu click
   const handleToggleClick = () => {
@@ -38,6 +42,11 @@ const NavMenu = () => {
       window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
+
+
+  const openDjangoAdmin = () => {
+    window.open('http://localhost:8000/admin', '_blank');
+  };
   
   return (
     <>
@@ -94,7 +103,15 @@ const NavMenu = () => {
               <span className="title">Notifications</span>
             </Link>
           </li>
-                  
+        
+          {isAdmin && (
+            <li>
+              <a onClick={openDjangoAdmin} style={{ cursor: 'pointer' }}>
+                <span className="icon"><Settings size={20} /></span>
+                <span className="title">Django Admin</span>
+              </a>
+            </li>
+          )}
           <li>
             <Link to="/logout">
               <span className="icon"><LogOut size={20} /></span>
