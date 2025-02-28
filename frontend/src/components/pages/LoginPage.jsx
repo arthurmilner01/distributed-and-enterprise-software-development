@@ -22,7 +22,7 @@ const LoginPage = () => {
       await refreshAccessToken();
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid login");
+      setError("Invalid login credentials. Please try again.");
     }
   };
 

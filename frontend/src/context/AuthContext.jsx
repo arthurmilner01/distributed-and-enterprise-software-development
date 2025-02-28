@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
       const newAccessToken = response.data.access;
       setAccessToken(newAccessToken);
       setIsAuthenticated(true);
+      console.log(newAccessToken);
       setUser(decodeToken(newAccessToken));
     } catch (error) {
       setIsAuthenticated(false);

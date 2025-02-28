@@ -12,6 +12,8 @@ from django.conf import settings
 from django.utils import timezone
 import requests
 from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
+
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -55,10 +57,27 @@ class CustomTokenRefreshView(TokenRefreshView):
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == 200:
-            #Remove existing refresh from response
-            new_refresh = response.data.pop("refresh", None)  
-
-
+           
+            #Get current user from the token
+            access_token = response.data.get("access")
+            token_data = AccessToken(access_token)
+            user_id = token_data.get("user_id")
+            
+            #Get fresh user data from the database
+            user = User.objects.get(id=user_id)
+            
+            #Create new token with updated user data 
+            #Neccesary to update user info incase of when updating profile
+            serializer = CustomTokenObtainPairSerializer()
+            token = serializer.get_token(user)
+            
+            #Update the access token in the response
+            response.data["access"] = str(token.access_token)
+            
+            #Handle refresh token
+            new_refresh = str(token)
+            response.data.pop("refresh", None)
+            
             #Store new refresh token in HttpOnly cookie
             response.set_cookie(
                 key="refresh_token",

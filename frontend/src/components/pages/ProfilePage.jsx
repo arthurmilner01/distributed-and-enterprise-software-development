@@ -1,15 +1,17 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react"; 
 import { Edit, Check, X } from "lucide-react";
-import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
+import useApi from "../../api"; 
+
 
 const ProfilePage = () => {
-  const { user, isAuthenticated, accessToken } = useAuth();
+  const { user, isAuthenticated, accessToken, refreshAccessToken } = useAuth();
   const [currentTab, setCurrentTab] = useState("posts");
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("")
+  const [successMessage, setSuccessMessage] = useState("");
+  const api = useApi();
 
   //For pre-populating edit fields and for sending in API request
   const [editableUser, setEditableUser] = useState({
@@ -32,17 +34,10 @@ const ProfilePage = () => {
   const handleSaveChanges = async () => {
     //Make API call to update and then update access token with new details
     try {
-      const response = await axios.patch(`http://localhost:8000/user/update/${user.id}/`, editableUser, {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
-        }
-      });
-
+      const response = await api.patch(`user/update/${user.id}/`, editableUser);
+      await refreshAccessToken();
       setIsEditing(false);
       setErrorMessage("");
-      //TODO: Update access token so reflects users details
-
       setSuccessMessage("Profile successfully updated.");
     } 
     catch (error) 

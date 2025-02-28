@@ -66,8 +66,8 @@ class UserProfileUpdateSerializer(UserSerializer):
 
     def update(self, instance, validated_data):
         #Update the user with the input data
-        instance.first_name = validated_data.get('first_name', instance.bio)
-        instance.last_name = validated_data.get('last_name', instance.bio)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.bio = validated_data.get('bio', instance.bio)
         instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
         instance.interests = validated_data.get('interests', instance.interests)
