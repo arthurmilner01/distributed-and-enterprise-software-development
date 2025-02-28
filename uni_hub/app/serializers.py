@@ -41,6 +41,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         token["email"] = user.email
         token["role"] = user.role
+        token["first_name"] = user.first_name
+        token["last_name"] = user.last_name
+        token["bio"] = user.bio
+        token["interests"] = user.interests
+        token["profile_pic"] = user.profile_picture
 
         return token
 

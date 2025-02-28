@@ -11,6 +11,7 @@ import AccountActivationPage from "./components/pages/AccountActivationPage";
 import PasswordResetPage from "./components/pages/PasswordResetPage";
 import PasswordResetConfirmPage from "./components/pages/PasswordResetConfirmPage";
 import UnauthLayout from "./components/layout/UnauthLayout";
+import ProfilePage from "./components/pages/ProfilePage";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<MainLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="profile" element={<ProfilePage />} />
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>
