@@ -39,13 +39,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(self, user):
         token = super().get_token(user)
 
+        token["id"] = user.id
         token["email"] = user.email
         token["role"] = user.role
         token["first_name"] = user.first_name
         token["last_name"] = user.last_name
         token["bio"] = user.bio
         token["interests"] = user.interests
-        token["profile_pic"] = user.profile_picture
+        token["profile_pic"] = user.profile_picture if user.profile_picture else None
 
         return token
 
@@ -65,6 +66,8 @@ class UserProfileUpdateSerializer(UserSerializer):
 
     def update(self, instance, validated_data):
         #Update the user with the input data
+        instance.first_name = validated_data.get('first_name', instance.bio)
+        instance.last_name = validated_data.get('last_name', instance.bio)
         instance.bio = validated_data.get('bio', instance.bio)
         instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
         instance.interests = validated_data.get('interests', instance.interests)
