@@ -83,7 +83,7 @@ const PasswordResetConfirmPage = () => {
                 </div>
                 <button
                 type="submit"
-                className="btn btn-primary w-100"
+                className="btn btn-info text-white w-100"
                 disabled={loading}
                 >
                   {loading ? "Resetting..." : "Reset Password"}

@@ -127,7 +127,7 @@ const RegisterPage = () => {
                   ></textarea>
                 </div>
 
-                <button type="submit" className="btn btn-primary w-100">
+                <button type="submit" className="btn btn-info text-white w-100">
                   Register
                 </button>
               </form>
