@@ -12,13 +12,10 @@ class UniversitySerializer(serializers.ModelSerializer):
 class CustomUserCreateSerializer(UserCreateSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    bio = serializers.CharField(required=False, allow_blank=True)
-    interests = serializers.CharField(required=False, allow_blank=True)
-    profile_picture = serializers.ImageField(required=False)
     university = UniversitySerializer(read_only=True)
     class Meta(UserCreateSerializer.Meta):
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'bio', 'interests', 'profile_picture', 'university']
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'university']
         extra_kwargs = {'password': {'write_only':True}}
     
     def create(self, validated_data):
@@ -42,7 +39,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(self, user):
         token = super().get_token(user)
 
-        token["username"] = user.username
         token["email"] = user.email
         token["role"] = user.role
 
@@ -54,4 +50,4 @@ class CustomUserSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "bio", "interests", "role", "profile_picture", "university"]
+        fields = ["id", "email", "first_name", "last_name", "bio", "interests", "role", "profile_picture", "university"]

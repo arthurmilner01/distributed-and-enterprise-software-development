@@ -98,8 +98,8 @@ SIMPLE_JWT = {
 }
 
 DJOSER = {
-    "USER_ID_FIELD": "username",
-    "LOGIN_FIELD": "username",
+    "USER_ID_FIELD": "email",
+    "LOGIN_FIELD": "email",
     "PASSWORD_RESET_CONFIRM_URL": "auth/password-reset-confirm?uid={uid}&token={token}",
     "ACTIVATION_URL": "auth/activate?uid={uid}&token={token}",
     "EMAIL": {
