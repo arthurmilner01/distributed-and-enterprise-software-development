@@ -9,7 +9,7 @@ const DashboardPage = () => {
 
   return (
     <div className="container mt-5">
-      <h2>Welcome, {user.username || "User"}!</h2>
+      <h2>Welcome, {user.first_name || "User"}!</h2>
       <p>
         <strong>Email:</strong> {user.email}
       </p>
