@@ -51,3 +51,17 @@ class CustomUserSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = User
         fields = ["id", "email", "first_name", "last_name", "bio", "interests", "role", "profile_picture", "university"]
+
+#For updating bio, interests and profile picture
+class UserProfileUpdateSerializer(UserSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests']
+
+    def update(self, instance, validated_data):
+        #Update the user with the input data
+        instance.bio = validated_data.get('bio', instance.bio)
+        instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
+        instance.interests = validated_data.get('interests', instance.interests)
+        instance.save()
+        return instance

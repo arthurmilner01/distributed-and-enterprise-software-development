@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from .models import *
 from .serializers import *
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.views import APIView
 from rest_framework import status
 from django.conf import settings
 from django.utils import timezone
@@ -70,6 +71,35 @@ class CustomTokenRefreshView(TokenRefreshView):
             )
 
         return response
+
+#View for updating user first name, last name, bio, and interests
+class UserProfileUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    #Get user details based on user_id
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None
+
+    def patch(self, request, user_id):
+        #PATCH request to update user
+        #Get user using get_object above
+        user = self.get_user(user_id)
+
+        if user != request.user:  #Only allow if logged in user is the one updating
+            return Response({"detail": "You do not have permission to update this profile."}, status=status.HTTP_403_FORBIDDEN)
+        
+        #Init serializer with user detail and PATCH request data
+        #Partial = True is for PATCH request
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+
+        #If data is valid make the change otherwise return error
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])  #Allowed http methods
