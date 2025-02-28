@@ -1,0 +1,110 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Menu,
+  Home,
+  User,
+  Users,
+  Calendar,
+  Bell,
+  LogOut
+} from 'lucide-react';
+import '../../assets/styles/NavMenu.css';
+
+
+const NavMenu = () => {
+  const [isActive, setIsActive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+ 
+  //Handle menu click
+  const handleToggleClick = () => {
+    setIsActive(!isActive);
+  };
+ 
+  //Check if mobile on page load/screen size change
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+   
+    //First check on render
+    checkIfMobile();
+   
+    //Add resize listener incase manual resize
+    window.addEventListener('resize', checkIfMobile);
+   
+    //Cleanup
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+  
+  return (
+    <>
+      <header className={isMobile ? 'header-visible' : ''}>
+        <div className="toggle" onClick={handleToggleClick}>
+          <Menu size={20} />
+        </div>
+        <h3>Dashboard</h3>
+        <Link to="/logout">
+          <LogOut size={20} />
+        </Link>
+      </header>
+    
+      <nav className={`${isActive ? 'active' : ''} ${isMobile ? 'mobile' : ''}`}>
+        <ul>
+          <li>
+            <a className={`toggle ${isMobile ? 'hidden' : ''}`} onClick={handleToggleClick}>
+              <span className="icon"><Menu size={20} /></span>
+              <span className="title">Menu</span>
+            </a>
+          </li>
+          
+          <li>
+            <Link to="/">
+              <span className="icon"><Home size={20} /></span>
+              <span className="title">Home</span>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to="/profile">
+              <span className="icon"><User size={20} /></span>
+              <span className="title">Profile</span>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to="/communities">
+              <span className="icon"><Users size={20} /></span>
+              <span className="title">Communities</span>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to="/events">
+              <span className="icon"><Calendar size={20} /></span>
+              <span className="title">Events</span>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to="/notifications">
+              <span className="icon"><Bell size={20} /></span>
+              <span className="title">Notifications</span>
+            </Link>
+          </li>
+                  
+          <li>
+            <Link to="/logout">
+              <span className="icon"><LogOut size={20} /></span>
+              <span className="title">Sign Out</span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+    </>
+  );
+};
+
+export default NavMenu;

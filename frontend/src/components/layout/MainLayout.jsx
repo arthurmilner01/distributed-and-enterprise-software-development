@@ -1,10 +1,14 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from 'react-router-dom';
+import NavMenu from './NavMenu'; 
 
 const MainLayout = () => {
   return (
     <>
-      <h1> YAYYYYYYYYYYYYYYYYY</h1>
-      <Outlet />
+      <NavMenu />
+     
+      <main className="content">
+        <Outlet />
+      </main>
     </>
   );
 };

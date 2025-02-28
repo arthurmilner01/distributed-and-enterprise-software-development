@@ -1,0 +1,161 @@
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --active-color: #0dcaf0; 
+    --text-color: #212529;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg-primary);
+  }
+  
+  /*Nav styles*/
+  nav {
+    position: fixed;
+    width: 60px;
+    height: 100%;
+    background: var(--bg-secondary);
+    transition: 0.5s;
+    overflow: hidden;
+    z-index: 100;
+  }
+  
+  nav.active {
+    width: 300px;
+  }
+  
+  nav ul {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0;
+  }
+  
+  nav ul li {
+    list-style: none;
+    width: 100%;
+    position: relative;
+  }
+  
+  nav ul li a,
+  nav ul li a.toggle {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: 0.2s;
+    cursor: pointer;
+  }
+  
+  nav ul li a:hover {
+    color: var(--active-color);
+  }
+  
+  nav ul li a::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background-color: transparent;
+    transition: 0.2s;
+  }
+  
+  nav ul li:hover a::before {
+    background-color: var(--active-color);
+    opacity: 0.1;
+    width: 100%;
+  }
+  
+  nav ul li a .icon {
+    position: relative;
+    display: flex;
+    min-width: 60px;
+    height: 60px;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  nav ul li a .title {
+    position: relative;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+  
+  nav ul li a.toggle {
+    border-bottom: 3px solid var(--bg-primary);
+  }
+  
+  .toggle {
+    cursor: pointer;
+  }
+  
+  /*Header styles*/
+  header {
+    display: none;
+    justify-content: space-around;
+    align-items: center;
+    height: 60px;
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    z-index: 101;
+  }
+  
+  header.header-visible {
+    display: flex;
+  }
+  
+  header a {
+    color: var(--text-color);
+    text-decoration: none;
+  }
+  
+  /* Content area */
+  .content {
+    margin-left: 60px;
+    padding: 20px;
+    transition: margin-left 0.5s;
+  }
+  
+  nav.active + .content {
+    margin-left: 300px;
+  }
+  
+  /*Mobile styles Nav*/
+  @media (max-width: 768px) {
+    header {
+      display: flex;
+    }
+    
+    nav {
+      left: -60px;
+    }
+    
+    nav.mobile {
+      left: -60px;
+    }
+    
+    nav.active.mobile {
+      left: 0;
+      width: 100%;
+    }
+    
+    nav ul li a.toggle.hidden {
+      display: none;
+    }
+    
+    .content,
+    nav.active + .content {
+      margin-left: 0;
+      padding-top: 80px;
+    }
+    
+    body {
+      overflow-x: hidden;
+    }
+  }
