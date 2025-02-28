@@ -13,6 +13,7 @@ from django.utils import timezone
 import requests
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
+from django.core.exceptions import ObjectDoesNotExist
 
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
@@ -97,10 +98,17 @@ class GetProfileDetailsView(APIView):
     serializer_class = CustomUserSerializer
     #Only allow GET
     def get(self, request, *args, **kwargs):
-        # Retrieve the user object by id from URL
-        user = User.objects.get(id=kwargs['id'])
-        serializer = self.serializer_class(user)
-        return Response(serializer.data)
+        user_id = kwargs.get('id')
+
+        try:
+            user = User.objects.get(id=user_id)
+            serializer = self.serializer_class(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError:
+            return Response({"error": "Invalid user ID format."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 #View for updating user first name, last name, bio, and interests

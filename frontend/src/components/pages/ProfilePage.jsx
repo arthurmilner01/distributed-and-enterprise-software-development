@@ -5,6 +5,8 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
 
+//TODO: Edit profile picture/upload
+
 const ProfilePage = () => {
   const { isAuthenticated, user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
@@ -24,6 +26,7 @@ const ProfilePage = () => {
     interests: "",
     profile_picture: "",
   });
+  const [isConfirmed, setIsConfirmed] = useState(false); //For updating details on profile update
 
   //Fetching user details from the api using ID
   useEffect(() => {
@@ -38,26 +41,41 @@ const ProfilePage = () => {
             last_name: response.data.last_name || "Unknown",
             bio: response.data.bio || "This user hasn't added a bio...",
             interests: response.data.interests || "This user hasn't added any interests...",
-            profile_picture: response.data.profile_picture || default_profile_picture,
+            profile_picture: response.data.profile_picture || default_profile_picture
           });
       } catch (error) {
         console.error("Error fetching user data:", error);
-        setErrorMessage("Failed to load user data.");
+        //If error in response display them
+        if (error.response && error.response.data && error.response.data.error) {
+          setErrorMessage(error.response.data.error);
+        } else {
+          setErrorMessage("Failed to load user data.");
+        }
       }
     };
     if (userId) {
+      setErrorMessage("");
       //If not editing
-      if(!isEditing)
+      if(!isEditing || isConfirmed)
       {
         fetchUserData();
+        if(isConfirmed) {
+          setIsConfirmed(false); //Set confirmed back to false
+        }  
       }
     }
 
-  }, [userId, api]);
+  }, [userId, isConfirmed]);
 
-  if (!isAuthenticated || !fetchedUser) {
-    return <p>Loading profile data...</p>;
+  //If user doesn't exist
+  if (!fetchedUser) {
+    return (
+      <div>
+        {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+      </div>
+    );
   }
+  
 
   //When the user edits profile details
   const handleInputChange = (e) => {
@@ -83,6 +101,7 @@ const ProfilePage = () => {
       setErrorMessage("");
       setSuccessMessage("Profile successfully updated.");
       setIsEditing(false);
+      setIsConfirmed(true); //To run new fetch user details
     } catch (error) {
       console.error("Error updating profile:", error);
       setErrorMessage("Failed to update profile. Please try again.");
@@ -100,6 +119,8 @@ const ProfilePage = () => {
       profile_picture: fetchedUser.profile_picture || default_profile_picture,
     });
     setIsEditing(false);
+    setSuccessMessage("");
+    setErrorMessage("Profile update cancelled.");
   };
 
   return (
