@@ -45,3 +45,117 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()  #Using custom user manager
+
+#Keyword
+class Keyword(models.Model):
+    keyword = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.keyword
+
+#Community
+class Community(models.Model):
+    community_name = models.CharField(max_length=255)
+    #Ref keywords here apart of community model for easier orm 
+    keywords = models.ManyToManyField(Keyword, through="CommunityKeyword", related_name="communities") 
+
+    def __str__(self):
+        return self.community_name
+
+#Junction table for Communities and Keywords (Many to many)
+class CommunityKeyword(models.Model):
+    community = models.ForeignKey("Community", on_delete=models.CASCADE)
+    keyword = models.ForeignKey("Keyword", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('community', 'keyword')  #To prevent duplicates
+
+    def __str__(self):
+        return f"{self.community.community_name} - {self.keyword.keyword}"
+
+#Junction table for Users and Communities (Many to many)
+class UserCommunity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_communities")
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="user_communities")
+    joined_at = models.DateTimeField(auto_now_add=True) 
+    role = models.CharField(max_length=20,default="Member")
+
+    class Meta:
+        unique_together = ('user', 'community')  #To prevent duplicates
+
+    def __str__(self):
+        return f"{self.user.email} ({self.role}) in {self.community.community_name}"
+
+
+
+#Event 
+class Event(models.Model):
+    event_name = models.CharField(max_length=255)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="events")
+    date = models.DateField()  
+    location = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    event_type = models.CharField(max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return self.event_name
+
+#Post
+class Post(models.Model):
+    created_at = models.DateField(auto_now_add=True)
+    post_text = models.TextField(null=True, blank=True)
+    likes = models.IntegerField(default=0)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="posts")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+
+    def __str__(self):
+        return f"Post {self.id} by {self.user.email}"
+
+
+
+#Follow
+class Follow(models.Model):
+    following_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="following")
+    followed_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="followers")
+    followed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('following_user', 'followed_user')
+
+    def __str__(self):
+        return f"{self.following_user.email} follows {self.followed_user.email}"
+
+#RSVP
+class RSVP(models.Model):
+    RSVP_STATUS_CHOICES = [
+        ('Accepted', 'Accepted'),
+        ('Tentative', 'Tentative'),
+        ('Declined', 'Declined'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rsvps")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvps")
+    status = models.CharField(max_length=10, choices=RSVP_STATUS_CHOICES)
+    rsvp_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} RSVP {self.status} for {self.event.event_name}"
+
+#Achievement
+class Achievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="achievements")
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    date_achieved = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.user.email}"
+
+#Comment
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    comment_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.user.email} on post {self.post.id}"
