@@ -199,6 +199,8 @@ const ProfilePage = () => {
   const handleUnfollow = async () => {
     try {
       const response = await api.delete(`api/follow/unfollow/?user_id=${userId}`,);
+      fetchFollowers(userId);
+      fetchFollowing(userId);
       checkFollowing(userId);
       setSuccessMessage("User unfollowed.");
       setErrorMessage("");
@@ -216,6 +218,8 @@ const ProfilePage = () => {
       const response = await api.post(`api/follow/follow/`,
         { user_id: userId }
       );
+      fetchFollowers(userId);
+      fetchFollowing(userId);
       checkFollowing(userId);
       setSuccessMessage("User followed.");
       setErrorMessage("");
@@ -277,8 +281,12 @@ const ProfilePage = () => {
             </h2>
 
             <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
-            <p className="text-muted">Followers: {followerCount}</p>
-            <p className="text-muted">Following: {followingCount}</p>
+            <div className="d-flex gap-1">
+              <p className="text-muted">Followers: </p>
+              <p className="text-primary">{followerCount}</p>
+              <p className="text-muted">Following: </p>
+              <p className="text-primary">{followingCount}</p>
+            </div>
             {!isOwner && isAuthenticated && (
               <div className="d-flex mt-3">
                 {isFollowing ? (
