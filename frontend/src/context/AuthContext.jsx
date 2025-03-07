@@ -20,6 +20,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+   //SignOut
+   const signOut = async () => {
+    try {
+        await axios.post(
+            "http://localhost:8000/auth/logout",
+            {},
+            {
+                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+                withCredentials: true, 
+            }
+        );
+    } catch (error) {
+        console.error("Error logging out:", error);
+    }
+    setAccessToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+
   //Refresh the access token if the refresh token is present
   const refreshAccessToken = async () => {
     try {
@@ -57,6 +78,7 @@ export const AuthProvider = ({ children }) => {
         user,
         refreshAccessToken,
         loading,
+        signOut
       }}
     >
       {children}

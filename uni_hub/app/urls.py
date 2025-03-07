@@ -10,6 +10,7 @@ router.register(r'follow', FollowViewSet, basename='follow')
 urlpatterns = [
     path("auth/jwt/create/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
     path("auth/jwt/refresh", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
+    path('auth/logout', logout_view, name='logout'),
     path('api/', include(router.urls)),  #Router URLs for viewsets
     path('user/<int:id>/', GetProfileDetailsView.as_view(), name='get-user-details'),  #Fetch user details by ID
     path('user/update/<int:user_id>/', UserProfileUpdateView.as_view(), name='user-profile-update'), #Update user profile

@@ -92,6 +92,15 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         return response
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    response = Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
+    response.delete_cookie("refresh_token")
+    return response
+
+
 #View for fetching user details
 class GetProfileDetailsView(APIView):
     permission_classes = [IsAuthenticated] 

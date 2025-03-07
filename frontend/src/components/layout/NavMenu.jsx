@@ -17,7 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 const NavMenu = () => {
   const [isActive, setIsActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const isAdmin = user && user.role === 'A';
  
   //Handle menu click
@@ -114,10 +114,10 @@ const NavMenu = () => {
             </li>
           )}
           <li>
-            <Link to="/logout">
+            <button onClick={signOut}>
               <span className="icon"><LogOut size={20} /></span>
               <span className="title">Sign Out</span>
-            </Link>
+            </button>
           </li>
         </ul>
       </nav>
