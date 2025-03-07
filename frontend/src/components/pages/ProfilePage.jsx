@@ -86,13 +86,34 @@ const ProfilePage = () => {
   const handleSaveChanges = async () => {
     //Have to use FormData because of profile picture
     const updatedUser = new FormData();
-    // Append the text fields
-    updatedUser.append('first_name', editableUser.first_name);
-    updatedUser.append('last_name', editableUser.last_name);
-    updatedUser.append('bio', editableUser.bio);
-    updatedUser.append('interests', editableUser.interests);
-    //If profile picture has been updated
-    if (editableUser.profile_picture && editableUser.profile_picture !== default_profile_picture) {
+
+    //If first name has been updated and not default
+    if (editableUser.first_name && editableUser.first_name !== "Unknown")
+    {
+      updatedUser.append('first_name', editableUser.first_name);
+    }
+
+    //If last name has been updated and not default
+    if (editableUser.last_name && editableUser.last_name !== "Unknown")
+    {
+      updatedUser.append('last_name', editableUser.last_name);
+    }
+
+      //If bio has been updated and not default message
+    if (editableUser.bio && editableUser.bio !== "This user hasn't added a bio...")
+    {
+      updatedUser.append('bio', editableUser.bio);
+    }
+
+    //If interests has been updates and not default message
+    if (editableUser.interests && editableUser.interests !== "This user hasn't added any interests...")
+    {
+      updatedUser.append('interests', editableUser.interests);
+    }
+
+    //If profile picture has been updated and not default profile_picture
+    if (editableUser.profile_picture && editableUser.profile_picture !== default_profile_picture) 
+    {
       updatedUser.append('profile_picture', editableUser.profile_picture);
     }
 
@@ -102,14 +123,16 @@ const ProfilePage = () => {
       setSuccessMessage("Profile successfully updated.");
       setIsEditing(false);
       setIsConfirmed(true); //To run new fetch user details
-    } catch (error) {
+    } 
+    catch (error) 
+    {
       console.error("Error updating profile:", error);
       setErrorMessage("Failed to update profile. Please try again.");
       setSuccessMessage("");
     }
   };
 
-  // Handle cancel action
+  //When user cancels update
   const handleCancel = () => {
     setEditableUser({
       first_name: fetchedUser.first_name || "Unknown",
