@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
-import { Edit, Check, X } from "lucide-react";
+import { Edit, Check, X, UserPlus, UserCheck } from "lucide-react";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
@@ -27,10 +27,11 @@ const ProfilePage = () => {
     profile_picture: "",
   });
   const [isConfirmed, setIsConfirmed] = useState(false); //For updating details on profile update
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [followingList, setFollowingList] = useState([]);
-  const [followerList, setFollowerList] = useState([]);
+  const [followerCount, setFollowerCount] = useState(0); //Count of followers
+  const [followingCount, setFollowingCount] = useState(0); //Count of following
+  const [followingList, setFollowingList] = useState([]); //List of following
+  const [followerList, setFollowerList] = useState([]); //List of followers
+  const [isFollowing, setIsFollowing] = useState(false); //If user follows currently displayed profile
 
   //Get viewed user's followers
   const fetchFollowers = async (userId) => {
@@ -59,10 +60,23 @@ const ProfilePage = () => {
     }
   };
 
+  const checkFollowing = async (userId) => {
+    try {
+      const response = await api.get(`api/follow/check_following/?user_id=${userId}`);
+      setIsFollowing(response.data.is_following); //True/false
+    } 
+    catch (error) 
+    {
+      console.error("Error checking follow status:", error);
+      setErrorMessage("Failed to check follow status.");
+    }
+  };
+
   //Fetching user details from the api using ID
   useEffect(() => {
     const fetchUserData = async () => {
-      try {
+      try 
+      {
           const response = await api.get(`user/${userId}/`);
           setFetchedUser(response.data);
           //Only update if not updating details
@@ -74,11 +88,12 @@ const ProfilePage = () => {
             interests: response.data.interests || "This user hasn't added any interests...",
             profile_picture: response.data.profile_picture || default_profile_picture
           });
-
           fetchFollowers(response.data.id);
           fetchFollowing(response.data.id);
-
-      } catch (error) {
+          checkFollowing(response.data.id);
+      }
+      catch (error) 
+      {
         console.error("Error fetching user data:", error);
         //If error in response display them
         if (error.response && error.response.data && error.response.data.error) {
@@ -181,6 +196,38 @@ const ProfilePage = () => {
     setErrorMessage("Profile update cancelled.");
   };
 
+  const handleUnfollow = async () => {
+    try {
+      const response = await api.delete(`api/follow/unfollow/?user_id=${userId}`,);
+      checkFollowing(userId);
+      setSuccessMessage("User unfollowed.");
+      setErrorMessage("");
+    } 
+    catch (error) 
+    {
+      console.error("Error updating profile:", error);
+      setErrorMessage("Failed to unfollow user. Please try again.");
+      setSuccessMessage("");
+    }
+  };
+
+  const handleFollow = async () => {
+    try {
+      const response = await api.post(`api/follow/follow/`,
+        { user_id: userId }
+      );
+      checkFollowing(userId);
+      setSuccessMessage("User followed.");
+      setErrorMessage("");
+    } 
+    catch (error) 
+    {
+      console.error("Error following user:", error);
+      setErrorMessage("Failed to follow user. Please try again.");
+      setSuccessMessage("");
+    }
+  };
+
   return (
     <div className="container mt-5">
       <div className="row">
@@ -232,6 +279,19 @@ const ProfilePage = () => {
             <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
             <p className="text-muted">Followers: {followerCount}</p>
             <p className="text-muted">Following: {followingCount}</p>
+            {!isOwner && isAuthenticated && (
+              <div className="d-flex mt-3">
+                {isFollowing ? (
+                  <button className="btn btn-danger" onClick={handleUnfollow}>
+                    <UserCheck size={20} /> Unfollow
+                  </button>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleFollow}>
+                    <UserPlus size={20} /> Follow
+                  </button>
+                )}
+              </div>
+            )}
             <hr />
 
             <div className="mb-3">
