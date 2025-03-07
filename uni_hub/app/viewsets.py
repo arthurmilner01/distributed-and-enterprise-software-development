@@ -70,7 +70,7 @@ class FollowViewSet(viewsets.ModelViewSet):
             user = request.user  #Use logged in user
         
         #Get list of followers
-        followers = Follow.objects.filter(followed_user=request.user).select_related("following_user")
+        followers = Follow.objects.filter(followed_user=user).select_related("following_user")
         #Get list of follows in json as the response
         #Using separate serializer that wont user logged in user ID
         follower_data = UserFollowerSerializer([f.following_user for f in followers], many=True)
@@ -91,7 +91,7 @@ class FollowViewSet(viewsets.ModelViewSet):
             user = request.user  #Use logged in user
         
         #Get list of following
-        following = Follow.objects.filter(following_user=request.user).select_related("following_user")
+        following = Follow.objects.filter(following_user=user).select_related("following_user")
         #Get list of follows
         following_users = [f.following_user for f in following]
         #Using separate serializer that wont user logged in user ID
