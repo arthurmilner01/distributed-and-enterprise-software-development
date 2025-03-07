@@ -58,7 +58,7 @@ class Community(models.Model):
     community_name = models.CharField(max_length=255)
     #Ref keywords here apart of community model for easier orm 
     keywords = models.ManyToManyField(Keyword, through="CommunityKeyword", related_name="communities") 
-
+    is_community_owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_communities")
     def __str__(self):
         return self.community_name
 
