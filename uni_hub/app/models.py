@@ -111,7 +111,15 @@ class Post(models.Model):
     def __str__(self):
         return f"Post {self.id} by {self.user.email}"
 
+#PinnedPost
+class PinnedPost(models.Model):
+    post = models.OneToOneField(Post, on_delete=models.CASCADE, related_name="pinned_post")
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="pinned_posts")
+    pinned_at = models.DateTimeField(auto_now_add=True)
+    pinned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pinned_posts")
 
+    def __str__(self):
+        return f"Pinned Post {self.post.id} in {self.community.community_name} by {self.pinned_by.email}"
 
 #Follow
 class Follow(models.Model):
