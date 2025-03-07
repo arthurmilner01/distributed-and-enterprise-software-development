@@ -27,6 +27,37 @@ const ProfilePage = () => {
     profile_picture: "",
   });
   const [isConfirmed, setIsConfirmed] = useState(false); //For updating details on profile update
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followingList, setFollowingList] = useState([]);
+  const [followerList, setFollowerList] = useState([]);
+
+  //Get viewed user's followers
+  const fetchFollowers = async (userId) => {
+    try {
+      //Endpoint for getting list of followers
+      const response = await api.get(`api/follow/followers/?user_id=${userId}`);
+      setFollowerList(response.data);
+      console.log(followerList);
+      setFollowerCount(response.data.length);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      setErrorMessage("Failed to load followers.");
+    }
+  };
+
+  //Get viewed user's following
+  const fetchFollowing = async (userId) => {
+    try {
+      const response = await api.get(`api/follow/following/?user_id=${userId}`);
+      setFollowingList(response.data);
+      console.log(followingList)
+      setFollowingCount(response.data.length);
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      setErrorMessage("Failed to load following.");
+    }
+  };
 
   //Fetching user details from the api using ID
   useEffect(() => {
@@ -43,6 +74,10 @@ const ProfilePage = () => {
             interests: response.data.interests || "This user hasn't added any interests...",
             profile_picture: response.data.profile_picture || default_profile_picture
           });
+
+          fetchFollowers(response.data.id);
+          fetchFollowing(response.data.id);
+
       } catch (error) {
         console.error("Error fetching user data:", error);
         //If error in response display them
@@ -195,6 +230,8 @@ const ProfilePage = () => {
             </h2>
 
             <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
+            <p className="text-muted">Followers: {followerCount}</p>
+            <p className="text-muted">Following: {followingCount}</p>
             <hr />
 
             <div className="mb-3">
