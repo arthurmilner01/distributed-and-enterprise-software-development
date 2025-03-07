@@ -70,5 +70,48 @@ class UserProfileUpdateSerializer(UserSerializer):
         instance.interests = validated_data.get('interests', instance.interests)
         instance.save()
         return instance
+
+#Serilizer for following
+class FollowSerializer(serializers.ModelSerializer):
+    follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged in user unless otherwise specified
+    followed = serializers.IntegerField(write_only=True) #User ID of followed user
+    class Meta:
+        model = Follow
+        fields = ["id", "following_user", "followed_user", "followed_at"]
+
+    #When POST request on the viewset
+    def create(self, validated_data):
+        #Get user
+        request_user = self.context["request"].user
+        #Get followed user
+        followed_user = validated_data.pop("followed")
+
+        #Check followed user exists in db and get
+        try:
+            followed_user = User.objects.get(id=followed_user)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"error": "User not found."})
+        
+        #If followed is same as request user
+        if request_user == followed_user:
+            raise serializers.ValidationError({"error": "You cannot follow yourself."})
+
+        #Create or get if already created the following relationship
+        follow, created = Follow.objects.get_or_create(follower=request_user, followed=followed_user)
+        #If following relationship is not created return error
+        if not created:
+            raise serializers.ValidationError({"error": "You are already following this user."})
+
+        return follow
+    
+#Used to return any users follower list (GET request)
+class UserFollowerSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()  #Return follower's ID
+    username = serializers.CharField()  #Return followers username
+
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
     
 
