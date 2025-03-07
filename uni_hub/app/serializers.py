@@ -73,7 +73,7 @@ class UserProfileUpdateSerializer(UserSerializer):
 
 #Serilizer for following
 class FollowSerializer(serializers.ModelSerializer):
-    follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged in user unless otherwise specified
+    follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged-in user
     followed = serializers.IntegerField(write_only=True) #User ID of followed user
     class Meta:
         model = Follow
