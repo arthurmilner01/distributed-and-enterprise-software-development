@@ -12,6 +12,7 @@ import PasswordResetPage from "./components/pages/PasswordResetPage";
 import PasswordResetConfirmPage from "./components/pages/PasswordResetConfirmPage";
 import UnauthLayout from "./components/layout/UnauthLayout";
 import ProfilePage from "./components/pages/ProfilePage";
+import CreateCommunityPage from "./components/pages/CreateCommunityPage"; 
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                   <Route path="/auth/activate" element={<AccountActivationPage />} />
                   <Route path="/auth/password-reset" element={<PasswordResetPage />} />
                   <Route path="/auth/password-reset-confirm" element={<PasswordResetConfirmPage />} />
+                  
             </Route>
           </Route>
 
@@ -34,6 +36,7 @@ function App() {
             <Route path="/" element={<MainLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
+              <Route path="create-community" element={<CreateCommunityPage />} />
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>

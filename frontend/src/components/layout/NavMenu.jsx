@@ -85,7 +85,7 @@ const NavMenu = () => {
 
           
           <li>
-            <Link to="/communities">
+            <Link to="/create-community">
               <span className="icon"><Users size={20} /></span>
               <span className="title">Communities</span>
             </Link>
