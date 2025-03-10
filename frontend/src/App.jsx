@@ -13,7 +13,7 @@ import PasswordResetConfirmPage from "./components/pages/PasswordResetConfirmPag
 import UnauthLayout from "./components/layout/UnauthLayout";
 import ProfilePage from "./components/pages/ProfilePage";
 import CreateCommunityPage from "./components/pages/CreateCommunityPage"; 
-
+import CommunitiesDashboard from "./components/pages/CommunitiesDashboard"; 
 function App() {
   return (
     <AuthProvider>
@@ -45,6 +45,7 @@ function App() {
                   element={<h1>Community Leader can only see this</h1>}
                 />
               </Route>
+              <Route path="communities" element={<CommunitiesDashboard />} />
 
               <Route element={<RoleBasedRoute allowedRoles={["E", "C"]} />}>
                 <Route

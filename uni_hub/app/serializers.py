@@ -114,4 +114,37 @@ class UserFollowerSerializer(serializers.ModelSerializer):
         fields = ['id', 'username']
 
     
+class CommunitySerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and updating Community instances.
+    Automatically assigns the creator as the community owner and leader.
+    """
+    class Meta:
+        model = Community
+        fields = ["id", "community_name", "description", "rules", "privacy"]
+        # Add or remove fields as needed.
 
+    def create(self, validated_data):
+        # Get the logged-in user from the request context
+        user = self.context["request"].user
+        
+        # Create the Community and set the user as the owner
+        community = Community.objects.create(
+            is_community_owner=user,
+            **validated_data
+        )
+
+        # Also create a UserCommunity record to mark the user as a Leader
+        UserCommunity.objects.create(
+            user=user,
+            community=community,
+            role="Leader"
+        )
+
+        return community
+
+class UserCommunitySerializer(serializers.ModelSerializer):
+    community_name = serializers.ReadOnlyField(source='community.community_name')
+    class Meta:
+        model = UserCommunity
+        fields = ['id', 'community_name', 'role', 'community']

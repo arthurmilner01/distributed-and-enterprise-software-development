@@ -5,13 +5,9 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
 
-//TODO: Edit profile picture/upload
-
 const ProfilePage = () => {
   const { isAuthenticated, user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
-  //For whether or not editing options are shown
-  //Edits are still validated in backend so not a problem just hiding the buttons here
   const isOwner = user.id === parseInt(userId);
   const [currentTab, setCurrentTab] = useState("posts");
   const [isEditing, setIsEditing] = useState(false);
@@ -26,20 +22,32 @@ const ProfilePage = () => {
     interests: "",
     profile_picture: "",
   });
-  const [isConfirmed, setIsConfirmed] = useState(false); //For updating details on profile update
-  const [followerCount, setFollowerCount] = useState(0); //Count of followers
-  const [followingCount, setFollowingCount] = useState(0); //Count of following
-  const [followingList, setFollowingList] = useState([]); //List of following
-  const [followerList, setFollowerList] = useState([]); //List of followers
-  const [isFollowing, setIsFollowing] = useState(false); //If user follows currently displayed profile
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followingList, setFollowingList] = useState([]);
+  const [followerList, setFollowerList] = useState([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  
+  // NEW: State for user's communities (and roles)
+  const [userCommunities, setUserCommunities] = useState([]);
 
-  //Get viewed user's followers
+  // Fetch user's communities from the API
+  const fetchUserCommunities = async () => {
+    try {
+      const response = await api.get(`api/user-communities/?user_id=${userId}`);
+      setUserCommunities(response.data);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      setErrorMessage("Failed to load user communities.");
+    }
+  };
+
+  // Get viewed user's followers
   const fetchFollowers = async (userId) => {
     try {
-      //Endpoint for getting list of followers
       const response = await api.get(`api/follow/followers/?user_id=${userId}`);
       setFollowerList(response.data);
-      console.log(followerList);
       setFollowerCount(response.data.length);
     } catch (error) {
       console.error("Error fetching followers:", error);
@@ -47,12 +55,11 @@ const ProfilePage = () => {
     }
   };
 
-  //Get viewed user's following
+  // Get viewed user's following
   const fetchFollowing = async (userId) => {
     try {
       const response = await api.get(`api/follow/following/?user_id=${userId}`);
       setFollowingList(response.data);
-      console.log(followingList)
       setFollowingCount(response.data.length);
     } catch (error) {
       console.error("Error fetching following:", error);
@@ -63,39 +70,32 @@ const ProfilePage = () => {
   const checkFollowing = async (userId) => {
     try {
       const response = await api.get(`api/follow/check_following/?user_id=${userId}`);
-      setIsFollowing(response.data.is_following); //True/false
-    } 
-    catch (error) 
-    {
+      setIsFollowing(response.data.is_following);
+    } catch (error) {
       console.error("Error checking follow status:", error);
       setErrorMessage("Failed to check follow status.");
     }
   };
 
-  //Fetching user details from the api using ID
+  // Fetch user details from the API using ID
   useEffect(() => {
     const fetchUserData = async () => {
-      try 
-      {
-          const response = await api.get(`user/${userId}/`);
-          setFetchedUser(response.data);
-          //Only update if not updating details
-          setEditableUser({
-            id: response.data.id,
-            first_name: response.data.first_name || "Unknown",
-            last_name: response.data.last_name || "Unknown",
-            bio: response.data.bio || "This user hasn't added a bio...",
-            interests: response.data.interests || "This user hasn't added any interests...",
-            profile_picture: response.data.profile_picture || default_profile_picture
-          });
-          fetchFollowers(response.data.id);
-          fetchFollowing(response.data.id);
-          checkFollowing(response.data.id);
-      }
-      catch (error) 
-      {
+      try {
+        const response = await api.get(`user/${userId}/`);
+        setFetchedUser(response.data);
+        setEditableUser({
+          id: response.data.id,
+          first_name: response.data.first_name || "Unknown",
+          last_name: response.data.last_name || "Unknown",
+          bio: response.data.bio || "This user hasn't added a bio...",
+          interests: response.data.interests || "This user hasn't added any interests...",
+          profile_picture: response.data.profile_picture || default_profile_picture
+        });
+        fetchFollowers(response.data.id);
+        fetchFollowing(response.data.id);
+        checkFollowing(response.data.id);
+      } catch (error) {
         console.error("Error fetching user data:", error);
-        //If error in response display them
         if (error.response && error.response.data && error.response.data.error) {
           setErrorMessage(error.response.data.error);
         } else {
@@ -105,19 +105,22 @@ const ProfilePage = () => {
     };
     if (userId) {
       setErrorMessage("");
-      //If not editing
-      if(!isEditing || isConfirmed)
-      {
+      if (!isEditing || isConfirmed) {
         fetchUserData();
-        if(isConfirmed) {
-          setIsConfirmed(false); //Set confirmed back to false
-        }  
+        if (isConfirmed) {
+          setIsConfirmed(false);
+        }
       }
     }
-
   }, [userId, isConfirmed]);
 
-  //If user doesn't exist
+  // NEW: Fetch communities when "communities" tab is active
+  useEffect(() => {
+    if (currentTab === "communities") {
+      fetchUserCommunities();
+    }
+  }, [currentTab, userId]);
+
   if (!fetchedUser) {
     return (
       <div>
@@ -125,45 +128,28 @@ const ProfilePage = () => {
       </div>
     );
   }
-  
 
-  //When the user edits profile details
+  // Handle profile editing inputs
   const handleInputChange = (e) => {
     setEditableUser({ ...editableUser, [e.target.name]: e.target.value });
   };
 
-  //When user confirms
   const handleSaveChanges = async () => {
-    //Have to use FormData because of profile picture
     const updatedUser = new FormData();
 
-    //If first name has been updated and not default
-    if (editableUser.first_name !== fetchedUser.first_name && editableUser.first_name !== "Unknown")
-    {
+    if (editableUser.first_name !== fetchedUser.first_name && editableUser.first_name !== "Unknown") {
       updatedUser.append('first_name', editableUser.first_name);
     }
-
-    //If last name has been updated and not default
-    if (editableUser.last_name !== fetchedUser.last_name && editableUser.last_name !== "Unknown")
-    {
+    if (editableUser.last_name !== fetchedUser.last_name && editableUser.last_name !== "Unknown") {
       updatedUser.append('last_name', editableUser.last_name);
     }
-
-      //If bio has been updated and not default message
-    if (editableUser.bio !== fetchedUser.bio && editableUser.bio !== "This user hasn't added a bio...")
-    {
+    if (editableUser.bio !== fetchedUser.bio && editableUser.bio !== "This user hasn't added a bio...") {
       updatedUser.append('bio', editableUser.bio);
     }
-
-    //If interests has been updates and not default message
-    if (editableUser.interests !== fetchedUser.interests && editableUser.interests !== "This user hasn't added any interests...")
-    {
+    if (editableUser.interests !== fetchedUser.interests && editableUser.interests !== "This user hasn't added any interests...") {
       updatedUser.append('interests', editableUser.interests);
     }
-
-    //If profile picture has been updated and not default profile_picture
-    if (editableUser.profile_picture !== fetchedUser.profile_picture && editableUser.profile_picture !== default_profile_picture) 
-    {
+    if (editableUser.profile_picture !== fetchedUser.profile_picture && editableUser.profile_picture !== default_profile_picture) {
       updatedUser.append('profile_picture', editableUser.profile_picture);
     }
 
@@ -172,17 +158,14 @@ const ProfilePage = () => {
       setErrorMessage("");
       setSuccessMessage("Profile successfully updated.");
       setIsEditing(false);
-      setIsConfirmed(true); //To run new fetch user details
-    } 
-    catch (error) 
-    {
+      setIsConfirmed(true);
+    } catch (error) {
       console.error("Error updating profile:", error);
       setErrorMessage("Failed to update profile. Please try again.");
       setSuccessMessage("");
     }
   };
 
-  //When user cancels update
   const handleCancel = () => {
     setEditableUser({
       first_name: fetchedUser.first_name || "Unknown",
@@ -198,15 +181,13 @@ const ProfilePage = () => {
 
   const handleUnfollow = async () => {
     try {
-      const response = await api.delete(`api/follow/unfollow/?user_id=${userId}`,);
+      const response = await api.delete(`api/follow/unfollow/?user_id=${userId}`);
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
       setSuccessMessage("User unfollowed.");
       setErrorMessage("");
-    } 
-    catch (error) 
-    {
+    } catch (error) {
       console.error("Error updating profile:", error);
       setErrorMessage("Failed to unfollow user. Please try again.");
       setSuccessMessage("");
@@ -215,17 +196,13 @@ const ProfilePage = () => {
 
   const handleFollow = async () => {
     try {
-      const response = await api.post(`api/follow/follow/`,
-        { user_id: userId }
-      );
+      const response = await api.post(`api/follow/follow/`, { user_id: userId });
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
       setSuccessMessage("User followed.");
       setErrorMessage("");
-    } 
-    catch (error) 
-    {
+    } catch (error) {
       console.error("Error following user:", error);
       setErrorMessage("Failed to follow user. Please try again.");
       setSuccessMessage("");
@@ -271,10 +248,7 @@ const ProfilePage = () => {
               )}
               
               {isOwner && !isEditing && (
-                <button
-                  className="btn text-info p-0 ms-2"
-                  onClick={() => setIsEditing(true)}
-                >
+                <button className="btn text-info p-0 ms-2" onClick={() => setIsEditing(true)}>
                   <Edit size={25} />
                 </button>
               )}
@@ -347,7 +321,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      <ul className="nav nav-pills mb-3 d-flex justify-content-center" id="profile-tabs" role="tab-list">
+      <ul className="nav nav-pills mb-3 d-flex justify-content-center" id="profile-tabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
             className={`nav-link ${currentTab === "posts" ? "active bg-info" : "text-dark"}`}
@@ -391,7 +365,18 @@ const ProfilePage = () => {
             <div className="card shadow-sm">
               <div className="card-body">
                 <h5 className="card-title">User Communities</h5>
-                <p className="card-text">User's communities here...</p>
+                {userCommunities.length > 0 ? (
+                  <ul>
+                    {userCommunities.map((uc) => (
+                      <li key={uc.id}>
+                        {uc.community_name} — <strong>{uc.role}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No communities found.</p>
+                )}
+                {errorMessage && <p className="text-danger">{errorMessage}</p>}
               </div>
             </div>
           </div>

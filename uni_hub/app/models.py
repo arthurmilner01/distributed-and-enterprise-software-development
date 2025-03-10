@@ -56,11 +56,22 @@ class Keyword(models.Model):
 #Community
 class Community(models.Model):
     community_name = models.CharField(max_length=255)
-    #Ref keywords here apart of community model for easier orm 
+    description = models.TextField(null=True, blank=True)  # New: community description
+    rules = models.TextField(null=True, blank=True)        # New: community rules
+    privacy = models.CharField(max_length=50, null=True, blank=True)  # New: e.g., "public" or "private"
     keywords = models.ManyToManyField(Keyword, through="CommunityKeyword", related_name="communities") 
-    is_community_owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_communities")
+    is_community_owner = models.ForeignKey(
+    User,
+    on_delete=models.CASCADE,
+    related_name="owned_communities",
+    null=True,  # allow null during migration
+    blank=True
+)
+
+    
     def __str__(self):
         return self.community_name
+
 
 #Junction table for Communities and Keywords (Many to many)
 class CommunityKeyword(models.Model):
