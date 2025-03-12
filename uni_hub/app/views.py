@@ -238,8 +238,6 @@ def user_communities_list(request):
 class GlobalPostListCreateView(generics.ListCreateAPIView):
     """
     API endpoint for creating and retrieving posts.
-    - If a `community` query parameter is provided, filter posts by community.
-    - Otherwise, fetch only posts related to the Global Community.
     """
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -247,39 +245,29 @@ class GlobalPostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """
         Fetch posts based on `community` query parameter.
-        - If provided, return posts for that community.
-        - If not, return posts for the Global Community.
         """
         queryset = Post.objects.all().order_by("-created_at")
         community_id = self.request.query_params.get("community")  # Get query param
 
         if community_id:
-            print(f"DEBUG - Filtering posts for Community ID: {community_id}")
             return queryset.filter(community_id=community_id)
 
         # Default to Global Community posts
-        print("DEBUG - Fetching Global Community posts.")
         return queryset.filter(community__community_name="Global Community (News Feed)")
 
     def perform_create(self, serializer):
-        """
-        Handles post creation.
-        - If `community` is provided in request, assign to that community.
-        - Otherwise, assign to Global Community.
-        """
         community_id = self.request.data.get("community")
-
         if community_id:
             try:
                 community = Community.objects.get(id=community_id)
-                print(f"DEBUG: Assigning post to Community ID {community_id}")
             except Community.DoesNotExist:
-                print(f"ERROR: Community ID {community_id} does not exist. Falling back to Global Community.")
                 community = Community.objects.get(community_name="Global Community (News Feed)")
         else:
             # Assign to Global Community if no ID is provided
-            print("DEBUG: No community provided. Assigning to Global Community.")
-            community = Community.objects.get(community_name="Global Community (News Feed)")
+            try:
+                community = Community.objects.get(community_name="Global Community (News Feed)")
+            except Community.DoesNotExist:
+                return Response({"error": "Global Community does not exist."}, status=400)
 
         serializer.save(user=self.request.user, community=community)
 

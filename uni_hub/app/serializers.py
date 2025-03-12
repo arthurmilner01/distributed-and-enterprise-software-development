@@ -2,7 +2,8 @@ from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
-
+from .models import Community, Keyword, UserCommunity
+from django.contrib.auth import get_user_model
 
 class UniversitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,8 +81,8 @@ class PostSerializer(serializers.ModelSerializer):
     user_image = serializers.ImageField(source='user.profile_picture', read_only=True)
     community = serializers.PrimaryKeyRelatedField(
         queryset=Community.objects.all(),
-        required=True,       # Now required
-        allow_null=False      # Do not allow null values
+        required=False,       
+        allow_null=True    
     )
 
     class Meta:
@@ -100,28 +101,22 @@ class PostSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "user", "likes"]
 
     def create(self, validated_data):
-        print("DEBUG: Serializer validated_data before community fallback:", validated_data)
-
         validated_data.pop("user", None)
         user = self.context["request"].user
 
         # If a community is already in validated_data, use it
         if "community" in validated_data and validated_data["community"] is not None:
-            print(f"DEBUG: Post assigned to community ID {validated_data['community'].id}")
             post = Post.objects.create(user=user, **validated_data)
             return post
 
         # Otherwise, assign to Global Community
-        print("DEBUG: No community provided, assigning to Global Community.")
         try:
             global_community = Community.objects.get(community_name="Global Community (News Feed)")
             validated_data["community"] = global_community
         except Community.DoesNotExist:
-            print("ERROR: Global Community (News Feed) does not exist!")
             raise serializers.ValidationError("Global Community (News Feed) does not exist.")
 
         post = Post.objects.create(user=user, **validated_data)
-        print(f"DEBUG: Post created successfully! Post ID: {post.id}")
         return post
 
 
@@ -177,9 +172,6 @@ class UserFollowerSerializer(serializers.ModelSerializer):
 
     
 # serializers.py
-from rest_framework import serializers
-from .models import Community, Keyword, UserCommunity
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
