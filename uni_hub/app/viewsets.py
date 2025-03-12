@@ -147,3 +147,22 @@ class FollowViewSet(viewsets.ModelViewSet):
         is_following = Follow.objects.filter(following_user=request.user, followed_user=followed_user).exists()
 
         return Response({"is_following": is_following}, status=status.HTTP_200_OK)
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    queryset = Announcement.objects.all()
+    serializer_class = AnnouncementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        community_id = self.request.query_params.get('community_id')
+        if community_id:
+            qs = qs.filter(community_id=community_id)
+        return qs
+
+    def perform_create(self, serializer):
+        community_id = self.request.data.get('community_id')
+        if not community_id:
+            raise serializers.ValidationError({"community_id": "This field is required."})
+        # Get community and check leadership if needed...
+        serializer.save(created_by=self.request.user, community_id=community_id)

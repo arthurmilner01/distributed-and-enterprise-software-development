@@ -44,7 +44,7 @@ const CreateCommunityPage = () => {
       if (response.status === 201 || response.status === 200) {
         setSuccess("Community created successfully!");
         setTimeout(() => {
-          navigate("/dashboard");
+          navigate(`/communities/${response.data.id}`);
         }, 2000);
       }
     } catch (err) {

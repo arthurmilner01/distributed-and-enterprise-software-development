@@ -115,17 +115,27 @@ class UserFollowerSerializer(serializers.ModelSerializer):
 
     
 # serializers.py
+from rest_framework import serializers
+from .models import Community, Keyword, UserCommunity
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class CommunitySerializer(serializers.ModelSerializer):
-    # 1) For input: We'll accept a list of strings
-    # 2) For output: We'll provide a read-only array of strings
+    # For input: We'll accept a list of strings
+    # For output: We'll provide a read-only array of strings
     keywords = serializers.ListField(
-        child=serializers.CharField(),  # input is an array of strings
-        write_only=True,               # Only used on input
+        child=serializers.CharField(),
+        write_only=True,
         required=False
     )
     # We'll add a separate read-only field for output
     keyword_list = serializers.SerializerMethodField(read_only=True)
+
+    # NEW: Return the user ID of the leader
+    is_community_owner = serializers.PrimaryKeyRelatedField(
+        read_only=True
+    )
 
     class Meta:
         model = Community
@@ -135,8 +145,9 @@ class CommunitySerializer(serializers.ModelSerializer):
             "description",
             "rules",
             "privacy",
-            "keywords",      # used for input
-            "keyword_list",  # used for output
+            "keywords",       # used for input
+            "keyword_list",   # used for output
+            "is_community_owner",  # the leader's user ID
         ]
 
     def create(self, validated_data):
@@ -166,13 +177,20 @@ class CommunitySerializer(serializers.ModelSerializer):
         return community
 
     def get_keyword_list(self, obj):
-        """
-        Return an array of keyword strings for output.
-        """
+        """Return an array of keyword strings for output."""
         return [k.keyword for k in obj.keywords.all()]
+
 
 class UserCommunitySerializer(serializers.ModelSerializer):
     community_name = serializers.ReadOnlyField(source='community.community_name')
     class Meta:
         model = UserCommunity
         fields = ['id', 'community_name', 'role', 'community']
+
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = ["id", "title", "content", "created_at", "created_by", "community"]
+        read_only_fields = ["id", "created_at", "created_by", "community"]        

@@ -14,6 +14,7 @@ import UnauthLayout from "./components/layout/UnauthLayout";
 import ProfilePage from "./components/pages/ProfilePage";
 import CreateCommunityPage from "./components/pages/CreateCommunityPage"; 
 import CommunitiesDashboard from "./components/pages/CommunitiesDashboard"; 
+import CommunityPage from "./components/pages/CommunityPage"; 
 function App() {
   return (
     <AuthProvider>
@@ -37,6 +38,8 @@ function App() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
               <Route path="create-community" element={<CreateCommunityPage />} />
+              <Route path="communities/:communityId" element={<CommunityPage />} />
+
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>
