@@ -1,0 +1,149 @@
+/* Darker overlay for higher contrast */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75); /* Increase opacity to .75 or .8 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+  }
+  
+  /* Modal container */
+  .modal-content {
+    background-color: #000000;
+    padding: 20px;
+    width: 400px;
+    max-width: 90%;
+    border-radius: 8px;
+    border: 2px solid #000000; /* Visible border */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+    color: #000000;
+  }
+  
+  /* Modal heading */
+  .modal-content h4 {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* Textarea (Post content) */
+  textarea.form-control {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    height: 80px;
+    margin-bottom: 10px;
+  }
+  
+  /* Footer for buttons (Close & Post) */
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  /* Shared button styles */
+  .modal-footer .btn {
+    min-width: 80px;
+    padding: 8px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Secondary (Close) button */
+  .modal-footer .btn-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  
+  .modal-footer .btn-secondary:hover {
+    background-color: #ccc;
+  }
+  
+  /* Primary (Post) button */
+  .modal-footer .btn-primary {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .modal-footer .btn-primary:hover {
+    background-color: #0056b3;
+  }
+  .post-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc; /* Card border */
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  /* Left Column: Avatar */
+  .post-avatar {
+    margin-right: 15px;
+  }
+  
+  .post-avatar .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover; /* Ensures the image fits in a circular shape */
+    border: 2px solid #ddd; 
+  }
+  
+  /* Middle Column: Post Content */
+  .post-content {
+    flex: 1; /* Take up remaining space */
+  }
+  
+  .post-content h5 {
+    margin: 0 0 5px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  
+  .post-content p {
+    margin: 0 0 5px;
+    font-size: 1rem;
+  }
+  
+  .post-content small {
+    color: #999;
+  }
+  
+  /* Right Column: Likes Section */
+  .post-likes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 15px;
+  }
+  
+  .post-likes .heart-icon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-bottom: 5px;
+  }
+  
+  .post-likes .heart-icon:hover {
+    transform: scale(1.1);
+  }
+  
+  .post-likes .likes-count {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  

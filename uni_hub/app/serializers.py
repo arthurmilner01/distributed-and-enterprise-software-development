@@ -71,6 +71,68 @@ class UserProfileUpdateSerializer(UserSerializer):
         instance.save()
         return instance
 
+
+#Serilizer for global posts
+
+class PostSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    user_image = serializers.ImageField(source='user.profile_picture', read_only=True)
+    community = serializers.PrimaryKeyRelatedField(
+        queryset=Community.objects.all(),
+        required=True,       # Now required
+        allow_null=False      # Do not allow null values
+    )
+
+    class Meta:
+        model = Post
+        fields = [
+            "id",
+            "user",
+            "user_name",
+            "user_last_name",
+            "user_image",
+            "community",
+            "post_text",
+            "created_at",
+            "likes",
+        ]
+        read_only_fields = ["id", "created_at", "user", "likes"]
+
+    def create(self, validated_data):
+        print("DEBUG: Serializer validated_data before community fallback:", validated_data)
+
+        validated_data.pop("user", None)
+        user = self.context["request"].user
+
+        # If a community is already in validated_data, use it
+        if "community" in validated_data and validated_data["community"] is not None:
+            print(f"DEBUG: Post assigned to community ID {validated_data['community'].id}")
+            post = Post.objects.create(user=user, **validated_data)
+            return post
+
+        # Otherwise, assign to Global Community
+        print("DEBUG: No community provided, assigning to Global Community.")
+        try:
+            global_community = Community.objects.get(community_name="Global Community (News Feed)")
+            validated_data["community"] = global_community
+        except Community.DoesNotExist:
+            print("ERROR: Global Community (News Feed) does not exist!")
+            raise serializers.ValidationError("Global Community (News Feed) does not exist.")
+
+        post = Post.objects.create(user=user, **validated_data)
+        print(f"DEBUG: Post created successfully! Post ID: {post.id}")
+        return post
+
+
+
+
+
+
+
+
+
+
 #Serilizer for following
 class FollowSerializer(serializers.ModelSerializer):
     follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged-in user

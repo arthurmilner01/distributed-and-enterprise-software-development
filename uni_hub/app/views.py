@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework import permissions
+from rest_framework import permissions, generics
 
 from django.conf import settings
 from django.utils import timezone
@@ -233,3 +233,71 @@ def user_communities_list(request):
     user_communities = UserCommunity.objects.filter(user_id=user_id).select_related('community')
     serializer = UserCommunitySerializer(user_communities, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)    
+
+
+class GlobalPostListCreateView(generics.ListCreateAPIView):
+    """
+    API endpoint for creating and retrieving posts.
+    - If a `community` query parameter is provided, filter posts by community.
+    - Otherwise, fetch only posts related to the Global Community.
+    """
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Fetch posts based on `community` query parameter.
+        - If provided, return posts for that community.
+        - If not, return posts for the Global Community.
+        """
+        queryset = Post.objects.all().order_by("-created_at")
+        community_id = self.request.query_params.get("community")  # Get query param
+
+        if community_id:
+            print(f"DEBUG - Filtering posts for Community ID: {community_id}")
+            return queryset.filter(community_id=community_id)
+
+        # Default to Global Community posts
+        print("DEBUG - Fetching Global Community posts.")
+        return queryset.filter(community__community_name="Global Community (News Feed)")
+
+    def perform_create(self, serializer):
+        """
+        Handles post creation.
+        - If `community` is provided in request, assign to that community.
+        - Otherwise, assign to Global Community.
+        """
+        community_id = self.request.data.get("community")
+
+        if community_id:
+            try:
+                community = Community.objects.get(id=community_id)
+                print(f"DEBUG: Assigning post to Community ID {community_id}")
+            except Community.DoesNotExist:
+                print(f"ERROR: Community ID {community_id} does not exist. Falling back to Global Community.")
+                community = Community.objects.get(community_name="Global Community (News Feed)")
+        else:
+            # Assign to Global Community if no ID is provided
+            print("DEBUG: No community provided. Assigning to Global Community.")
+            community = Community.objects.get(community_name="Global Community (News Feed)")
+
+        serializer.save(user=self.request.user, community=community)
+
+
+
+class CommunityPostListCreateView(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Fetch posts only for a specific community."""
+        community_id = self.kwargs.get("community_id")
+        print(f"DEBUG - Fetching posts for Community ID: {community_id}")  # Debugging
+        return Post.objects.filter(community_id=community_id).order_by("-created_at")
+
+
+    def perform_create(self, serializer):
+        """Save a new post inside the given community."""
+        community_id = self.kwargs.get("community_id")
+        community = Community.objects.get(id=community_id)
+        serializer.save(user=self.request.user, community=community)

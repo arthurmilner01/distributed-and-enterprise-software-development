@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
+import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 
 const CommunityPage = () => {
   const { communityId } = useParams();
-  const { user } = useAuth();
+  const { user, accessToken, isAuthenticated, loading} = useAuth();
   const api = useApi();
 
   const [community, setCommunity] = useState(null);
@@ -19,6 +21,7 @@ const CommunityPage = () => {
     rules: "",
     privacy: "public",
   });
+  console.log("communityId:", communityId); // Debug
 
   // Announcements state
   const [announcements, setAnnouncements] = useState([]);
@@ -27,10 +30,41 @@ const CommunityPage = () => {
   const [newAnnouncementContent, setNewAnnouncementContent] = useState("");
 
   // Dummy posts state (frontend only)
-  const [posts] = useState([
-    { id: 1, title: "Welcome!", content: "This is the first post in our community." },
-    { id: 2, title: "Upcoming Event", content: "Don't miss our event next week." },
-  ]);
+  const [posts, setPosts] = useState([]);
+
+  // Fetch posts for the current community
+  const fetchCommunityPosts = async () => {
+    try {
+      const response = await api.get(`api/posts/`, {
+        params: { community: communityId }, // Filter by community ID
+      });
+  
+      console.log("DEBUG - Posts fetched from API:", response.data);
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+    }
+  };
+  
+  // Fetch posts when the community ID changes
+  useEffect(() => {
+    if (communityId) {
+      fetchCommunityPosts();
+    }
+  }, [communityId]);
+  
+  
+  // Fetch posts when the community ID changes
+  useEffect(() => {
+    if (communityId) {
+      fetchCommunityPosts();
+    }
+  }, [communityId]);
+  
+
+  // New states for post modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPost, setNewPost] = useState("");
 
   // Fetch community details
   const fetchCommunity = async () => {
@@ -114,6 +148,33 @@ const CommunityPage = () => {
       setAnnouncementError("Failed to create announcement.");
     }
   };
+
+  // Updated handler for post submission to send the post to the current community
+  const handlePostSubmit = async (event) => {
+    event.preventDefault();
+  
+    axios
+      .post(
+        "http://localhost:8000/api/posts/",
+        { post_text: newPost, community: parseInt(communityId) },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      .then((response) => {
+        setPosts([response.data, ...posts]); // Add new post to the top of the list
+        setNewPost("");
+        setIsModalOpen(false);
+      })
+      .catch((error) => {
+        console.error("Failed to create post:", error);
+      });
+  };
+  
+  
+  
+  
+
+
+
 
   return (
     <div className="container mt-5">
@@ -253,26 +314,159 @@ const CommunityPage = () => {
             </div>
           </div>
 
-          {/* Posts Section (Frontend Only) */}
+          {/* Posts Section */}
           <div className="card shadow-sm mb-4">
-            <div className="card-header bg-secondary text-white">
-              <h4 className="mb-0">Community Posts</h4>
-            </div>
-            <div className="card-body">
-              {posts && posts.length > 0 ? (
-                <ul className="list-group">
-                  {posts.map((post) => (
-                    <li key={post.id} className="list-group-item">
-                      <h5>{post.title}</h5>
-                      <p>{post.content}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No posts yet.</p>
-              )}
-            </div>
+          <div className="card-header bg-secondary text-white">
+            <h4 className="mb-0">Community Posts</h4>
           </div>
+          <div className="card-body">
+            {/* Button to open the post creation modal */}
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: "1rem" }}
+              onClick={() => setIsModalOpen(true)}
+            >
+              Create Post
+            </button>
+
+            {posts && posts.length > 0 ? (
+              <ul className="list-group mt-3">
+                {posts.map((post) => (
+                  <li key={post.id} className="list-group-item d-flex align-items-start">
+                    {/* User Profile Image */}
+                    <img
+                      src={post.user_image || default_profile_picture } // Fallback profile image
+                      alt="User Avatar"
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        marginRight: "15px",
+                        border: "2px solid #ddd",
+                      }}
+                    />
+
+                    {/* Post Content */}
+                    <div style={{ flex: 1 }}>
+                      <h5>{post.user_name} {post.user_last_name}</h5>
+                      <p>{post.post_text}</p>
+                      <small>{new Date(post.created_at).toLocaleDateString()}</small>
+                    </div>
+
+                    {/* Like Button */}
+                    <button
+                      className="btn btn-outline-danger"
+                      style={{ marginLeft: "auto" }}
+                    >
+                      ❤️ {post.likes}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No posts yet.</p>
+            )}
+          </div>
+        </div>
+
+
+          {/* Modal for creating a new post */}
+          {isModalOpen && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: "rgba(0, 0, 0, 0.75)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 1050,
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "#fff",
+                  padding: "20px",
+                  width: "400px",
+                  maxWidth: "90%",
+                  borderRadius: "8px",
+                  border: "2px solid #ccc",
+                  boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
+                  color: "#333",
+                }}
+              >
+                <h4
+                  style={{
+                    marginBottom: "15px",
+                    fontSize: "1.3rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Create a New Post
+                </h4>
+                <textarea
+                  style={{
+                    width: "100%",
+                    fontSize: "14px",
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    resize: "none",
+                    height: "80px",
+                    marginBottom: "10px",
+                  }}
+                  placeholder="What's on your mind?"
+                  value={newPost}
+                  onChange={(e) => setNewPost(e.target.value)}
+                  rows="3"
+                  required
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "10px",
+                    marginTop: "10px",
+                  }}
+                >
+                  <button
+                    style={{
+                      minWidth: "80px",
+                      padding: "8px 20px",
+                      fontSize: "14px",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      border: "none",
+                      backgroundColor: "#e0e0e0",
+                      color: "#333",
+                    }}
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    style={{
+                      minWidth: "80px",
+                      padding: "8px 20px",
+                      fontSize: "14px",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      border: "none",
+                      backgroundColor: "#007bff",
+                      color: "#fff",
+                    }}
+                    onClick={handlePostSubmit}
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <p>Loading community...</p>

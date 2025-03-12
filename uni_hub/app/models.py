@@ -111,16 +111,18 @@ class Event(models.Model):
     def __str__(self):
         return self.event_name
 
-#Post
 class Post(models.Model):
     created_at = models.DateField(auto_now_add=True)
     post_text = models.TextField(null=True, blank=True)
     likes = models.IntegerField(default=0)
-    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="posts")
+    community = models.ForeignKey(
+        Community, on_delete=models.CASCADE, related_name="posts", null=True, blank=True  # Allow global posts
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
 
     def __str__(self):
-        return f"Post {self.id} by {self.user.email}"
+        return f"Post {self.id} by {self.user.email} {'in ' + self.community.community_name if self.community else ' (Global)'}"
+
 
 #PinnedPost
 class PinnedPost(models.Model):

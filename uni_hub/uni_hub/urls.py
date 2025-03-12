@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenVerifyView, TokenBlacklistView
+from app.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -8,5 +9,8 @@ urlpatterns = [
     path('auth/jwt/verify/', TokenVerifyView.as_view(), name='token-verify'),
     path('auth/jwt/blacklist/', TokenBlacklistView.as_view(), name='token-blacklist'),
     path("", include("app.urls")),
+    path("api/posts/", GlobalPostListCreateView.as_view(), name="global-posts"),  # Allows global posting
+    path('api-auth/', include('rest_framework.urls')),  # Enables login form in DRF
+
 ]
 
