@@ -8,6 +8,7 @@ const CreateCommunityPage = () => {
   const [description, setDescription] = useState("");
   const [rules, setRules] = useState("");
   const [privacy, setPrivacy] = useState("public");
+  const [keywords, setKeywords] = useState(""); // NEW
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
@@ -17,13 +18,18 @@ const CreateCommunityPage = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     try {
+      // Convert comma-separated string to array
+      const keywordsArray = keywords
+        ? keywords.split(",").map((kw) => kw.trim())
+        : [];
+
       const data = {
         community_name: communityName,
         description,
         rules,
         privacy,
+        keywords: keywordsArray, // pass as an array
       };
 
       const headers = accessToken
@@ -100,6 +106,20 @@ const CreateCommunityPage = () => {
                     <option value="public">Public</option>
                     <option value="private">Private</option>
                   </select>
+                </div>
+
+                {/* NEW: Keywords Input */}
+                <div className="mb-3">
+                  <label className="form-label">Keywords (comma-separated):</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                  />
+                  <small className="text-muted">
+                    e.g. "Electronics, UWE, Coding"
+                  </small>
                 </div>
 
                 <button type="submit" className="btn btn-info text-white w-100">

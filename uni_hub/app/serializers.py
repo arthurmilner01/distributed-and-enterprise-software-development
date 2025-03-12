@@ -114,34 +114,62 @@ class UserFollowerSerializer(serializers.ModelSerializer):
         fields = ['id', 'username']
 
     
+# serializers.py
+
 class CommunitySerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating and updating Community instances.
-    Automatically assigns the creator as the community owner and leader.
-    """
+    # 1) For input: We'll accept a list of strings
+    # 2) For output: We'll provide a read-only array of strings
+    keywords = serializers.ListField(
+        child=serializers.CharField(),  # input is an array of strings
+        write_only=True,               # Only used on input
+        required=False
+    )
+    # We'll add a separate read-only field for output
+    keyword_list = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Community
-        fields = ["id", "community_name", "description", "rules", "privacy"]
-        # Add or remove fields as needed.
+        fields = [
+            "id",
+            "community_name",
+            "description",
+            "rules",
+            "privacy",
+            "keywords",      # used for input
+            "keyword_list",  # used for output
+        ]
 
     def create(self, validated_data):
-        # Get the logged-in user from the request context
+        keywords_data = validated_data.pop("keywords", [])
         user = self.context["request"].user
-        
-        # Create the Community and set the user as the owner
+
+        # Create the community
         community = Community.objects.create(
             is_community_owner=user,
             **validated_data
         )
 
-        # Also create a UserCommunity record to mark the user as a Leader
+        # Also create the user->community relationship
         UserCommunity.objects.create(
             user=user,
             community=community,
             role="Leader"
         )
 
+        # Now handle the incoming keywords
+        for kw in keywords_data:
+            kw = kw.strip()
+            if kw:
+                keyword_obj, created = Keyword.objects.get_or_create(keyword=kw)
+                community.keywords.add(keyword_obj)
+
         return community
+
+    def get_keyword_list(self, obj):
+        """
+        Return an array of keyword strings for output.
+        """
+        return [k.keyword for k in obj.keywords.all()]
 
 class UserCommunitySerializer(serializers.ModelSerializer):
     community_name = serializers.ReadOnlyField(source='community.community_name')
