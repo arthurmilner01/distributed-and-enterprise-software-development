@@ -5,6 +5,8 @@ import useApi from "../../api";
 
 const CommunitiesDashboard = () => {
   const [userCommunities, setUserCommunities] = useState([]);
+  const [userRequestCommunities, setUserRequestCommunities] = useState([]);
+
   const [errorMessage, setErrorMessage] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -21,9 +23,20 @@ const CommunitiesDashboard = () => {
     }
   };
 
+  // Fetch users outgoing community requests
+  const fetchUserCommunityRequests = async () => {
+    try {
+        const response = await api.get("api/communityfollow/follow_requests/");
+        setUserRequestCommunities(response.data);
+    } catch (error) {
+        console.error("Error fetching communities:", error);
+        setErrorMessage("Failed to load requested communities.");
+    }
+}
   useEffect(() => {
     if (user?.id) {
       fetchCommunities();
+      fetchUserCommunityRequests();
     }
   }, [user]);
 
@@ -64,6 +77,22 @@ const CommunitiesDashboard = () => {
                 </ul>
               ) : (
                 <p>You are not in any communities yet.</p>
+              )}
+              <hr></hr>
+              <h3 className="text-center mb-4">Community Requests</h3>
+              {userRequestCommunities.length > 0 ? (
+                <div>
+                  <ul className="list-group mb-3">
+                    {userRequestCommunities.map((uc) => (
+                      <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{uc.community_name}</span>
+                        <span className="badge bg-info text-white">Requested</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-muted">You have no outgoing join requests.</p>
               )}
 
               {/* Button to go to CreateCommunityPage */}
