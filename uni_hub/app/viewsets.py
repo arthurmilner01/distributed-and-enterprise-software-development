@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import *
 from .models import *
 from .serializers import *
+from django.db.models import Q, Count
+
 
 #View set for following
 class FollowViewSet(viewsets.ModelViewSet):
@@ -365,3 +367,61 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError({"community_id": "This field is required."})
         # Get community and check leadership if needed...
         serializer.save(created_by=self.request.user, community_id=community_id)
+
+
+class CommunityViewSet(viewsets.ModelViewSet):
+    serializer_class = CommunitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Customize the queryset based on query parameters.
+        This handles filtering and ordering.
+        """
+        queryset = Community.objects.all()
+        
+        queryset = queryset.annotate(member_count=Count('user_communities'))
+        
+        search_query = self.request.query_params.get('search', None)
+        keywords = self.request.query_params.get('keywords', None)
+        privacy = self.request.query_params.get('privacy', None)
+        ordering = self.request.query_params.get('ordering', '-id')
+        
+        #Search text (looks in name and description)
+        if search_query:
+            queryset = queryset.filter(
+                Q(community_name__icontains=search_query) | 
+                Q(description__icontains=search_query)
+            )
+        
+        #Keywords filter
+        if keywords:
+            keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
+            if keyword_list:
+                #Filter communities that have ALL of the specified keywords
+                for keyword in keyword_list:
+                    queryset = queryset.filter(keywords__keyword=keyword)
+                queryset = queryset.distinct()
+        
+        #Privacy
+        if privacy and privacy != 'all':
+            queryset = queryset.filter(privacy=privacy)
+        
+        #Sort ordering
+        if ordering == 'community_name':
+            queryset = queryset.order_by('community_name')
+        elif ordering == '-community_name':
+            queryset = queryset.order_by('-community_name')
+        elif ordering == 'member_count':
+            queryset = queryset.order_by('member_count')
+        elif ordering == '-member_count':
+            queryset = queryset.order_by('-member_count')
+        else:
+            queryset = queryset.order_by('-id' if ordering == '-id' else 'id')
+        
+        return queryset
+
+    def get_serializer_context(self):
+        #Pass the request to the serializer to access request.user in create()
+        return {"request": self.request}
+

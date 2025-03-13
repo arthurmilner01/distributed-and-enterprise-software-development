@@ -174,7 +174,6 @@ class UserFollowerSerializer(serializers.ModelSerializer):
 # serializers.py
 
 User = get_user_model()
-
 class CommunitySerializer(serializers.ModelSerializer):
     # For input: We'll accept a list of strings
     # For output: We'll provide a read-only array of strings
@@ -190,6 +189,8 @@ class CommunitySerializer(serializers.ModelSerializer):
     is_community_owner = serializers.PrimaryKeyRelatedField(
         read_only=True
     )
+    
+    member_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Community
@@ -202,6 +203,7 @@ class CommunitySerializer(serializers.ModelSerializer):
             "keywords",       # used for input
             "keyword_list",   # used for output
             "is_community_owner",  # the leader's user ID
+            "member_count", 
         ]
 
     def create(self, validated_data):

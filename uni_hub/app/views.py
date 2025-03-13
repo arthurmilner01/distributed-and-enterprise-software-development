@@ -47,41 +47,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         return response
     
-
-class CommunityViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing communities.
-    When a community is created via CommunitySerializer, the creator is automatically assigned as its leader.
-    """
-    queryset = Community.objects.all()
-    serializer_class = CommunitySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_serializer_context(self):
-        # Pass the request to the serializer to access request.user in create()
-        return {"request": self.request}
-
-    @action(detail=True, methods=['post'], permission_classes=[IsCommunityLeader])
-    def assign_role(self, request, pk=None):
-        """
-        Custom action to assign a new role to a community member.
-        Expects JSON with "userId" and "newRole".
-        Only accessible by the community leader.
-        """
-        community = self.get_object()
-        user_id = request.data.get("userId")
-        new_role = request.data.get("newRole")
-        if not user_id or not new_role:
-            return Response({"error": "userId and newRole are required."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user_community = UserCommunity.objects.get(user_id=user_id, community=community)
-            user_community.role = new_role
-            user_community.save()
-            return Response({"detail": "Role updated successfully."}, status=status.HTTP_200_OK)
-        except UserCommunity.DoesNotExist:
-            return Response({"error": "User is not a member of this community."},
-                            status=status.HTTP_400_BAD_REQUEST)
             
 #When getting new access/refresh tokens, refresh will store in http only cookie
 class CustomTokenRefreshView(TokenRefreshView):
