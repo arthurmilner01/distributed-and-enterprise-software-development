@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
-import { Lock, UserPlus, UserCheck } from "lucide-react";
+import { Lock, UserPlus } from "lucide-react";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
 
@@ -118,16 +118,15 @@ const DiscoverCommunitiesPage = () => {
                   <Lock size={18} style={{ marginLeft: '10px' }} />
                 )}
                 </h4>
-                <p>{community.description}</p> {/* Use description */}
+                <p>{community.description}</p>
                 <p><strong>Rules:</strong> {community.rules}</p>
-                {/* Check community privacy */}
                 {community.privacy === "private" ? (
-                <button className="btn btn-warning" onClick={() => handleRequestToFollow(community.id)}>
-                    Request to Join
+                <button className="btn btn-info text-white" onClick={() => handleRequestToFollow(community.id)}>
+                    Request to Join <Lock size={18} style={{ marginLeft: '8px' }} />
                 </button>
                 ) : (
-                <button className="btn btn-primary" onClick={() => handleFollowCommunity(community.id)}>
-                    Join
+                <button className="btn btn-info text-white" onClick={() => handleFollowCommunity(community.id)}>
+                    Join <UserPlus size={18} style={{ marginLeft: '8px' }} />
                 </button>
                 )}
             </div>
