@@ -104,18 +104,17 @@ const DiscoverCommunitiesPage = () => {
 
   return (
     <div className="container mt-4">
-      <h2>Discover New Communities</h2>
-      {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+        <h2>Discover New Communities</h2>
+        {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+        {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
-      {/* Displaying the relevant communities */}
-      <div className="list-group">
+        <div className="list-group">
         {relevantCommunities.length > 0 ? (
-          relevantCommunities.map((community) => (
+            relevantCommunities.map((community) => (
             <div key={community.id} className="list-group-item">
                 <h4>{community.community_name}
                 {community.privacy === "private" && (
-                  <Lock size={18} style={{ marginLeft: '10px' }} />
+                    <Lock size={18} style={{ marginLeft: '10px' }} />
                 )}
                 </h4>
                 <p>{community.description}</p>
@@ -130,11 +129,11 @@ const DiscoverCommunitiesPage = () => {
                 </button>
                 )}
             </div>
-          ))
+            ))
         ) : (
-          <p>No relevant communities to display.</p>
+            <p>No relevant communities to display.</p>
         )}
-      </div>
+        </div>
     </div>
   );
 };
