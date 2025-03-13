@@ -195,7 +195,7 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
 
         return Response({"success": "Joined community successfully."}, status=status.HTTP_201_CREATED)
 
-    #To unfollow a user
+    #To unfollow a community
     @action(detail=False, methods=["DELETE"])
     def unfollow(self, request):
         #User ID to unfolow
@@ -249,6 +249,33 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
             return Response({"success": "Request to join community sent."}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    #To unfollow a community
+    @action(detail=False, methods=["DELETE"])
+    def cancel_follow_request(self, request):
+        #Community ID to unfolow
+        community_id = request.query_params.get("community_id")
+
+        #If user not passed
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        #Get community to unfollow
+        try:
+            unfollowed_community = Community.objects.get(id=community_id)
+        #If community ID not in database
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        #Get row to delete
+        unfollow = UserRequestCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
+        #If exists detete
+        if unfollow:
+            unfollow.delete()
+            return Response({"success": "Successfully cancelled the follow request."}, status=status.HTTP_204_NO_CONTENT)
+        
+        #Else return error
+        return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
         
 
     @action(detail=False, methods=["GET"])

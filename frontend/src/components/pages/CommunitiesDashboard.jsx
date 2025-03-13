@@ -6,7 +6,7 @@ import useApi from "../../api";
 const CommunitiesDashboard = () => {
   const [userCommunities, setUserCommunities] = useState([]);
   const [userRequestCommunities, setUserRequestCommunities] = useState([]);
-
+  const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +32,25 @@ const CommunitiesDashboard = () => {
         console.error("Error fetching communities:", error);
         setErrorMessage("Failed to load requested communities.");
     }
-}
+  }
+
+  const handleCancelRequest = async (communityId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/cancel_follow_request/`, {
+        params: { community_id: communityId }
+      });
+      setSuccessMessage("Join request cancelled successfully.");
+      setErrorMessage("");
+      fetchCommunities();
+      fetchUserCommunityRequests();
+    } catch (error) {
+      console.error("Error canceling join request:", error);
+      setErrorMessage("Failed to cancel the join request. Please try again.");
+      setSuccessMessage(""); // Reset success message on error
+    }
+  };
+
+
   useEffect(() => {
     if (user?.id) {
       fetchCommunities();
@@ -65,6 +83,12 @@ const CommunitiesDashboard = () => {
                 </div>
               )}
 
+              {successMessage && (
+                <div className="alert alert-success" role="alert">
+                  {successMessage}
+                </div>
+              )}
+
               {/* Communities List */}
               {userCommunities.length > 0 ? (
                 <ul className="list-group mb-3">
@@ -79,24 +103,30 @@ const CommunitiesDashboard = () => {
                 <p>You are not in any communities yet.</p>
               )}
               <hr></hr>
-              <h3 className="text-center mb-4">Community Requests</h3>
+              <h5 className="text-center mb-4 small-title">Community Requests</h5>
               {userRequestCommunities.length > 0 ? (
                 <div>
                   <ul className="list-group mb-3">
                     {userRequestCommunities.map((uc) => (
                       <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <span>{uc.community_name}</span>
-                        <span className="badge bg-info text-white">Requested</span>
+                        <span className="badge bg-warning text-white">Requested</span>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleCancelRequest(uc.id)}
+                        >
+                          Cancel
+                        </button>
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : (
-                <p className="text-muted">You have no outgoing join requests.</p>
+                <p className="text-muted text-grey text-center fst-italic">You have no outgoing join requests.</p>
               )}
 
               {/* Button to go to CreateCommunityPage */}
-              <button className="btn btn-info w-100 text-white" onClick={handleCreateCommunity}>
+              <button className="btn btn-info w-100 text-white mt-2" onClick={handleCreateCommunity}>
                 Create Community
               </button>
               <button className="btn btn-info w-100 mt-2 text-white" onClick={navigateDiscover}>
