@@ -5,15 +5,15 @@ import useApi from "../../api";
 import { useParams } from "react-router-dom";
 
 const DiscoverCommunitiesPage = () => {
-  const { isAuthenticated, user } = useAuth();
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const api = useApi();
-  const [communities, setCommunities] = useState([]);
-  // State to prevent communities the user is a member of from showing
-  const [userCommunities, setUserCommunities] = useState([]);
-  const [relevantCommunities, setRelevantCommunities] = useState([]);
-  const [userRequestCommunities, setUserRequestCommunities] = useState([]);
+    const { isAuthenticated, user } = useAuth();
+    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const api = useApi();
+    const [communities, setCommunities] = useState([]);
+    // State to prevent communities the user is a member of from showing
+    const [userCommunities, setUserCommunities] = useState([]);
+    const [relevantCommunities, setRelevantCommunities] = useState([]);
+    const [userRequestCommunities, setUserRequestCommunities] = useState([]);
 
     // Fetch user's communities from the API
     const fetchUserCommunities = async () => {

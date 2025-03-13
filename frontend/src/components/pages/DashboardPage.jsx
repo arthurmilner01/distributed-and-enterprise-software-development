@@ -73,8 +73,6 @@ const DashboardPage = () => {
   return (
     <div className="container" style={{ marginTop: "2rem" }}>
       <h2>Welcome, {user.first_name || "User"}!</h2>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Role:</strong> {user.role || "N/A"}</p>
 
       {/* Error Message */}
       {errorMessage && (
