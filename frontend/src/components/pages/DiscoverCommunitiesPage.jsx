@@ -2,7 +2,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
 import { Lock, UserPlus, Search } from "lucide-react";
 import useApi from "../../api"; 
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { PaginationComponent } from "../widgets/PaginationComponent";
 
 const DiscoverCommunitiesPage = () => {
     const navigate = useNavigate();
@@ -25,6 +26,11 @@ const DiscoverCommunitiesPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     //Fetch user's communities to check membership status
     const fetchUserMembershipData = async () => {
@@ -49,7 +55,7 @@ const DiscoverCommunitiesPage = () => {
     //Update search when filter values change
     useEffect(() => {
         performSearch();
-    }, [privacyFilter, sortOrder]);
+    }, [privacyFilter, sortOrder, currentPage]);
 
     //Check if user is a member of a community
     const isMemberOf = (communityId) => {
@@ -71,7 +77,15 @@ const DiscoverCommunitiesPage = () => {
     // Handle search form submission
     const handleSearch = (e) => {
         if (e) e.preventDefault();
+        //Reset to first page when performing a new search
+        setCurrentPage(1);
         performSearch();
+    };
+
+    // Handle pagination change
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        //performSearch will be triggered by the useEffect
     };
 
     //Perform the search API call
@@ -101,11 +115,24 @@ const DiscoverCommunitiesPage = () => {
             
             params.append("ordering", sortOrder);
             
+            // Add pagination parameter
+            params.append("page", currentPage.toString());
+            
             const response = await api.get(`/api/communities/?${params.toString()}`);
-            setCommunities(response.data);
+            
+            // Handle paginated response
+            setCommunities(response.data.results || []);
+            setTotalItems(response.data.count || 0);
+            setTotalPages(response.data.total_pages || 1);
+            
+            //If current page doesn't exist anymore, go to the last page
+            if (response.data.total_pages && currentPage > response.data.total_pages) {
+                setCurrentPage(response.data.total_pages);
+            }
         } catch (error) {
             console.error("Error searching communities:", error);
             setErrorMessage("Failed to search communities. Please try again.");
+            setCommunities([]);
         } finally {
             setIsLoading(false);
         }
@@ -113,7 +140,7 @@ const DiscoverCommunitiesPage = () => {
 
 
 
-    
+
     //Add a keyword to the selected keywords
     const addKeyword = (e) => {
         e.preventDefault();
@@ -122,6 +149,8 @@ const DiscoverCommunitiesPage = () => {
             setSelectedKeywords(newKeywords);
             setCurrentKeyword("");
             
+            //Reset to page 1 when adding a new keyword
+            setCurrentPage(1);
             performSearch(newKeywords);
         }
     };
@@ -139,6 +168,8 @@ const DiscoverCommunitiesPage = () => {
         const newKeywords = selectedKeywords.filter(k => k !== keyword);
         setSelectedKeywords(newKeywords);
         
+        //Reset to page 1 when removing a keyword
+        setCurrentPage(1);
         performSearch(newKeywords);
     };
 
@@ -216,6 +247,7 @@ const DiscoverCommunitiesPage = () => {
                                     value={privacyFilter}
                                     onChange={(e) => {
                                         setPrivacyFilter(e.target.value);
+                                        setCurrentPage(1); //Reset to page 1 when changing filters
                                     }}
                                     aria-label="Filter by privacy"
                                 >
@@ -254,6 +286,7 @@ const DiscoverCommunitiesPage = () => {
                                     value={sortOrder}
                                     onChange={(e) => {
                                         setSortOrder(e.target.value);
+                                        setCurrentPage(1); //Reset to page 1 when changing sort order
                                     }}
                                     aria-label="Sort results"
                                 >
@@ -297,7 +330,7 @@ const DiscoverCommunitiesPage = () => {
                     <div className="d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">Communities</h4>
                         {!isLoading && (
-                            <span className="text-muted">{communities.length} communities found</span>
+                            <span className="text-muted">{totalItems} communities found</span>
                         )}
                     </div>
                 </div>
@@ -309,102 +342,113 @@ const DiscoverCommunitiesPage = () => {
                             </div>
                         </div>
                     ) : communities.length > 0 ? (
-                        <div className="row">
-                            {communities.map((community) => {
-                                const membershipStatus = getMembershipStatus(community.id);
-                                
-                                return (
-                                    <div key={community.id} className="col-md-6 col-lg-4 mb-4">
-                                        <div className="card h-100 shadow-sm">
-                                            <div className="card-header d-flex justify-content-between align-items-center">
-                                                <h5 className="mb-0 text-truncate" title={community.community_name}>
-                                                    {community.community_name}
-                                                </h5>
-                                                <span className={`badge ${community.privacy === 'public' ? 'bg-success' : 'bg-warning text-dark'}`}>
-                                                    {community.privacy}
-                                                    {community.privacy === "private" && (
-                                                        <Lock size={14} className="ms-1" />
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="card-body">
-                                                <p className="card-text">
-                                                    {community.description && community.description.length > 100
-                                                        ? `${community.description.substring(0, 100)}...`
-                                                        : community.description || "No description provided."}
-                                                </p>
-                                                
-                                                <p className="card-text">
-                                                    <small className="text-muted">
-                                                        <strong>Members:</strong> {community.member_count || 0}
-                                                    </small>
-                                                </p>
-                                                
-                                                {community.keyword_list && community.keyword_list.length > 0 && (
-                                                    <div className="mb-2">
-                                                        <strong>Keywords:</strong>
-                                                        <div className="d-flex flex-wrap gap-1 mt-1">
-                                                            {community.keyword_list.map((keyword, index) => (
-                                                                <span key={index} className="badge bg-secondary">
-                                                                    {keyword}
-                                                                </span>
-                                                            ))}
+                        <>
+                            <div className="row">
+                                {communities.map((community) => {
+                                    const membershipStatus = getMembershipStatus(community.id);
+                                    
+                                    return (
+                                        <div key={community.id} className="col-md-6 col-lg-4 mb-4">
+                                            <div className="card h-100 shadow-sm">
+                                                <div className="card-header d-flex justify-content-between align-items-center">
+                                                    <h5 className="mb-0 text-truncate" title={community.community_name}>
+                                                        {community.community_name}
+                                                    </h5>
+                                                    <span className={`badge ${community.privacy === 'public' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                                                        {community.privacy}
+                                                        {community.privacy === "private" && (
+                                                            <Lock size={14} className="ms-1" />
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="card-body">
+                                                    <p className="card-text">
+                                                        {community.description && community.description.length > 100
+                                                            ? `${community.description.substring(0, 100)}...`
+                                                            : community.description || "No description provided."}
+                                                    </p>
+                                                    
+                                                    <p className="card-text">
+                                                        <small className="text-muted">
+                                                            <strong>Members:</strong> {community.member_count || 0}
+                                                        </small>
+                                                    </p>
+                                                    
+                                                    {community.keyword_list && community.keyword_list.length > 0 && (
+                                                        <div className="mb-2">
+                                                            <strong>Keywords:</strong>
+                                                            <div className="d-flex flex-wrap gap-1 mt-1">
+                                                                {community.keyword_list.map((keyword, index) => (
+                                                                    <span key={index} className="badge bg-secondary">
+                                                                        {keyword}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
                                                         </div>
+                                                    )}
+                                                </div>
+                                                <div className="card-footer bg-white">
+                                                    <div className="d-flex gap-2">
+                                                        <button 
+                                                            className="btn btn-primary flex-grow-1"
+                                                            onClick={() => handleViewCommunity(community.id)}
+                                                        >
+                                                            View Community
+                                                        </button>
+                                                        
+                                                        {/* Show different buttons based on membership status */}
+                                                        {membershipStatus === "none" && (
+                                                            community.privacy === "private" ? (
+                                                                <button 
+                                                                    className="btn btn-outline-info"
+                                                                    onClick={() => handleRequestToJoin(community.id)}
+                                                                >
+                                                                    Request <Lock size={14} className="ms-1" />
+                                                                </button>
+                                                            ) : (
+                                                                <button 
+                                                                    className="btn btn-outline-success"
+                                                                    onClick={() => handleJoinCommunity(community.id)}
+                                                                >
+                                                                    Join <UserPlus size={14} className="ms-1" />
+                                                                </button>
+                                                            )
+                                                        )}
+                                                        
+                                                        {membershipStatus === "requested" && (
+                                                            <button 
+                                                                className="btn btn-outline-secondary" 
+                                                                disabled
+                                                            >
+                                                                Requested
+                                                            </button>
+                                                        )}
+                                                        
+                                                        {membershipStatus === "member" && (
+                                                            <button 
+                                                                className="btn btn-outline-success" 
+                                                                disabled
+                                                            >
+                                                                Member
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                            <div className="card-footer bg-white">
-                                                <div className="d-flex gap-2">
-                                                    <button 
-                                                        className="btn btn-primary flex-grow-1"
-                                                        onClick={() => handleViewCommunity(community.id)}
-                                                    >
-                                                        View Community
-                                                    </button>
-                                                    
-                                                    {/* Show different buttons based on membership status */}
-                                                    {membershipStatus === "none" && (
-                                                        community.privacy === "private" ? (
-                                                            <button 
-                                                                className="btn btn-outline-info"
-                                                                onClick={() => handleRequestToJoin(community.id)}
-                                                            >
-                                                                Request <Lock size={14} className="ms-1" />
-                                                            </button>
-                                                        ) : (
-                                                            <button 
-                                                                className="btn btn-outline-success"
-                                                                onClick={() => handleJoinCommunity(community.id)}
-                                                            >
-                                                                Join <UserPlus size={14} className="ms-1" />
-                                                            </button>
-                                                        )
-                                                    )}
-                                                    
-                                                    {membershipStatus === "requested" && (
-                                                        <button 
-                                                            className="btn btn-outline-secondary" 
-                                                            disabled
-                                                        >
-                                                            Requested
-                                                        </button>
-                                                    )}
-                                                    
-                                                    {membershipStatus === "member" && (
-                                                        <button 
-                                                            className="btn btn-outline-success" 
-                                                            disabled
-                                                        >
-                                                            Member
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            {/*Pagination Component*/}
+                            <div className="d-flex justify-content-center mt-4">
+                                <PaginationComponent 
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    handlePageChange={handlePageChange}
+                                />
+                            </div>
+                        </>
                     ) : (
                         <div className="text-center p-5">
                             <p>No communities found matching your search criteria.</p>

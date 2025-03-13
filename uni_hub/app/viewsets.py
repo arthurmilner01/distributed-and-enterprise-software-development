@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import *
 from .models import *
 from .serializers import *
+from .pagination import *
 from django.db.models import Q, Count
 
 
@@ -372,6 +373,7 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
 class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         """
