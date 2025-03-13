@@ -232,7 +232,8 @@ def user_communities_list(request):
 
     user_communities = UserCommunity.objects.filter(user_id=user_id).select_related('community')
     serializer = UserCommunitySerializer(user_communities, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)    
+    return Response(serializer.data, status=status.HTTP_200_OK)   
+ 
 
 
 class GlobalPostListCreateView(generics.ListCreateAPIView):

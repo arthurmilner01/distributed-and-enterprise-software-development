@@ -32,6 +32,11 @@ const CommunitiesDashboard = () => {
     navigate("/create-community");
   };
 
+  // Navigate to discover community page
+  const navigateDiscover = () => {
+    navigate("/communities/discover");
+  };
+
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
@@ -64,6 +69,9 @@ const CommunitiesDashboard = () => {
               {/* Button to go to CreateCommunityPage */}
               <button className="btn btn-info w-100 text-white" onClick={handleCreateCommunity}>
                 Create Community
+              </button>
+              <button className="btn btn-info w-100 mt-2 text-white" onClick={navigateDiscover}>
+                Discover New Communities
               </button>
             </div>
           </div>

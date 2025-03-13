@@ -147,6 +147,178 @@ class FollowViewSet(viewsets.ModelViewSet):
         is_following = Follow.objects.filter(following_user=request.user, followed_user=followed_user).exists()
 
         return Response({"is_following": is_following}, status=status.HTTP_200_OK)
+    
+
+#View set for joining/leaving communities
+class CommunityFollowViewSet(viewsets.ModelViewSet):
+    #All rows
+    queryset = UserCommunity.objects.all()
+    #Use follow serializer
+    serializer_class = UserCommunitySerializer
+    #Required logged in user
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        #Use logged in user
+        user = self.request.user  #Use logged in user ID
+
+        return UserCommunity.objects.filter(user=user)  #Get joined communities
+    
+    @action(detail=False, methods=["POST"])
+    def follow(self, request):
+        #ID to follow
+        community_id = request.data.get("community_id")
+
+        #If user ID not provided
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        #Get user to follow details
+        try:
+            followed_community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        #Check if already following
+        if UserCommunity.objects.filter(user=request.user, community=followed_community).exists():
+            return Response({"error": "You are already a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #Check if community is private
+        if followed_community.privacy == "private":
+            return Response({"error": "This community is private. You need to request to join."}, status=status.HTTP_403_FORBIDDEN)
+
+        #Create the follow row in db
+        try:
+            UserCommunity.objects.create(user=request.user, community=followed_community)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"success": "Joined community successfully."}, status=status.HTTP_201_CREATED)
+
+    #To unfollow a user
+    @action(detail=False, methods=["DELETE"])
+    def unfollow(self, request):
+        #User ID to unfolow
+        community_id = request.query_params.get("community_id")
+
+        #If user not passed
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        #Get user to unfollow
+        try:
+            unfollowed_community = Community.objects.get(id=community_id)
+        #If user ID not in database
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        #Get follow row to delete
+        unfollow = UserCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
+        #If exists detete
+        if unfollow:
+            unfollow.delete()
+            return Response({"success": "Successfully left the community."}, status=status.HTTP_204_NO_CONTENT)
+        
+        #Else return error
+        return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["POST"])
+    def request_follow(self, request):
+        community_id = request.data.get("community_id")
+
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get community details
+        try:
+            community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check privacy
+        if community.privacy != "private":
+            return Response({"error": "This community is not private. You can join directly."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the user has already requested to join this community
+        if UserRequestCommunity.objects.filter(user=request.user, community=community).exists():
+            return Response({"error": "You have already requested to join this community."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the request to join community
+        try:
+            user_request = UserRequestCommunity.objects.create(user=request.user, community=community)
+            return Response({"success": "Request to join community sent."}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+    @action(detail=False, methods=["GET"])
+    def followers(self, request):
+        user = request.user  #Use logged in user
+        
+        #Get list of followed communities
+        followed_communities = UserCommunity.objects.filter(user=user).select_related("community")
+        #Get list of follows in json as the response
+        community_data = UserCommunityFollowerSerializer([f.community for f in followed_communities], many=True)
+
+        return Response(community_data.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["GET"])
+    def follow_requests(self, request):
+        user = request.user  #Use logged in user
+        
+        #Get list of followed communities
+        requested_communities = UserRequestCommunity.objects.filter(user=user).select_related("community")
+        #Get list of follows in json as the response
+        community_data = UserCommunityFollowerSerializer([f.community for f in requested_communities], many=True)
+
+        return Response(community_data.data, status=status.HTTP_200_OK)
+
+    
+    @action(detail=False, methods=["GET"])
+    def check_following(self, request):
+        community_id = request.query_params.get("community_id")
+
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            followed_community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        #Check logged-in user follows viewed community
+        is_following = UserCommunity.objects.filter(user=request.user, community=followed_community).exists()
+
+        return Response({"is_following": is_following}, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["GET"])
+    def communities_all(self, request):
+        #Fetch all available communities
+        communities = Community.objects.all()
+        serializer = UserCommunityFollowerSerializer(communities, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    #For filtering only to communities user has not request/joined
+    @action(detail=False, methods=["GET"])
+    def relevant_communities(self, request):
+        user = request.user  # Get the logged-in user
+
+        # Get list of communities the user is already following
+        followed_communities = UserCommunity.objects.filter(user=user).values_list('community', flat=True)
+
+        # Get list of communities the user has requested to join
+        requested_communities = UserRequestCommunity.objects.filter(user=user).values_list('community', flat=True)
+
+        # Get all communities excluding those the user is following or has requested to join
+        relevant_communities = Community.objects.exclude(id__in=followed_communities).exclude(id__in=requested_communities)
+
+        # Filter by only communities with an owner
+        relevant_communities = relevant_communities.filter(is_community_owner__isnull=False)
+
+        # Serialize the data and return it
+        serializer = UserCommunityFollowerSerializer(relevant_communities, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset = Announcement.objects.all()

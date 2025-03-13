@@ -241,7 +241,22 @@ class UserCommunitySerializer(serializers.ModelSerializer):
         model = UserCommunity
         fields = ['id', 'community_name', 'role', 'community']
 
+#Used to return community list (GET request)
+class UserCommunityFollowerSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    community_name = serializers.CharField()
+    description = serializers.CharField()
+    rules = serializers.CharField()
+    privacy = serializers.CharField()
+    keywords = serializers.SerializerMethodField()
+    is_community_owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
+    class Meta:
+        model = Community
+        fields = ['id', 'community_name', 'description', 'rules', 'privacy', 'keywords', 'is_community_owner']
+
+    def get_keywords(self, obj):
+        return [keyword.keyword for keyword in obj.keywords.all()] if obj.keywords.exists() else []
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:

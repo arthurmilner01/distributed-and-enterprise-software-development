@@ -5,6 +5,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'follow', FollowViewSet, basename='follow')
+router.register(r'communityfollow', CommunityFollowViewSet, basename='communityfollow')
 router.register(r'communities', CommunityViewSet, basename='community')
 router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 
