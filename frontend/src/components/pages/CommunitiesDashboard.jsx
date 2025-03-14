@@ -119,7 +119,13 @@ const CommunitiesDashboard = () => {
                 <ul className="list-group mb-3">
                   {userCommunities.map((uc) => (
                     <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
-                      <span>{uc.community_name}</span>
+                      <span
+                        className="text-primary text-decoration-underline"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => navigate(`/communities/${uc.id}`)}
+                      >
+                        {uc.community_name}
+                      </span>
                       <span className="badge bg-info text-white">{uc.role}</span>
                       <button
                           className="btn btn-danger btn-sm"
@@ -140,7 +146,13 @@ const CommunitiesDashboard = () => {
                   <ul className="list-group mb-3">
                     {userRequestCommunities.map((uc) => (
                       <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{uc.community_name}</span>
+                        <span
+                        className="text-primary text-decoration-underline"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => navigate(`/communities/${uc.id}`)}
+                        >
+                          {uc.community_name}
+                        </span>
                         <span className="badge bg-warning text-white">Requested</span>
                         <button
                           className="btn btn-danger btn-sm"
