@@ -217,14 +217,25 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
 
         #Get follow row to delete
         unfollow = UserCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
+
+        #If user not following
+        if not unfollow:
+            return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
+
+        #Check user isn't leader of community        
+        if unfollow.role == "Leader":
+            return Response(
+                {"error": "You cannot leave the community as a leader. Please transfer leadership first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
         #If exists detete
-        if unfollow:
+        try:
             unfollow.delete()
             return Response({"success": "Successfully left the community."}, status=status.HTTP_204_NO_CONTENT)
-        
-        #Else return error
-        return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
-    
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
     @action(detail=False, methods=["POST"])
     def request_follow(self, request):
         community_id = request.data.get("community_id")
@@ -253,7 +264,7 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    #To unfollow a community
+    #To cancel a community request to join
     @action(detail=False, methods=["DELETE"])
     def cancel_follow_request(self, request):
         #Community ID to unfolow

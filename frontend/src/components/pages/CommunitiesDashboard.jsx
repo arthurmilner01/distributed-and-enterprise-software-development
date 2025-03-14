@@ -33,6 +33,27 @@ const CommunitiesDashboard = () => {
         setErrorMessage("Failed to load requested communities.");
     }
   }
+  
+  const handleUnfollow = async (communityId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/unfollow/`, {
+        params: { community_id: communityId }
+      });
+      setSuccessMessage("Successfully left the community.");
+      setErrorMessage("");
+      fetchCommunities(); 
+      fetchUserCommunityRequests();
+    } catch (error) {
+      console.error("Error unfollowing community:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Failed to leave the community. Please try again.");
+      }
+  
+      setSuccessMessage("");
+    }
+  };
 
   const handleCancelRequest = async (communityId) => {
     try {
@@ -45,7 +66,11 @@ const CommunitiesDashboard = () => {
       fetchUserCommunityRequests();
     } catch (error) {
       console.error("Error canceling join request:", error);
-      setErrorMessage("Failed to cancel the join request. Please try again.");
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Failed to cancel the join request. Please try again.");
+      }
       setSuccessMessage(""); // Reset success message on error
     }
   };
@@ -96,6 +121,12 @@ const CommunitiesDashboard = () => {
                     <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
                       <span>{uc.community_name}</span>
                       <span className="badge bg-info text-white">{uc.role}</span>
+                      <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleUnfollow(uc.id)}
+                      >
+                        Leave
+                      </button>
                     </li>
                   ))}
                 </ul>
