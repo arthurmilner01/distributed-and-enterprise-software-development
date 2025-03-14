@@ -15,7 +15,7 @@ const CommunitiesDashboard = () => {
   // Fetch the communities for the current user
   const fetchCommunities = async () => {
     try {
-      const response = await api.get(`api/user-communities/?user_id=${user.id}`);
+      const response = await api.get(`api/communityfollow/followers`);
       setUserCommunities(response.data);
     } catch (error) {
       console.error("Error fetching communities:", error);
@@ -34,6 +34,7 @@ const CommunitiesDashboard = () => {
     }
   }
   
+  // Leave community
   const handleUnfollow = async (communityId) => {
     try {
       const response = await api.delete(`api/communityfollow/unfollow/`, {
@@ -55,6 +56,7 @@ const CommunitiesDashboard = () => {
     }
   };
 
+  // Cancel join request
   const handleCancelRequest = async (communityId) => {
     try {
       const response = await api.delete(`api/communityfollow/cancel_follow_request/`, {
@@ -75,7 +77,7 @@ const CommunitiesDashboard = () => {
     }
   };
 
-
+  // Get users communities and requests to join communitites
   useEffect(() => {
     if (user?.id) {
       fetchCommunities();
@@ -144,19 +146,19 @@ const CommunitiesDashboard = () => {
               {userRequestCommunities.length > 0 ? (
                 <div>
                   <ul className="list-group mb-3">
-                    {userRequestCommunities.map((uc) => (
-                      <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
+                    {userRequestCommunities.map((ucr) => (
+                      <li key={ucr.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <span
                         className="text-primary text-decoration-underline"
                         style={{ cursor: "pointer" }}
-                        onClick={() => navigate(`/communities/${uc.id}`)}
+                        onClick={() => navigate(`/communities/${ucr.id}`)}
                         >
-                          {uc.community_name}
+                          {ucr.community_name}
                         </span>
                         <span className="badge bg-warning text-white">Requested</span>
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => handleCancelRequest(uc.id)}
+                          onClick={() => handleCancelRequest(ucr.id)}
                         >
                           Cancel
                         </button>
