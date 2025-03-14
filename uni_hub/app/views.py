@@ -188,19 +188,6 @@ def event_view(request):
     elif request.method == 'POST':
         return Response({"message": "POST request successful, event manager!"}, status=200)
 
-
-@api_view(['GET'])
-def user_communities_list(request):
-    user_id = request.GET.get('user_id')
-    if not user_id:
-        return Response({"error": "Missing user_id"}, status=status.HTTP_400_BAD_REQUEST)
-
-    user_communities = UserCommunity.objects.filter(user_id=user_id).select_related('community')
-    serializer = UserCommunitySerializer(user_communities, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)   
- 
-
-
 class GlobalPostListCreateView(generics.ListCreateAPIView):
     """
     API endpoint for creating and retrieving posts.

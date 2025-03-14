@@ -241,7 +241,7 @@ class UserCommunitySerializer(serializers.ModelSerializer):
     community_name = serializers.ReadOnlyField(source='community.community_name')
     class Meta:
         model = UserCommunity
-        fields = ['id', 'community_name', 'role', 'community']
+        fields = ['id', 'community_name', 'role', 'community', 'community_id']
 
 #Used to return community list (GET request)
 class UserCommunityFollowerSerializer(serializers.ModelSerializer):

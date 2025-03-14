@@ -19,6 +19,4 @@ urlpatterns = [
     path('user/update/<int:user_id>/', UserProfileUpdateView.as_view(), name='user-profile-update'),
     path("protected/", protected_view, name="protected-view"),
     path("event/", event_view, name="event-view"),
-    # Single user-communities endpoint
-    path('api/user-communities/', user_communities_list, name='user-communities-list'),
 ]

@@ -290,6 +290,28 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         
         #Else return error
         return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    #Gets user communities with the user's role
+    @action(detail=False, methods=["GET"])
+    def user_communities_list(self, request):
+        #If a user ID is passed filter by that ID otherwise use logged in user id
+        user_id = request.GET.get('user_id')
+
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({"error": "User not found."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user #Use logged in user
+
+        if not user:
+            return Response({"error": "Missing user credentials."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        user_communities = UserCommunity.objects.filter(user_id=user.id).select_related('community')
+        serializer = UserCommunitySerializer(user_communities, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)   
         
 
     @action(detail=False, methods=["GET"])

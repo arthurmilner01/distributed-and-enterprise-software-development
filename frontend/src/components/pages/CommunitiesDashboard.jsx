@@ -15,7 +15,7 @@ const CommunitiesDashboard = () => {
   // Fetch the communities for the current user
   const fetchCommunities = async () => {
     try {
-      const response = await api.get(`api/communityfollow/followers`);
+      const response = await api.get(`api/communityfollow/user_communities_list`);
       setUserCommunities(response.data);
     } catch (error) {
       console.error("Error fetching communities:", error);
@@ -124,14 +124,14 @@ const CommunitiesDashboard = () => {
                       <span
                         className="text-primary text-decoration-underline"
                         style={{ cursor: "pointer" }}
-                        onClick={() => navigate(`/communities/${uc.id}`)}
+                        onClick={() => navigate(`/communities/${uc.community_id}`)}
                       >
                         {uc.community_name}
                       </span>
                       <span className="badge bg-info text-white">{uc.role}</span>
                       <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => handleUnfollow(uc.id)}
+                          onClick={() => handleUnfollow(uc.community_id)}
                       >
                         Leave
                       </button>
