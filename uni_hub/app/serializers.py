@@ -73,6 +73,27 @@ class UserProfileUpdateSerializer(UserSerializer):
         return instance
 
 
+
+class CommentSerializer(serializers.ModelSerializer):
+    # These fields pull user info from the related user object
+    user_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    # Mark the user field as read-only so it's not required in input
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "user", "user_name", "user_last_name", "comment_text", "created_at"]
+        read_only_fields = ["id", "created_at", "user"]
+
+    def create(self, validated_data):
+        # Remove user from validated_data if it's present
+        validated_data.pop("user", None)
+        # Automatically assign the authenticated user from the request context
+        comment = Comment.objects.create(user=self.context["request"].user, **validated_data)
+        return comment
+
+
 #Serilizer for global posts
 
 class PostSerializer(serializers.ModelSerializer):
@@ -84,6 +105,7 @@ class PostSerializer(serializers.ModelSerializer):
         required=False,       
         allow_null=True    
     )
+    comments = CommentSerializer(many=True, read_only=True, source="comment_set")  # Fetch comments
 
     class Meta:
         model = Post
@@ -97,6 +119,7 @@ class PostSerializer(serializers.ModelSerializer):
             "post_text",
             "created_at",
             "likes",
+            "comments",  # ✅ Include comments in response
         ]
         read_only_fields = ["id", "created_at", "user", "likes"]
 
@@ -118,7 +141,6 @@ class PostSerializer(serializers.ModelSerializer):
 
         post = Post.objects.create(user=user, **validated_data)
         return post
-
 
 
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
+import useApi from "../../api";
 
 const DashboardPage = () => {
   const { user, accessToken, isAuthenticated, loading } = useAuth();
@@ -14,35 +15,64 @@ const DashboardPage = () => {
   const [newPost, setNewPost] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // If app is still loading user data
-  if (loading) {
-    return <p>Loading user data...</p>;
-  }
+  // State for creating comments
+  const [newComment, setNewComment] = useState({});
+  const api = useApi();
 
-  // If user is not authenticated
-  if (!isAuthenticated || !user) {
-    return <p>You are not authenticated. Please log in.</p>;
-  }
+  // ✅ Function to fetch posts (includes comments)
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/api/posts/", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log("DEBUG - Posts with Comments Fetched:", response.data);
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      setErrorMessage("Failed to fetch posts.");
+    }
+  };
 
-  // Fetch posts on mount or whenever accessToken changes
+  // ✅ Fetch posts on mount or whenever accessToken changes
   useEffect(() => {
     if (isAuthenticated && accessToken) {
-      axios
-        .get("http://localhost:8000/api/posts/", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((response) => {
-          setPosts(response.data);
-        })
-        .catch((error) => {
-          setErrorMessage("Failed to fetch posts.");
-        });
+      fetchPosts();
     }
   }, [isAuthenticated, accessToken]);
 
-  // Handle creating a new post
+  // ✅ Handle creating a new comment on a post
+  const handleCommentSubmit = async (event, postId) => {
+    event.preventDefault();
+
+    if (!newComment[postId] || newComment[postId].trim() === "") {
+      console.error("DEBUG - Comment is empty, not submitting.");
+      return;
+    }
+
+    const commentData = {
+      comment_text: newComment[postId],
+    };
+
+    console.log("DEBUG - Comment Data Being Sent:", commentData);
+
+    try {
+      const response = await api.post(`api/posts/${postId}/comments/`, commentData);
+      console.log("DEBUG - Comment Created:", response.data);
+
+      // ✅ Refresh posts to include the new comment
+      fetchPosts();
+      setNewComment({ ...newComment, [postId]: "" });
+    } catch (error) {
+      console.error("Failed to create comment:", error);
+      if (error.response) {
+        console.error("Response Data:", error.response.data);
+      }
+    }
+  };
+
+  // ✅ Handle creating a new post
   const handlePostSubmit = (event) => {
     event.preventDefault();
     if (!newPost) return; // Don't submit empty posts
@@ -58,17 +88,24 @@ const DashboardPage = () => {
         }
       )
       .then((response) => {
-        // Add the new post to the top of the list
         setPosts([response.data, ...posts]);
-        // Clear the text area
         setNewPost("");
-        // Close the modal
         setIsModalOpen(false);
       })
-      .catch((error) => {
+      .catch(() => {
         setErrorMessage("Failed to create post.");
       });
   };
+
+  // If app is still loading user data
+  if (loading) {
+    return <p>Loading user data...</p>;
+  }
+
+  // If user is not authenticated
+  if (!isAuthenticated || !user) {
+    return <p>You are not authenticated. Please log in.</p>;
+  }
 
   return (
     <div className="container" style={{ marginTop: "2rem" }}>
@@ -84,11 +121,7 @@ const DashboardPage = () => {
       )}
 
       {/* Button to open the modal */}
-      <button
-        className="btn btn-primary"
-        style={{ marginTop: "1rem" }}
-        onClick={() => setIsModalOpen(true)}
-      >
+      <button className="btn btn-primary" style={{ marginTop: "1rem" }} onClick={() => setIsModalOpen(true)}>
         Create Post
       </button>
 
@@ -120,15 +153,7 @@ const DashboardPage = () => {
               color: "#333",
             }}
           >
-            <h4
-              style={{
-                marginBottom: "15px",
-                fontSize: "1.3rem",
-                fontWeight: "bold",
-              }}
-            >
-              Create a New Post
-            </h4>
+            <h4 style={{ marginBottom: "15px", fontSize: "1.3rem", fontWeight: "bold" }}>Create a New Post</h4>
             <textarea
               style={{
                 width: "100%",
@@ -146,42 +171,11 @@ const DashboardPage = () => {
               rows="3"
               required
             />
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "10px",
-              }}
-            >
-              <button
-                style={{
-                  minWidth: "80px",
-                  padding: "8px 20px",
-                  fontSize: "14px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  border: "none",
-                  backgroundColor: "#e0e0e0",
-                  color: "#333",
-                }}
-                onClick={() => setIsModalOpen(false)}
-              >
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+              <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
                 Close
               </button>
-              <button
-                style={{
-                  minWidth: "80px",
-                  padding: "8px 20px",
-                  fontSize: "14px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  border: "none",
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                }}
-                onClick={handlePostSubmit}
-              >
+              <button className="btn btn-primary" onClick={handlePostSubmit}>
                 Post
               </button>
             </div>
@@ -196,52 +190,44 @@ const DashboardPage = () => {
           <p>No posts in the global feed yet.</p>
         ) : (
           posts.map((post) => (
-            <div
-              key={post.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                padding: "10px",
-                marginBottom: "15px",
-              }}
-            >
-              {/* Left: User Avatar (if user_image is returned) */}
-              <div style={{ marginRight: "15px" }}>
+            <div key={post.id} style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "10px", marginBottom: "15px" }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
                 <img
                   src={post.user_image || default_profile_picture}
                   alt="User Avatar"
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "2px solid #ddd",
-                  }}
+                  style={{ width: "60px", height: "60px", borderRadius: "50%", objectFit: "cover", border: "2px solid #ddd", marginRight: "15px" }}
                 />
+                <div style={{ flex: 1 }}>
+                  <h5>{post.user_name} {post.user_last_name}</h5>
+                  <p>{post.post_text}</p>
+                  <small>{new Date(post.created_at).toLocaleDateString()}</small>
+                </div>
               </div>
 
-
-              {/* Middle: Post Content */}
-              <div style={{ flex: 1 }}>
-                <h5 style={{ margin: 0 }}>
-                  {post.user_name} {post.user_last_name}
-                </h5>
-                <p style={{ margin: "5px 0" }}>{post.post_text}</p>
-                <small style={{ color: "#999" }}>
-                  {new Date(post.created_at).toLocaleDateString()}
-                </small>
+              {/* ✅ Display Comments Under Each Post */}
+              <div className="mt-3">
+                <h6>Comments</h6>
+                {post.comments && post.comments.length > 0 ? (
+                  <ul className="list-group">
+                    {post.comments.map((comment) => (
+                      <li key={comment.id} className="list-group-item">
+                        <strong>{comment.user_name} {comment.user_last_name}</strong>: {comment.comment_text}
+                        <br />
+                        <small>{new Date(comment.created_at).toLocaleDateString()}</small>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No comments yet.</p>
+                )}
               </div>
 
-              {/* Right: Heart icon + likes */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <button
-                      className="btn btn-outline-danger" style={{ fontSize: "1.5rem", marginBottom: "5px" }}>❤️</button>
-                <span style={{ fontSize: "0.9rem", color: "#666" }}>
-                  {post.likes || 0} Likes
-                </span>
-              </div>
+              {/* Add Comment Section */}
+              <form onSubmit={(e) => handleCommentSubmit(e, post.id)} className="mt-2">
+                <input type="text" className="form-control" placeholder="Write a comment..." value={newComment[post.id] || ""}
+                  onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })} required />
+                <button type="submit" className="btn btn-primary mt-2">Comment</button>
+              </form>
             </div>
           ))
         )}

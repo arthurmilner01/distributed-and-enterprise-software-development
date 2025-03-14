@@ -28,7 +28,26 @@ const ProfilePage = () => {
   const [followingList, setFollowingList] = useState([]);
   const [followerList, setFollowerList] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  
+
+  // User Posts
+  const [userPosts, setUserPosts] = useState([]);
+
+  const fetchUserPosts = async () => {
+    try {
+      const response = await api.get(`api/posts/?user=${userId}`);
+      console.log("DEBUG - User Posts Fetched:", response.data);
+      setUserPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+    }
+  };
+  // Fetch posts when the "Posts" tab is active
+useEffect(() => {
+  if (currentTab === "posts" && userId) {
+    fetchUserPosts();
+  }
+}, [currentTab, userId]);
+
   // NEW: State for user's communities (and roles)
   const [userCommunities, setUserCommunities] = useState([]);
 
@@ -349,16 +368,52 @@ const ProfilePage = () => {
       </ul>
 
       <div className="tab-content mt-3">
-        {currentTab === "posts" && (
-          <div className="tab-pane fade show active">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h5 className="card-title">User Posts</h5>
-                <p className="card-text">User posts here...</p>
-              </div>
-            </div>
+      {currentTab === "posts" && (
+      <div className="tab-pane fade show active">
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <h5 className="card-title">User Posts</h5>
+            {userPosts.length > 0 ? (
+              <ul className="list-group">
+                {userPosts.map((post) => (
+                  <li key={post.id} className="list-group-item d-flex align-items-start">
+                    {/* Profile Image */}
+                    <img
+                      src={post.user_image || default_profile_picture}
+                      alt="User Avatar"
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        marginRight: "15px",
+                        border: "2px solid #ddd",
+                      }}
+                    />
+                    {/* Post Content */}
+                    <div style={{ flex: 1 }}>
+                      <h5>{post.user_name} {post.user_last_name}</h5>
+                      <p>{post.post_text}</p>
+                      <small>{new Date(post.created_at).toLocaleDateString()}</small>
+                    </div>
+                    {/* Likes Button */}
+                    <button
+                      className="btn btn-outline-danger"
+                      style={{ marginLeft: "auto" }}
+                    >
+                      ❤️ {post.likes}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No posts yet.</p>
+            )}
           </div>
-        )}
+        </div>
+      </div>
+    )}
+
 
         {currentTab === "communities" && (
           <div className="tab-pane fade show active">
