@@ -239,6 +239,8 @@ class GlobalPostListCreateView(generics.ListCreateAPIView):
     """
     API endpoint for creating and retrieving posts.
     """
+    pagination_class = None
+
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -291,7 +293,6 @@ class CommunityPostListCreateView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user, community=community)
 
 
-# View for creating and listing comments for a post
 class CommentListCreateView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -304,12 +305,16 @@ class CommentListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """Ensure the authenticated user is set for the comment."""
         post_id = self.kwargs.get("post_id")
+        
+        # ✅ Debugging: Ensure `post_id` exists
+        print(f"DEBUG - Creating comment for post_id: {post_id}")
+
         if not post_id:
             raise serializers.ValidationError({"post_id": "This field is required."})
+
         try:
             post = Post.objects.get(id=post_id)
         except Post.DoesNotExist:
             raise serializers.ValidationError({"post_id": "Invalid post ID."})
-        # Save the comment with the logged-in user and the associated post
-        serializer.save(user=self.request.user, post=post)
+
         serializer.save(user=self.request.user, post=post)

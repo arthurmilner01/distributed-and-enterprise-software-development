@@ -34,6 +34,14 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
+class CommentSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.first_name", read_only=True)
+    user_last_name = serializers.CharField(source="user.last_name", read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "user", "user_name", "user_last_name", "post", "comment_text", "created_at"]
+        read_only_fields = ["id", "user", "created_at"]
 
 #Add custom claims to the token
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -73,39 +81,22 @@ class UserProfileUpdateSerializer(UserSerializer):
         return instance
 
 
-
-class CommentSerializer(serializers.ModelSerializer):
-    # These fields pull user info from the related user object
-    user_name = serializers.CharField(source='user.first_name', read_only=True)
-    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
-    # Mark the user field as read-only so it's not required in input
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = Comment
-        fields = ["id", "user", "user_name", "user_last_name", "comment_text", "created_at"]
-        read_only_fields = ["id", "created_at", "user"]
-
-    def create(self, validated_data):
-        # Remove user from validated_data if it's present
-        validated_data.pop("user", None)
-        # Automatically assign the authenticated user from the request context
-        comment = Comment.objects.create(user=self.context["request"].user, **validated_data)
-        return comment
-
-
 #Serilizer for global posts
 
+from rest_framework import serializers
+from app.models import Post, Comment, Community
+from app.serializers import CommentSerializer
+
 class PostSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='user.first_name', read_only=True)
-    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
-    user_image = serializers.ImageField(source='user.profile_picture', read_only=True)
+    user_name = serializers.CharField(source="user.first_name", read_only=True)
+    user_last_name = serializers.CharField(source="user.last_name", read_only=True)
+    user_image = serializers.ImageField(source="user.profile_picture", read_only=True)
     community = serializers.PrimaryKeyRelatedField(
         queryset=Community.objects.all(),
-        required=False,       
-        allow_null=True    
+        required=False,
+        allow_null=True
     )
-    comments = CommentSerializer(many=True, read_only=True, source="comment_set")  # Fetch comments
+    comments = serializers.SerializerMethodField()  # ✅ Fetch latest 5 comments for each post
 
     class Meta:
         model = Post
@@ -119,9 +110,14 @@ class PostSerializer(serializers.ModelSerializer):
             "post_text",
             "created_at",
             "likes",
-            "comments",  # ✅ Include comments in response
+            "comments",  # ✅ Include comments in the response
         ]
         read_only_fields = ["id", "created_at", "user", "likes"]
+
+    def get_comments(self, obj):
+        """Fetch the latest 5 comments for each post."""
+        latest_comments = obj.comments.order_by("-created_at")[:5]  # ✅ Use "comments" instead of "comment_set"
+        return CommentSerializer(latest_comments, many=True).data  # ✅ Serialize comments properly
 
     def create(self, validated_data):
         validated_data.pop("user", None)
@@ -141,6 +137,8 @@ class PostSerializer(serializers.ModelSerializer):
 
         post = Post.objects.create(user=user, **validated_data)
         return post
+
+
 
 
 
@@ -270,3 +268,5 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = ["id", "title", "content", "created_at", "created_by", "community"]
         read_only_fields = ["id", "created_at", "created_by", "community"]        
+
+
