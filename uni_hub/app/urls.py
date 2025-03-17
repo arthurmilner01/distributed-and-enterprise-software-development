@@ -20,4 +20,6 @@ urlpatterns = [
     path("event/", event_view, name="event-view"),
     # Single user-communities endpoint
     path('api/user-communities/', user_communities_list, name='user-communities-list'),
+    path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
+
 ]
