@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Menu,
@@ -34,10 +34,10 @@ const NavMenu = () => {
     //First check on render
     checkIfMobile();
    
-    //Add resize listener incase manual resize
+    // Add resize listener incase manual resize
     window.addEventListener('resize', checkIfMobile);
    
-    //Cleanup
+    // Cleanup
     return () => {
       window.removeEventListener('resize', checkIfMobile);
     };
@@ -50,7 +50,7 @@ const NavMenu = () => {
   
   return (
     <>
-      <header className={isMobile ? 'header-visible' : ''}>
+      <header className={`site-header ${isMobile ? 'header-visible' : ''}`}>
         <div className="toggle" onClick={handleToggleClick}>
           <Menu size={20} />
         </div>
@@ -59,8 +59,8 @@ const NavMenu = () => {
           <LogOut size={20} />
         </Link>
       </header>
-    
-      <nav className={`${isActive ? 'active' : ''} ${isMobile ? 'mobile' : ''}`}>
+   
+      <nav className={`side-nav ${isActive ? 'active' : ''} ${isMobile ? 'mobile' : ''}`}>
         <ul>
           <li>
             <a className={`toggle ${isMobile ? 'hidden' : ''}`} onClick={handleToggleClick}>
@@ -68,14 +68,14 @@ const NavMenu = () => {
               <span className="title">Menu</span>
             </a>
           </li>
-          
+         
           <li>
             <Link to="/">
               <span className="icon"><Home size={20} /></span>
               <span className="title">Home</span>
             </Link>
           </li>
-          
+         
           <li>
             <Link to={`/profile/${user?.id}`}>
               <span className="icon"><User size={20} /></span>
@@ -83,6 +83,9 @@ const NavMenu = () => {
             </Link>
           </li>
 
+
+          
+         
           
           <li>
             <Link to="/communities">
@@ -90,21 +93,21 @@ const NavMenu = () => {
               <span className="title">Communities</span>
             </Link>
           </li>
-          
+         
           <li>
             <Link to="/events">
               <span className="icon"><Calendar size={20} /></span>
               <span className="title">Events</span>
             </Link>
           </li>
-          
+         
           <li>
             <Link to="/notifications">
               <span className="icon"><Bell size={20} /></span>
               <span className="title">Notifications</span>
             </Link>
           </li>
-        
+       
           {isAdmin && (
             <li>
               <a onClick={openDjangoAdmin} style={{ cursor: 'pointer' }}>

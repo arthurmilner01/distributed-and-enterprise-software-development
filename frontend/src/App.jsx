@@ -15,6 +15,8 @@ import ProfilePage from "./components/pages/ProfilePage";
 import CreateCommunityPage from "./components/pages/CreateCommunityPage"; 
 import CommunitiesDashboard from "./components/pages/CommunitiesDashboard"; 
 import CommunityPage from "./components/pages/CommunityPage"; 
+import DiscoverCommunitiesPage from "./components/pages/DiscoverCommunitiesPage"; 
+
 function App() {
   return (
     <AuthProvider>
@@ -39,7 +41,7 @@ function App() {
               <Route path="profile/:userId" element={<ProfilePage />} />
               <Route path="create-community" element={<CreateCommunityPage />} />
               <Route path="communities/:communityId" element={<CommunityPage />} />
-
+              <Route path="communities/discover" element={<DiscoverCommunitiesPage />} />
 
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>

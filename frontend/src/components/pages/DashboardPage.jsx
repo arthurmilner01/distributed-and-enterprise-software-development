@@ -75,8 +75,6 @@ const DashboardPage = () => {
   return (
     <div className="container" style={{ maxWidth: "800px", margin: "20px auto" }}>
       <h2>Welcome, {user.first_name || "User"}!</h2>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Role:</strong> {user.role || "N/A"}</p>
 
       {errorMessage && <div className="alert alert-danger" style={{ marginTop: "1rem" }}>{errorMessage}</div>}
 

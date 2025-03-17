@@ -96,6 +96,12 @@ class UserCommunity(models.Model):
 
     def __str__(self):
         return f"{self.user.email} ({self.role}) in {self.community.community_name}"
+    
+#Junction table for Users and requests to join private Communities
+class UserRequestCommunity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    community = models.ForeignKey(Community, on_delete=models.CASCADE)
+    requested_at = models.DateTimeField(auto_now_add=True)
 
 
 

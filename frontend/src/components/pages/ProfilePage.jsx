@@ -54,7 +54,7 @@ useEffect(() => {
   // Fetch user's communities from the API
   const fetchUserCommunities = async () => {
     try {
-      const response = await api.get(`api/user-communities/?user_id=${userId}`);
+      const response = await api.get(`api/communityfollow/user_communities_list/?user_id=${userId}`);
       setUserCommunities(response.data);
     } catch (error) {
       console.error("Error fetching user communities:", error);

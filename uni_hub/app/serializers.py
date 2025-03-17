@@ -194,7 +194,6 @@ class UserFollowerSerializer(serializers.ModelSerializer):
 # serializers.py
 
 User = get_user_model()
-
 class CommunitySerializer(serializers.ModelSerializer):
     # For input: We'll accept a list of strings
     # For output: We'll provide a read-only array of strings
@@ -210,6 +209,8 @@ class CommunitySerializer(serializers.ModelSerializer):
     is_community_owner = serializers.PrimaryKeyRelatedField(
         read_only=True
     )
+    
+    member_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Community
@@ -222,6 +223,7 @@ class CommunitySerializer(serializers.ModelSerializer):
             "keywords",       # used for input
             "keyword_list",   # used for output
             "is_community_owner",  # the leader's user ID
+            "member_count", 
         ]
 
     def create(self, validated_data):
@@ -259,9 +261,24 @@ class UserCommunitySerializer(serializers.ModelSerializer):
     community_name = serializers.ReadOnlyField(source='community.community_name')
     class Meta:
         model = UserCommunity
-        fields = ['id', 'community_name', 'role', 'community']
+        fields = ['id', 'community_name', 'role', 'community', 'community_id']
 
+#Used to return community list (GET request)
+class UserCommunityFollowerSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    community_name = serializers.CharField()
+    description = serializers.CharField()
+    rules = serializers.CharField()
+    privacy = serializers.CharField()
+    keywords = serializers.SerializerMethodField()
+    is_community_owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
+    class Meta:
+        model = Community
+        fields = ['id', 'community_name', 'description', 'rules', 'privacy', 'keywords', 'is_community_owner']
+
+    def get_keywords(self, obj):
+        return [keyword.keyword for keyword in obj.keywords.all()] if obj.keywords.exists() else []
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:

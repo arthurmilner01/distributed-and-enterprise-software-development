@@ -5,6 +5,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'follow', FollowViewSet, basename='follow')
+router.register(r'communityfollow', CommunityFollowViewSet, basename='communityfollow')
 router.register(r'communities', CommunityViewSet, basename='community')
 router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 
@@ -18,8 +19,6 @@ urlpatterns = [
     path('user/update/<int:user_id>/', UserProfileUpdateView.as_view(), name='user-profile-update'),
     path("protected/", protected_view, name="protected-view"),
     path("event/", event_view, name="event-view"),
-    # Single user-communities endpoint
-    path('api/user-communities/', user_communities_list, name='user-communities-list'),
     path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
 
 ]
