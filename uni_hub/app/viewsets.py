@@ -103,8 +103,8 @@ class FollowViewSet(viewsets.ModelViewSet):
         #Get list of followers
         followers = Follow.objects.filter(followed_user=user).select_related("following_user")
         #Get list of follows in json as the response
-        #Using separate serializer that wont use logged in user ID, request context passed to get if logged-in user follows
-        follower_data = UserFollowerSerializer([f.following_user for f in followers], many=True, context={'request': request})
+        #Using separate serializer that wont user logged in user ID
+        follower_data = UserFollowerSerializer([f.following_user for f in followers], many=True)
 
         return Response(follower_data.data, status=status.HTTP_200_OK)
     
@@ -122,11 +122,11 @@ class FollowViewSet(viewsets.ModelViewSet):
             user = request.user  #Use logged in user
         
         #Get list of following
-        following = Follow.objects.filter(following_user=user).select_related("followed_user")
+        following = Follow.objects.filter(following_user=user).select_related("following_user")
         #Get list of follows
-        following_users = [f.followed_user for f in following]
-        #Using separate serializer that wont use logged in user ID, request context passed to get if logged-in user follows
-        following_data = UserFollowingSerializer(following_users, many=True, context={'request': request})
+        following_users = [f.following_user for f in following]
+        #Using separate serializer that wont user logged in user ID
+        following_data = UserFollowerSerializer(following_users, many=True)
 
         return Response(following_data.data, status=status.HTTP_200_OK)
     

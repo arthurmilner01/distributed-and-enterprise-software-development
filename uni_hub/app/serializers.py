@@ -139,6 +139,15 @@ class PostSerializer(serializers.ModelSerializer):
         return post
 
 
+
+
+
+
+
+
+
+
+
 #Serilizer for following
 class FollowSerializer(serializers.ModelSerializer):
     follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged-in user
@@ -172,44 +181,14 @@ class FollowSerializer(serializers.ModelSerializer):
 
         return follow
     
-# Used to return any users follower/following list (GET request)
+#Used to return any users follower list (GET request)
 class UserFollowerSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()  # Return follower's ID
-    first_name = serializers.CharField()  # Return followers first name
-    last_name = serializers.CharField()  # Return followers last name
-    profile_picture = serializers.ImageField() # Return followers profile picture
-    is_following = serializers.SerializerMethodField()  # Checks if logged-in user is following
+    id = serializers.IntegerField()  #Return follower's ID
+    username = serializers.CharField()  #Return followers username
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'profile_picture', 'is_following']
-
-    def get_is_following(self, obj):
-        request = self.context.get('request')
-        # Return true if user is following false if not
-        if request.user:
-            return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
-        # False if error
-        return False
-    
-class UserFollowingSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()  # Return follower's ID
-    first_name = serializers.CharField()  # Return followers first name
-    last_name = serializers.CharField()  # Return followers last name
-    profile_picture = serializers.ImageField() # Return followers profile picture
-    is_following = serializers.SerializerMethodField()  # Checks if logged-in user is following
-
-    class Meta:
-        model = User
-        fields = ['id', 'first_name', 'last_name', 'profile_picture', 'is_following']
-
-    def get_is_following(self, obj):
-        request = self.context.get('request')
-        # Return true if user is following false if not
-        if request.user:
-            return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
-        # False if error
-        return False
+        fields = ['id', 'username']
 
     
 # serializers.py
