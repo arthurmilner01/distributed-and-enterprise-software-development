@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.conf import settings
 
 # Create your models here.
 class University(models.Model):
@@ -38,12 +39,18 @@ class User(AbstractUser):
     bio = models.CharField(max_length=200, null=True, blank=True)
     interests = models.CharField(max_length=200, null=True, blank=True)
     role = models.CharField(max_length=1, default='S') #S for student, E for event manager, C for community leader
-    profile_picture = models.ImageField(upload_to="profile_pics/", max_length = 200, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to="profile_pics/", max_length=200, null=True, blank=True)
     university = models.ForeignKey(University, on_delete=models.CASCADE)
 
     USERNAME_FIELD = "email"  #Use email for login
     REQUIRED_FIELDS = []
 
+    def get_profile_picture_url(self):
+        """Return the full S3 URL for the profile picture or a default image."""
+        if self.profile_picture:
+            return self.profile_picture.url
+        return settings.MEDIA_URL + "default_profile_picture.jpg"
+    
     objects = CustomUserManager()  #Using custom user manager
 
 #Keyword
