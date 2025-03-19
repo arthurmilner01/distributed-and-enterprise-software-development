@@ -1,50 +1,40 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
 import { Edit, Check, X, UserPlus, UserCheck } from "lucide-react";
-import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
-  const isOwner = user.id === parseInt(userId); // To check if viewing own profile
-  const [currentTab, setCurrentTab] = useState("posts"); // For what tab user is viewing (posts, communities, events)
-  const [isEditing, setIsEditing] = useState(false); // Checks whether user is currently editing their profile
+  const isOwner = user.id === parseInt(userId);
+  const [currentTab, setCurrentTab] = useState("posts");
+  const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const api = useApi();
-  const [fetchedUser, setFetchedUser] = useState(null); // Stores viewed user's details
+  const [fetchedUser, setFetchedUser] = useState(null);
   const [editableUser, setEditableUser] = useState({
     first_name: "",
     last_name: "",
     bio: "",
     interests: "",
     profile_picture: "",
-  }); // Used to store user edits to their details
-  const [isConfirmed, setIsConfirmed] = useState(false); // When edit is confirmed
+  });
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followingList, setFollowingList] = useState([]);
+  const [followerList, setFollowerList] = useState([]);
+  const [isFollowing, setIsFollowing] = useState(false);
 
-  const [followerCount, setFollowerCount] = useState(0); // Count of followers
-  const [followingCount, setFollowingCount] = useState(0); // Count of following
-  const [followingList, setFollowingList] = useState([]); // List of users followed
-  const [followerList, setFollowerList] = useState([]); // List of users followers
-  const [isFollowing, setIsFollowing] = useState(false); // When viewing to show follow/unfollow button
-  const [showFollowersModal, setShowFollowersModal] = useState(false);
-  const [showFollowingModal, setShowFollowingModal] = useState(false);
-
-  const handleShowFollowers = () => setShowFollowersModal(true);
-  const handleCloseFollowers = () => setShowFollowersModal(false);
-  const handleShowFollowing = () => setShowFollowingModal(true);
-  const handleCloseFollowing = () => setShowFollowingModal(false);
-  
   // User Posts
   const [userPosts, setUserPosts] = useState([]);
 
   const fetchUserPosts = async () => {
     try {
       const response = await api.get(`api/posts/?user=${userId}`);
-      console.log("DEBUG - User Posts Fetched:", response.data);
       setUserPosts(response.data);
     } catch (error) {
       console.error("Error fetching user posts:", error);
@@ -156,15 +146,30 @@ useEffect(() => {
       </div>
     );
   }
-
+  const handleProfilePictureChange = (event) => {
+    const file = event.target.files[0]; // Get the selected file
+    if (file) {
+      setEditableUser({ ...editableUser, profile_picture: file });
+  
+      // Preview the selected image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditableUser((prevUser) => ({
+          ...prevUser,
+          profile_picture: reader.result, // Update UI preview
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   // Handle profile editing inputs
   const handleInputChange = (e) => {
     setEditableUser({ ...editableUser, [e.target.name]: e.target.value });
   };
-
   const handleSaveChanges = async () => {
     const updatedUser = new FormData();
-
+  
     if (editableUser.first_name !== fetchedUser.first_name && editableUser.first_name !== "Unknown") {
       updatedUser.append('first_name', editableUser.first_name);
     }
@@ -177,12 +182,27 @@ useEffect(() => {
     if (editableUser.interests !== fetchedUser.interests && editableUser.interests !== "This user hasn't added any interests...") {
       updatedUser.append('interests', editableUser.interests);
     }
-    if (editableUser.profile_picture !== fetchedUser.profile_picture && editableUser.profile_picture !== default_profile_picture) {
-      updatedUser.append('profile_picture', editableUser.profile_picture);
+  
+    // ✅ Ensure profile_picture is being added properly
+    if (editableUser.profile_picture && editableUser.profile_picture !== fetchedUser.profile_picture) {
+      if (editableUser.profile_picture instanceof File) {
+        updatedUser.append('profile_picture', editableUser.profile_picture);
+      }
     }
-
+  
+    // 🔥 Debugging: Check if the file is included
+    for (let pair of updatedUser.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
+  
     try {
-      const response = await api.patch(`user/update/${userId}/`, updatedUser);
+      const response = await api.patch(`user/update/${userId}/`, updatedUser, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      console.log("Profile update response:", response.data);
       setErrorMessage("");
       setSuccessMessage("Profile successfully updated.");
       setIsEditing(false);
@@ -193,6 +213,7 @@ useEffect(() => {
       setSuccessMessage("");
     }
   };
+  
 
   const handleCancel = () => {
     setEditableUser({
@@ -237,47 +258,37 @@ useEffect(() => {
     }
   };
 
-  const handleModalUnfollow = async (followerId) => {
-    try {
-      const response = await api.delete(`api/follow/unfollow/?user_id=${followerId}`);
-      fetchFollowers(userId);
-      fetchFollowing(userId);
-      checkFollowing(userId);
-      setSuccessMessage("User unfollowed.");
-      setErrorMessage("");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      setErrorMessage("Failed to unfollow user. Please try again.");
-      setSuccessMessage("");
-    }
-  };
-
-  const handleModalFollow = async (followerId) => {
-    try {
-      const response = await api.post(`api/follow/follow/`, { user_id: followerId });
-      fetchFollowers(userId);
-      fetchFollowing(userId);
-      checkFollowing(userId);
-      setSuccessMessage("User followed.");
-      setErrorMessage("");
-    } catch (error) {
-      console.error("Error following user:", error);
-      setErrorMessage("Failed to follow user. Please try again.");
-      setSuccessMessage("");
-    }
-  };
-
   return (
     <div className="container mt-5">
       <div className="row">
-        <div className="col-md-3 text-center">
-          <img
-            src={editableUser.profile_picture}
-            alt="Profile"
-            className="img-fluid rounded-circle border border-3 text-info"
-            style={{ width: "200px", height: "200px" }}
-          />
-        </div>
+      <div className="col-md-3 text-center">
+      <img
+  src={editableUser.profile_picture_preview || editableUser.profile_picture || default_profile_picture}
+  alt="Profile"
+  className="img-fluid rounded-circle border border-3 text-info"
+  style={{ width: "200px", height: "200px" }}
+/>
+
+
+  {isEditing && (
+    <div className="mt-2">
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // ✅ Create a temporary URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      setEditableUser({ ...editableUser, profile_picture: file, profile_picture_preview: imageUrl });
+    }
+  }}
+/>
+
+    </div>
+  )}
+</div>
+
 
         <div className="col-md-9">
           <div className="d-flex flex-column justify-content-center">
@@ -315,15 +326,11 @@ useEffect(() => {
             <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
             <div className="d-flex gap-1">
               <p className="text-muted">Followers: </p>
-              <p className="text-primary" style={{ cursor: "pointer", textDecoration: "underline"}} onClick={handleShowFollowers}>
-                {followerCount}
-              </p>
+              <p className="text-primary">{followerCount}</p>
               <p className="text-muted">Following: </p>
-              <p className="text-primary" style={{ cursor: "pointer", textDecoration: "underline" }} onClick={handleShowFollowing}>
-                {followingCount}
-              </p>
+              <p className="text-primary">{followingCount}</p>
             </div>
-            {!isOwner && (
+            {!isOwner && isAuthenticated && (
               <div className="d-flex mt-3">
                 {isFollowing ? (
                   <button className="btn btn-danger" onClick={handleUnfollow}>
@@ -491,78 +498,6 @@ useEffect(() => {
           </div>
         )}
       </div>
-
-      <Modal show={showFollowersModal} onHide={handleCloseFollowers}>
-      <Modal.Header closeButton>
-        <Modal.Title>Followers</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {followerList.length > 0 ? (
-          <ul className="list-group">
-            {followerList.map((follower) => (
-              <li key={follower.id} className="list-group-item d-flex align-items-center justify-content-between">
-                <img
-                  src={follower.profile_picture || default_profile_picture}
-                  alt="Profile"
-                  className="rounded-circle me-2"
-                  style={{ width: "50px", height: "50px", margin:"10px" }}
-                />
-                {follower.first_name || "Unknown"} {follower.last_name || "Unknown"}
-                {follower.id !== user.id && 
-                  (follower.is_following ? (
-                    <button className="btn btn-danger" onClick={() => handleModalUnfollow(follower.id)}>
-                      <UserCheck size={20} /> Unfollow
-                    </button>
-                  ) : (
-                    <button className="btn btn-primary" onClick={() => handleModalFollow(follower.id)}>
-                      <UserPlus size={20} /> Follow
-                    </button>
-                  )
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No followers yet.</p>
-        )}
-      </Modal.Body>
-      </Modal>
-
-      <Modal show={showFollowingModal} onHide={handleCloseFollowing}>
-      <Modal.Header closeButton>
-        <Modal.Title>Following</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {followingList.length > 0 ? (
-          <ul className="list-group">
-            {followingList.map((following) => (
-              <li key={following.id} className="list-group-item d-flex align-items-center justify-content-between">
-                <img
-                  src={following.profile_picture || default_profile_picture}
-                  alt="Following Profile Picture"
-                  className="rounded-circle"
-                  style={{ width: "50px", height: "50px", margin:"10px" }}
-                />
-                {following.first_name || "Unknown"} {following.last_name || "Unknown"}
-                {following.id !== user.id && 
-                  (following.is_following ? (
-                    <button className="btn btn-danger" onClick={() => handleModalUnfollow(following.id)}>
-                      <UserCheck size={20} /> Unfollow
-                    </button>
-                  ) : (
-                    <button className="btn btn-primary" onClick={() => handleModalFollow(following.id)}>
-                      <UserPlus size={20} /> Follow
-                    </button>
-                  )
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Not following any users.</p>
-        )}
-      </Modal.Body>
-      </Modal>
     </div>
   );
 };
