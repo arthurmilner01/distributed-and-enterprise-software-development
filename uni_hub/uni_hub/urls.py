@@ -11,8 +11,6 @@ urlpatterns = [
     path("", include("app.urls")),
     path("api/posts/", GlobalPostListCreateView.as_view(), name="global-posts"),  # Allows global posting
     path('api-auth/', include('rest_framework.urls')),  # Enables login form in DRF
-    path("user/update/<int:user_id>/", UserProfileUpdateView.as_view(), name="user-update"),
-    path("test-upload/", test_s3_upload),  # ✅ Add test upload route
 
 ]
 

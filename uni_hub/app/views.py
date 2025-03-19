@@ -18,7 +18,6 @@ import requests
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.parsers import MultiPartParser, FormParser  # ✅ Import necessary parsers
 
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
@@ -126,33 +125,33 @@ class GetProfileDetailsView(APIView):
 
 
 #View for updating user first name, last name, bio, and interests
-from rest_framework.parsers import MultiPartParser, FormParser
-
 class UserProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)  # ✅ Allow file uploads
+
+    #Get user details based on user_id
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None
 
     def patch(self, request, user_id):
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        if user != request.user:
+        #PATCH request to update user
+        #Get user using get_object above
+        user = self.get_user(user_id)
+
+        if user != request.user:  #Only allow if logged in user is the one updating
             return Response({"detail": "You do not have permission to update this profile."}, status=status.HTTP_403_FORBIDDEN)
+        
+        #Init serializer with user detail and PATCH request data
+        #Partial = True is for PATCH request
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
 
-        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True, context={"request": request})
-
+        #If data is valid make the change otherwise return error
         if serializer.is_valid():
             serializer.save()
-
-            # ✅ DEBUG LOGGING
-            if 'profile_picture' in request.FILES:
-                print("DEBUG - Profile Picture Successfully Uploaded to S3:", user.profile_picture)
-
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 @api_view(['GET', 'POST'])  #Allowed http methods
@@ -272,37 +271,3 @@ class CommentListCreateView(generics.ListCreateAPIView):
             raise serializers.ValidationError({"post_id": "Invalid post ID."})
 
         serializer.save(user=self.request.user, post=post)
-
-from django.core.files.base import ContentFile
-import requests
-from app.models import User
-from django.http import JsonResponse
-from django.core.files.base import ContentFile
-from storages.backends.s3boto3 import S3Boto3Storage
-from django.core.files.base import ContentFile
-
-AWS_STORAGE_BUCKET_NAME = "uni-hub-pictures"
-
-def test_s3_upload(request):
-    """Manually upload a test file to S3 and check if it gets stored."""
-    file_name = "profile_pics/debug-test-upload.txt"
-    file_content = ContentFile(b"Testing S3 upload from Django")
-    
-    # 🔥 FORCE S3 STORAGE 🔥
-    storage = S3Boto3Storage()
-    
-    print("DEBUG - HERE WILL BE THE BUCKET NAME:", storage.bucket_name)
-
-    try:
-        print("DEBUG - Attempting to save:", file_name)
-        saved_path = storage.save(file_name, file_content)  # 🔥 Use `storage.save()` instead of `default_storage`
-        print("DEBUG - File saved at:", saved_path)
-
-        return JsonResponse({
-            "message": "File uploaded successfully!",
-            "file_path": saved_path,
-            "file_url": f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{saved_path}"
-        })
-    except Exception as e:
-        print("DEBUG - ERROR:", str(e))
-        return JsonResponse({"error": str(e)}, status=500)
