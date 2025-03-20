@@ -362,4 +362,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "created_by", "community"]
 
 class AchievementSerializer(serializers.ModelSerializer):
-    pass
+    class Meta:
+        # No user because auto assigned by perform_create
+        model = Achievement
+        fields = ['id', 'title', 'description', 'date_achieved']

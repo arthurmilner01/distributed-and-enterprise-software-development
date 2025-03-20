@@ -41,6 +41,16 @@ const ProfilePage = () => {
   // Store user's achievements
   const [userAchievements, setUserAchievements] = useState([]);
 
+  // For adding achievement
+  const [newAchievementTitle, setNewAchievementTitle] = useState("")
+  const [newAchievementDescription, setNewAchievementDescription] = useState("")
+  const [newAchievementDate, setNewAchievementDate] = useState("")
+
+  // Achievement error message
+  const [achievementErrorMessage, setAchievementErrorMessage] = useState("");
+  const [achievementSuccessMessage, setAchievementSuccessMessage] = useState("");
+
+
 
 
   // User Posts
@@ -84,6 +94,35 @@ useEffect(() => {
     } catch (error) {
       console.error("Error fetching followers:", error);
       setErrorMessage("Failed to load followers.");
+    }
+  }
+
+  const handleAddAchievement = async () =>{
+    try {
+      if (!newAchievementTitle || !newAchievementDate || !newAchievementDescription) {
+        setAchievementErrorMessage("Achievements must have a title, description, and date.");
+        return;
+      }
+  
+      const response = await api.post("api/achievements/", {
+        title: newAchievementTitle,
+        description: newAchievementDescription,
+        date_achieved: newAchievementDate,
+      });
+      
+      // Reset inputs
+      setNewAchievementTitle("");
+      setNewAchievementDescription("");
+      setNewAchievementDate("");
+
+      // Update achievement list
+      fetchAchievements();
+      setAchievementSuccessMessage("Achievement added.");
+      setAchievementErrorMessage("");
+      console.log(response);
+    } catch (error) {
+      console.error("Error adding achievement:", error);
+      setAchievementErrorMessage("Failed to add achievement. Please try again.");
     }
   }
 
@@ -563,25 +602,51 @@ useEffect(() => {
           <div className="tab-pane fade show active">
             <div className="card shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">
-                  User Achievements
-                </h5>
+                <h5 className="card-title mb-3">User Achievements</h5>
+
                 {isOwner && (
-                  <Button>Add an Achievement</Button>
+                  <div className="mb-4 p-3 border rounded bg-light">
+                    <input
+                      type="text"
+                      className="form-control mb-2"
+                      placeholder="Achievement Title"
+                      value={newAchievementTitle}
+                      onChange={(e) => setNewAchievementTitle(e.target.value)}
+                    />
+                    <textarea
+                      className="form-control mb-2"
+                      placeholder="Achievement Description"
+                      value={newAchievementDescription}
+                      onChange={(e) => setNewAchievementDescription(e.target.value)}
+                    ></textarea>
+                    <input
+                      type="date"
+                      className="form-control mb-2"
+                      value={newAchievementDate}
+                      onChange={(e) => setNewAchievementDate(e.target.value)}
+                    />
+                    <Button variant="primary" onClick={handleAddAchievement}>Add Achievement</Button>
+                  </div>
                 )}
+
                 {userAchievements.length > 0 ? (
-                  <ul>
+                  <ul className="list-group">
                     {userAchievements.map((achievement) => (
-                      <li key={achievement.id}>
-                        {achievement.title} — <strong>{achievement.date_achieved}</strong>
-                        <p>{achievement.description}</p>
+                      <li key={achievement.id} className="list-group-item d-flex flex-column">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <strong className="fs-5">{achievement.title}</strong>
+                          <span className="text-muted small">Date Achieved: {achievement.date_achieved}</span>
+                        </div>
+                        <p className="mb-1 text-secondary">{achievement.description}</p>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>No achievements have been added.</p>
+                  <p className="text-muted">No achievements have been added.</p>
                 )}
-                {errorMessage && <p className="text-danger">{errorMessage}</p>}
+
+                {achievementSuccessMessage && <p className="text-success mt-2">{achievementSuccessMessage}</p>}
+                {achievementErrorMessage && <p className="text-danger mt-2">{achievementErrorMessage}</p>}
               </div>
             </div>
           </div>

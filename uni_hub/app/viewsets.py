@@ -578,7 +578,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
         else:
             user = self.request.user
 
-        # Return in order of date achieved    
+        # Return in order of date achieved
         return Achievement.objects.filter(user=user).order_by("-date_achieved")
         
     def perform_create(self, serializer):
