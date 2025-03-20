@@ -193,14 +193,12 @@ useEffect(() => {
       updatedUser.append('interests', editableUser.interests);
     }
   
-    // ✅ Ensure profile_picture is being added properly
     if (editableUser.profile_picture && editableUser.profile_picture !== fetchedUser.profile_picture) {
       if (editableUser.profile_picture instanceof File) {
         updatedUser.append('profile_picture', editableUser.profile_picture);
       }
     }
   
-    // 🔥 Debugging: Check if the file is included
     for (let pair of updatedUser.entries()) {
       console.log(`${pair[0]}:`, pair[1]);
     }
@@ -319,7 +317,6 @@ useEffect(() => {
   onChange={(e) => {
     const file = e.target.files[0];
     if (file) {
-      // ✅ Create a temporary URL for preview
       const imageUrl = URL.createObjectURL(file);
       setEditableUser({ ...editableUser, profile_picture: file, profile_picture_preview: imageUrl });
     }

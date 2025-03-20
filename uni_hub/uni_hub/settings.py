@@ -200,7 +200,8 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "mailhog"
 EMAIL_PORT = 1025
 EMAIL_USE_TLS = False
-# AWS S3 Storage Settings
+
+
 # AWS S3 Storage Settings
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 AWS_ACCESS_KEY_ID = "AKIA2MNVMEZIV5KHSZWM"
@@ -208,8 +209,7 @@ AWS_SECRET_ACCESS_KEY = "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"
 AWS_STORAGE_BUCKET_NAME = "uni-hub-pictures"
 AWS_S3_REGION_NAME = "us-east-1"
 
-# ✅ Ensure correct S3 URL format with region
+
 AWS_S3_CUSTOM_DOMAIN = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
-# ✅ Ensure MEDIA_URL uses the correct S3 path
 MEDIA_URL = f"{AWS_S3_CUSTOM_DOMAIN}/"

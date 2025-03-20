@@ -18,7 +18,7 @@ import requests
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.parsers import MultiPartParser, FormParser  # ✅ Import necessary parsers
+from rest_framework.parsers import MultiPartParser, FormParser 
 from django.core.files.base import ContentFile
 import requests
 from app.models import User

@@ -37,7 +37,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.first_name', read_only=True)
     user_last_name = serializers.CharField(source='user.last_name', read_only=True)
-    user_image = serializers.SerializerMethodField()  # ✅ Add this field
+    user_image = serializers.SerializerMethodField() 
 
     class Meta:
         model = Comment
@@ -46,8 +46,8 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_user_image(self, obj):
         """Returns full profile picture URL from S3 or default"""
         if obj.user.profile_picture:
-            return obj.user.profile_picture.url  # ✅ This ensures S3 URL is returned
-        return "https://via.placeholder.com/150"  # 🔥 Default profile picture (change if needed)
+            return obj.user.profile_picture.url  
+        return "https://via.placeholder.com/150"  
 
 
 #Add custom claims to the token
@@ -75,9 +75,9 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def get_profile_picture_url(self, obj):
         """Ensure correct URL is used for profile pictures."""
         if obj.profile_picture:
-            # 🔥 Explicitly use S3 Storage to get the correct URL
+            # Explicitly use S3 Storage
             storage = S3Boto3Storage()
-            return storage.url(obj.profile_picture.name)  # ✅ Ensures S3 returns the correct URL
+            return storage.url(obj.profile_picture.name)
 
         return None
 
@@ -92,14 +92,13 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request = self.context.get('request')
 
-        # ✅ Explicitly set S3 storage for profile picture
         if 'profile_picture' in request.FILES:
             image = request.FILES['profile_picture']
-            storage = S3Boto3Storage()  # 🔥 FORCE S3 STORAGE
+            storage = S3Boto3Storage()
             file_path = f"profile_pics/{instance.id}/{image.name}"  # Unique path for each user
-            saved_path = storage.save(file_path, image)  # 🔥 SAVE TO S3
+            saved_path = storage.save(file_path, image)  # SAVE TO S3
 
-            instance.profile_picture = saved_path  # ✅ Store S3 file path in DB
+            instance.profile_picture = saved_path  # Store S3 file path in DB
 
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
@@ -117,13 +116,13 @@ from app.serializers import CommentSerializer
 class PostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.first_name", read_only=True)
     user_last_name = serializers.CharField(source="user.last_name", read_only=True)
-    user_image = serializers.SerializerMethodField()  # ✅ Fix: Use method for correct URL
+    user_image = serializers.SerializerMethodField() 
     community = serializers.PrimaryKeyRelatedField(
         queryset=Community.objects.all(),
         required=False,
         allow_null=True
     )
-    comments = serializers.SerializerMethodField()  # ✅ Fetch latest 5 comments for each post
+    comments = serializers.SerializerMethodField()  # Fetch latest 5 comments for each post
 
     class Meta:
         model = Post
@@ -137,14 +136,14 @@ class PostSerializer(serializers.ModelSerializer):
             "post_text",
             "created_at",
             "likes",
-            "comments",  # ✅ Include comments in the response
+            "comments", 
         ]
         read_only_fields = ["id", "created_at", "user", "likes"]
 
     def get_comments(self, obj):
         """Fetch the latest 5 comments for each post."""
-        latest_comments = obj.comments.order_by("-created_at")[:5]  # ✅ Use "comments" instead of "comment_set"
-        return CommentSerializer(latest_comments, many=True).data  # ✅ Serialize comments properly
+        latest_comments = obj.comments.order_by("-created_at")[:5]  
+        return CommentSerializer(latest_comments, many=True).data  
 
     def create(self, validated_data):
         validated_data.pop("user", None)
