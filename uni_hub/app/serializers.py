@@ -326,6 +326,35 @@ class UserCommunityFollowerSerializer(serializers.ModelSerializer):
     def get_keywords(self, obj):
         return [keyword.keyword for keyword in obj.keywords.all()] if obj.keywords.exists() else []
 
+# For approving/denying join requests
+class UserRequestCommunitySerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    community = serializers.PrimaryKeyRelatedField(queryset=Community.objects.all())
+    
+    user_details = serializers.SerializerMethodField()
+    class Meta:
+        model = UserRequestCommunity
+        fields = ['id', 'user', 'community', 'requested_at', 'user_details']
+
+    # Get user details to display
+    def get_user_details(self, obj):
+        user = User.objects.get(id=obj.user.id)  # Get user details
+        if user:
+            return {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "profile_picture": self.get_profile_picture_url(user)
+            }
+        
+        return None
+    
+    # Because profile picture can be null
+    def get_profile_picture_url(self, user):
+        if user.profile_picture:
+            return user.profile_picture.url
+        return None
+
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement

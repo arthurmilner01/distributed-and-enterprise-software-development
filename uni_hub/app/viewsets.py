@@ -7,6 +7,7 @@ from .models import *
 from .serializers import *
 from .pagination import *
 from django.db.models import Q, Count
+from django.db import transaction
 
 
 #View set for following
@@ -382,6 +383,107 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         # Serialize the data and return it
         serializer = UserCommunityFollowerSerializer(relevant_communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["GET"])
+    def follow_requests_for_community(self, request):
+        # Get the community_id from query params
+        community_id = request.query_params.get("community_id")
+
+        # If none passed error
+        if not community_id:
+            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get community details
+        try:
+            community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the logged-in user is the community owner
+        if community.is_community_owner != request.user:
+            return Response({"error": "You do not have the required permissions to view this."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Retrieve the list of follow requests for this community
+        try:
+            # Filter by the given community id
+            follow_requests = UserRequestCommunity.objects.filter(community=community)
+        except Exception as e:
+            return Response({"error": f"Error fetching follow requests: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Serialize and return the follow requests
+        follow_requests_serializer = UserRequestCommunitySerializer(follow_requests, many=True)
+        return Response(follow_requests_serializer.data, status=status.HTTP_200_OK)
+    
+    # Leader denies a request to join
+    @action(detail=False, methods=["DELETE"])
+    def deny_follow_request(self, request):
+        # Request ID to deny
+        request_id = request.query_params.get("request_id")
+
+        #If user not passed
+        if not request_id:
+            return Response({"error": "Request ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get request details
+        try:
+            join_request = UserRequestCommunity.objects.filter(id= request_id).first()
+        #If request ID not in database
+        except UserRequestCommunity.DoesNotExist:
+            return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get community to deny
+        unfollowed_community = join_request.community
+        
+        # Check if the logged-in user is the community owner
+        if unfollowed_community.is_community_owner != request.user:
+            return Response({"error": "You do not have the required permissions to deny this request."}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Delete join request
+        try:
+            join_request.delete()
+            return Response({"success": "Follow request approved and user added to the community."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error deleting the join request."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+    # Leader approves a request to join
+    @action(detail=False, methods=["DELETE"])
+    def approve_follow_request(self, request):
+        # Request ID to deny
+        request_id = request.query_params.get("request_id")
+
+        #If user not passed
+        if not request_id:
+            return Response({"error": "Request ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get request details
+        try:
+            join_request = UserRequestCommunity.objects.filter(id= request_id).first()
+        #If request ID not in database
+        except UserRequestCommunity.DoesNotExist:
+            return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get community to approve
+        unfollowed_community = join_request.community
+        
+        # Check if the logged-in user is the community owner
+        if unfollowed_community.is_community_owner != request.user:
+            return Response({"error": "You do not have the required permissions to approve this request."}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Create follow relationship and delete the join request
+        try:
+            # Prevents user follow creation without also deleting join request
+            with transaction.atomic():
+                user_community = UserCommunity.objects.create(
+                    user=join_request.user,
+                    community=join_request.community
+                )
+                join_request.delete()
+
+            return Response({"success": "Follow request approved and user added to the community."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error approving the request to join."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+    
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset = Announcement.objects.all()

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { CheckCircle, XCircle } from 'lucide-react';
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import { Button } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 
@@ -40,6 +41,87 @@ const CommunityPage = () => {
   const [isMember, setIsMember] = useState(false);
   // Whether the current user has requested to join the community
   const [isRequested, setIsRequested] = useState(false);
+
+  // For show/hide of request modal
+  const [requestModalShowHide, setRequestModalShowHide] = useState(false);
+  // For storing follow requests of community
+  const [followRequests, setFollowRequests] = useState([])
+  // Error/success message for modal
+  const [requestErrorMessage, setRequestErrorMessage] = useState("")
+  const [requestSuccessMessage, setRequestSuccessMessage] = useState("")
+
+  // To control modal show/hide
+  const openFollowRequestsModal = () => {
+    if (isLeader) {
+      // Get follow request for the community
+      fetchFollowRequests();
+      // Open follow requests modal
+      setRequestModalShowHide(true);
+    }
+  };
+
+  const closeFollowRequestsModal = () => {
+    setRequestModalShowHide(false);
+  };
+
+  // Fetch follow requests for this community (backend has community leader check)
+  const fetchFollowRequests = async () => {
+    try {
+      const response = await api.get(`api/communityfollow/follow_requests_for_community/`, {
+        params: { community_id: communityId }
+      });
+      console.log("Community Requests Response:", response.data);
+
+      setFollowRequests(response.data);
+    } catch (error) {
+      console.error("Error fetching follow requests:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Failed to get follow requests.");
+      }
+    }
+  };
+
+  // Deny join request
+  const handleDenyRequest = async (requestId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/deny_follow_request/`, {
+        params: { request_id: requestId }
+      });
+      setRequestErrorMessage("");
+      setRequestSuccessMessage("Follow request denied.");
+      fetchFollowRequests();
+    } catch (error) {
+      console.error("Error denying join request:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setRequestErrorMessage(error.response.data.error);
+      } else {
+        setRequestErrorMessage("Failed to deny the join request. Please try again.");
+      }
+      setRequestSuccessMessage(""); // Reset success message on error
+    }
+  };
+
+  // Approve join request
+  const handleApproveRequest = async (requestId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/approve_follow_request/`, {
+        params: { request_id: requestId }
+      });
+      setRequestErrorMessage("");
+      setRequestSuccessMessage("Follow request approved.");
+      fetchFollowRequests();
+    } catch (error) {
+      console.error("Error approving join request:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setRequestErrorMessage(error.response.data.error);
+      } else {
+        setRequestErrorMessage("Failed to approve the join request. Please try again.");
+      }
+      setRequestSuccessMessage(""); // Reset success message on error
+    }
+  };
 
   // 1) Fetch community details
   const fetchCommunity = async () => {
@@ -354,10 +436,16 @@ const CommunityPage = () => {
                 <strong>Privacy:</strong> {community.privacy}
               </p>
               {isLeader && (
+                <p className="text-primary" style={{ cursor: "pointer", textDecoration: "none"}} onClick={openFollowRequestsModal}>
+                 Approve/deny join requests
+                </p>
+              )}
+              {isLeader && (
                 <button className="btn btn-primary" onClick={handleEditClick}>
                   Edit Community
                 </button>
               )}
+
               {isMember ? (
                 <Button onClick={() => handleLeaveCommunity(community.id)} variant="danger">
                   Leave Community
@@ -586,6 +674,53 @@ const CommunityPage = () => {
           </div>
         </div>
       )}
+
+      <Modal show={requestModalShowHide} onHide={closeFollowRequestsModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Follow Requests</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {followRequests.length > 0 ? (
+            <ul className="list-group">
+              {followRequests.map((request) => (
+                <li key={request.id} className="list-group-item d-flex align-items-center justify-content-between">
+                  <img
+                    src={request.user_details.profile_picture || default_profile_picture}
+                    alt="Profile"
+                    className="rounded-circle me-2"
+                    style={{ width: "50px", height: "50px", margin:"10px" }}
+                  />
+                  <div>
+                    <strong>{request.user_details.first_name} </strong>
+                    <strong>{request.user_details.last_name}</strong>
+                  </div>
+                  <div>
+                    <Button 
+                      className="btn btn-success me-2" 
+                      onClick={() => handleApproveRequest(request.id)}
+                    >
+                      <CheckCircle size={20} />
+                    </Button>
+
+                    <Button 
+                      className="btn btn-danger" 
+                      onClick={() => handleDenyRequest(request.id)}
+                    >
+                      <XCircle size={20} />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No follow requests at the moment.</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+            {requestErrorMessage && <div className="alert alert-danger">{requestErrorMessage}</div>}
+            {requestSuccessMessage && <div className="alert alert-success">{requestSuccessMessage}</div>}
+          </Modal.Footer>
+      </Modal>
     </div>
   );
 };
