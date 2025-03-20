@@ -35,13 +35,20 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         return user
 
 class CommentSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source="user.first_name", read_only=True)
-    user_last_name = serializers.CharField(source="user.last_name", read_only=True)
+    user_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    user_image = serializers.SerializerMethodField()  # ✅ Add this field
 
     class Meta:
         model = Comment
-        fields = ["id", "user", "user_name", "user_last_name", "post", "comment_text", "created_at"]
-        read_only_fields = ["id", "user", "created_at"]
+        fields = ["id", "user", "user_name", "user_last_name", "user_image", "comment_text", "created_at"]
+
+    def get_user_image(self, obj):
+        """Returns full profile picture URL from S3 or default"""
+        if obj.user.profile_picture:
+            return obj.user.profile_picture.url  # ✅ This ensures S3 URL is returned
+        return "https://via.placeholder.com/150"  # 🔥 Default profile picture (change if needed)
+
 
 #Add custom claims to the token
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -55,40 +62,62 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["last_name"] = user.last_name
 
         return token
+from storages.backends.s3boto3 import S3Boto3Storage
 
-class CustomUserSerializer(UserSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
     university = UniversitySerializer()
+    profile_picture_url = serializers.SerializerMethodField()
 
-    class Meta(UserSerializer.Meta):
+    class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "bio", "interests", "role", "profile_picture", "university"]
+        fields = ["id", "email", "first_name", "last_name", "bio", "interests", "role", "profile_picture", "profile_picture_url", "university"]
+
+    def get_profile_picture_url(self, obj):
+        """Ensure correct URL is used for profile pictures."""
+        if obj.profile_picture:
+            # 🔥 Explicitly use S3 Storage to get the correct URL
+            storage = S3Boto3Storage()
+            return storage.url(obj.profile_picture.name)  # ✅ Ensures S3 returns the correct URL
+
+        return None
+
+
 
 #For updating bio, interests and profile picture
-class UserProfileUpdateSerializer(UserSerializer):
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests']
 
     def update(self, instance, validated_data):
-        #Update the user with the input data
+        request = self.context.get('request')
+
+        # ✅ Explicitly set S3 storage for profile picture
+        if 'profile_picture' in request.FILES:
+            image = request.FILES['profile_picture']
+            storage = S3Boto3Storage()  # 🔥 FORCE S3 STORAGE
+            file_path = f"profile_pics/{instance.id}/{image.name}"  # Unique path for each user
+            saved_path = storage.save(file_path, image)  # 🔥 SAVE TO S3
+
+            instance.profile_picture = saved_path  # ✅ Store S3 file path in DB
+
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.bio = validated_data.get('bio', instance.bio)
-        instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
         instance.interests = validated_data.get('interests', instance.interests)
         instance.save()
         return instance
 
+
 #Serilizer for global posts
 
-from rest_framework import serializers
 from app.models import Post, Comment, Community
 from app.serializers import CommentSerializer
 
 class PostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.first_name", read_only=True)
     user_last_name = serializers.CharField(source="user.last_name", read_only=True)
-    user_image = serializers.ImageField(source="user.profile_picture", read_only=True)
+    user_image = serializers.SerializerMethodField()  # ✅ Fix: Use method for correct URL
     community = serializers.PrimaryKeyRelatedField(
         queryset=Community.objects.all(),
         required=False,
@@ -135,6 +164,12 @@ class PostSerializer(serializers.ModelSerializer):
 
         post = Post.objects.create(user=user, **validated_data)
         return post
+    def get_user_image(self, obj):
+        """Ensure correct URL for user profile image (S3 or default)"""
+        if obj.user.profile_picture:
+            return f"{settings.AWS_S3_CUSTOM_DOMAIN}/{obj.user.profile_picture.name}"
+        return None  # No profile picture
+
 
 #Serilizer for following
 class FollowSerializer(serializers.ModelSerializer):

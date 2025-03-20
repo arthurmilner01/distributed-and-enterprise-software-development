@@ -18,7 +18,14 @@ import requests
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 from django.core.exceptions import ObjectDoesNotExist
-
+from rest_framework.parsers import MultiPartParser, FormParser  # ✅ Import necessary parsers
+from django.core.files.base import ContentFile
+import requests
+from app.models import User
+from django.http import JsonResponse
+from django.core.files.base import ContentFile
+from storages.backends.s3boto3 import S3Boto3Storage
+from django.core.files.base import ContentFile
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -124,34 +131,33 @@ class GetProfileDetailsView(APIView):
 
 
 
+
 #View for updating user first name, last name, bio, and interests
 class UserProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]
-
-    #Get user details based on user_id
-    def get_user(self, user_id):
-        try:
-            return User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return None
+    parser_classes = (MultiPartParser, FormParser)  # ✅ Allow file uploads
 
     def patch(self, request, user_id):
-        #PATCH request to update user
-        #Get user using get_object above
-        user = self.get_user(user_id)
-
-        if user != request.user:  #Only allow if logged in user is the one updating
-            return Response({"detail": "You do not have permission to update this profile."}, status=status.HTTP_403_FORBIDDEN)
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         
-        #Init serializer with user detail and PATCH request data
-        #Partial = True is for PATCH request
-        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        if user != request.user:
+            return Response({"detail": "You do not have permission to update this profile."}, status=status.HTTP_403_FORBIDDEN)
 
-        #If data is valid make the change otherwise return error
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True, context={"request": request})
+
         if serializer.is_valid():
             serializer.save()
+
+            # ✅ DEBUG LOGGING
+            if 'profile_picture' in request.FILES:
+                print("DEBUG - Profile Picture Successfully Uploaded to S3:", user.profile_picture)
+
             return Response(serializer.data, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET', 'POST'])  #Allowed http methods

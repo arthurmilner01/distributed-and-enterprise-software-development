@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.conf import settings
 
 # Create your models here.
 class University(models.Model):
@@ -45,6 +46,12 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()  #Using custom user manager
+    def get_profile_picture_url(self):
+        """Return the full S3 URL for the profile picture or a default image."""
+        if self.profile_picture:
+            return self.profile_picture.url
+        return settings.MEDIA_URL + "default_profile_picture.jpg"
+    
 
 #Keyword
 class Keyword(models.Model):
