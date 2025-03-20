@@ -360,3 +360,6 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = ["id", "title", "content", "created_at", "created_by", "community"]
         read_only_fields = ["id", "created_at", "created_by", "community"]
+
+class AchievementSerializer(serializers.ModelSerializer):
+    pass
