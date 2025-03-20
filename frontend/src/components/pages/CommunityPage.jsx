@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import { Button } from "react-bootstrap";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 
@@ -12,6 +13,7 @@ const CommunityPage = () => {
 
   // Community details
   const [community, setCommunity] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   // Editing community details
@@ -36,6 +38,8 @@ const CommunityPage = () => {
 
   // Whether the current user is actually a member (or leader)
   const [isMember, setIsMember] = useState(false);
+  // Whether the current user has requested to join the community
+  const [isRequested, setIsRequested] = useState(false);
 
   // 1) Fetch community details
   const fetchCommunity = async () => {
@@ -48,6 +52,7 @@ const CommunityPage = () => {
         rules: response.data.rules || "",
         privacy: response.data.privacy || "public",
       });
+      console.log("Community Response:", response.data);
     } catch (error) {
       console.error("Error fetching community:", error);
       setErrorMessage("Failed to load community details.");
@@ -80,21 +85,36 @@ const CommunityPage = () => {
   // 4) Determine if the current user is a *real* member or leader
   const fetchMembership = async () => {
     try {
-      const resp = await api.get(`api/user-communities/?user_id=${user.id}`);
-      console.log("DEBUG - user-communities response:", resp.data); // ✅ Debugging line
-  
-      const membership = resp.data.find((mem) => {
-        const cId = parseInt(mem.community_id ?? mem.community);
-        return cId === parseInt(communityId) && ["Member", "Leader"].includes(mem.role);
+      const response = await api.get("api/communityfollow/followers/");
+      console.log("Request response", response);
+      // Search if viewed community id is found in community request data for logged in user
+      const isFollowedCommunity = response.data.some(community => {
+        return parseInt(community.id) === parseInt(communityId);
       });
-  
-      console.log("DEBUG - Is user a member (including leader)?", !!membership); // ✅ Debugging line
-      setIsMember(!!membership);
-    } catch (error) {
-      console.error("Error fetching membership:", error);
-    }
+      console.log("User follows community?", isFollowedCommunity);
+      setIsMember(isFollowedCommunity);
+  } catch (error) {
+      console.error("Error fetching communiy requests:", error);
+      setErrorMessage("Failed to fetch users community requests.");
+  }
   };
   
+  // 5) Fetch users outgoing community requests
+  const fetchUserCommunityRequests = async () => {
+    try {
+        const response = await api.get("api/communityfollow/follow_requests/");
+        console.log("Request response", response);
+        // Search if viewed community id is found in community request data for logged in user
+        const isRequestedCommunity = response.data.some(community => {
+          return parseInt(community.id) === parseInt(communityId);
+        });
+        console.log("User has outgoing request?", isRequestedCommunity);
+        setIsRequested(isRequestedCommunity);
+    } catch (error) {
+        console.error("Error fetching communiy requests:", error);
+        setErrorMessage("Failed to fetch users community requests.");
+    }
+  }
 
   // Kick off fetches once we have a communityId (and user)
   
@@ -105,9 +125,10 @@ const CommunityPage = () => {
       fetchCommunityPosts();
       if (user) {
         fetchMembership();
+        fetchUserCommunityRequests();
       }
     }
-  }, [communityId, user]);
+  }, [communityId, user, isMember, isRequested]);
 
   // Is the current user the leader?
   const isLeader = community?.is_community_owner === user?.id;
@@ -172,6 +193,83 @@ const CommunityPage = () => {
     }
   };
 
+  // Leave community
+  const handleLeaveCommunity = async (communityId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/unfollow/`, {
+        params: { community_id: communityId }
+      });
+      setSuccessMessage("Successfully left the community.");
+      setErrorMessage("");
+      fetchMembership();
+      fetchUserCommunityRequests();
+    } catch (error) {
+      console.error("Error unfollowing community:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Failed to leave the community. Please try again.");
+      }
+  
+      setSuccessMessage("");
+    }
+  };
+
+  // Join a community
+  const handleJoinCommunity = async (communityId) => {
+    try {
+        const response = await api.post(`api/communityfollow/follow/`, { community_id: communityId });
+        setSuccessMessage("Successfully joined the community.");
+        setErrorMessage("");
+        
+        // Refresh user community data
+        fetchMembership();
+        fetchUserCommunityRequests();
+    } catch (error) {
+        console.error("Error joining community:", error);
+        setErrorMessage("Failed to join community. Please try again.");
+        setSuccessMessage("");
+    }
+  };
+
+  // Request to join a private community
+  const handleRequestToJoin = async (communityId) => {
+      try {
+          const response = await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
+          setSuccessMessage("Request to join the community sent.");
+          setErrorMessage("");
+          
+          // Refresh user community data
+          fetchMembership();
+          fetchUserCommunityRequests();
+      } catch (error) {
+          console.error("Error requesting to join community:", error);
+          setErrorMessage("Failed to request to join the community. Please try again.");
+          setSuccessMessage("");
+      }
+  };
+
+  // Cancel join request
+  const handleCancelRequest = async (communityId) => {
+    try {
+      const response = await api.delete(`api/communityfollow/cancel_follow_request/`, {
+        params: { community_id: communityId }
+      });
+      setSuccessMessage("Join request cancelled successfully.");
+      setErrorMessage("");
+      fetchMembership();
+      fetchUserCommunityRequests();
+    } catch (error) {
+      console.error("Error canceling join request:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Failed to cancel the join request. Please try again.");
+      }
+      setSuccessMessage(""); // Reset success message on error
+    }
+  };
+
   if (!community) {
     return (
       <div className="container mt-5">
@@ -184,6 +282,7 @@ const CommunityPage = () => {
   return (
     <div className="container mt-5">
       {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+      {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
       {/* Community Details Section */}
       <div className="card shadow-sm mb-4">
@@ -259,6 +358,24 @@ const CommunityPage = () => {
                   Edit Community
                 </button>
               )}
+              {isMember ? (
+                <Button onClick={() => handleLeaveCommunity(community.id)} variant="danger">
+                  Leave Community
+                </Button>
+              ) : isRequested ? (
+                <Button onClick={() => handleCancelRequest(community.id)} variant="danger">
+                  Cancel Request
+                </Button>
+              ) : community.privacy === "public" ? (
+                <Button onClick={() => handleJoinCommunity(community.id)} variant="primary">
+                  Join
+                </Button>
+              ) : (
+                <Button onClick={() => handleRequestToJoin(community.id)} variant="warning">
+                  Request to Join
+                </Button>
+              )}
+
             </>
           )}
         </div>

@@ -10,11 +10,11 @@ const DiscoverCommunitiesPage = () => {
     const { isAuthenticated, user } = useAuth();
     const api = useApi();
     
-    //User community membership state
+    // User community membership state
     const [userCommunities, setUserCommunities] = useState([]);
     const [userRequestCommunities, setUserRequestCommunities] = useState([]);
     
-    //Search state
+    // Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedKeywords, setSelectedKeywords] = useState([]);
     const [currentKeyword, setCurrentKeyword] = useState("");
@@ -32,7 +32,7 @@ const DiscoverCommunitiesPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
-    //Fetch user's communities to check membership status
+    // Fetch user's communities to check membership status
     const fetchUserMembershipData = async () => {
         try {
             const [membershipsResponse, requestsResponse] = await Promise.all([
