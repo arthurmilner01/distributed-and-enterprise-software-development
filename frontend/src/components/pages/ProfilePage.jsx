@@ -1,7 +1,7 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
 import { Edit, Check, X, UserPlus, UserCheck } from "lucide-react";
-import { Modal } from "react-bootstrap";
+import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
@@ -38,6 +38,10 @@ const ProfilePage = () => {
   const handleShowFollowing = () => setShowFollowingModal(true);
   const handleCloseFollowing = () => setShowFollowingModal(false);
 
+  // Store user's achievements
+  const [userAchievements, setUserAchievements] = useState([]);
+
+
 
   // User Posts
   const [userPosts, setUserPosts] = useState([]);
@@ -70,6 +74,24 @@ useEffect(() => {
       setErrorMessage("Failed to load user communities.");
     }
   };
+
+  // Get viewed user's achievements
+  const fetchAchievements = async () =>{
+    try {
+      const response = await api.get(`api/achievements/?user_id=${userId}`);
+      setUserAchievements(response.data);
+      console.log(response);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      setErrorMessage("Failed to load followers.");
+    }
+  }
+
+  useEffect(() => {
+    if (currentTab === "achievements" && userId) {
+      fetchAchievements();
+    }
+  }, [currentTab, userId]);
 
   // Get viewed user's followers
   const fetchFollowers = async (userId) => {
@@ -443,6 +465,14 @@ useEffect(() => {
         </li>
         <li className="nav-item" role="presentation">
           <button
+            className={`nav-link ${currentTab === "achievements" ? "active bg-info" : "text-dark"}`}
+            onClick={() => setCurrentTab("achievements")}
+          >
+            Achievements
+          </button>
+        </li>
+        <li className="nav-item" role="presentation">
+          <button
             className={`nav-link ${currentTab === "communities" ? "active bg-info" : "text-dark"}`}
             onClick={() => setCurrentTab("communities")}
           >
@@ -522,6 +552,34 @@ useEffect(() => {
                   </ul>
                 ) : (
                   <p>No communities found.</p>
+                )}
+                {errorMessage && <p className="text-danger">{errorMessage}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentTab === "achievements" && (
+          <div className="tab-pane fade show active">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title">
+                  User Achievements
+                </h5>
+                {isOwner && (
+                  <Button>Add an Achievement</Button>
+                )}
+                {userAchievements.length > 0 ? (
+                  <ul>
+                    {userAchievements.map((achievement) => (
+                      <li key={achievement.id}>
+                        {achievement.title} — <strong>{achievement.date_achieved}</strong>
+                        <p>{achievement.description}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No achievements have been added.</p>
                 )}
                 {errorMessage && <p className="text-danger">{errorMessage}</p>}
               </div>

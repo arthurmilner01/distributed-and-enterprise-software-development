@@ -562,3 +562,32 @@ class CommunityViewSet(viewsets.ModelViewSet):
         #Pass the request to the serializer to access request.user in create()
         return {"request": self.request}
 
+class AchievementViewSet(viewsets.ModelViewSet):
+    serializer_class = AchievementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Uses passed user_id or logged-in user
+        user_id = self.request.query_params.get('user_id')
+        
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Achievement.objects.none()
+        else:
+            user = self.request.user
+
+        # Return in order of date achieved    
+        return Achievement.objects.filter(user=user).order_by("-date_achieved")
+        
+    def perform_create(self, serializer):
+        # When achievement created assign user to logged-in user
+        serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        # Modifying destory so that user can only delete their own achievements
+        achievement = self.get_object()
+        if achievement.user != request.user:
+            return Response({"error": "You can only delete your own achievements."}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)

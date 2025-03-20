@@ -8,6 +8,8 @@ router.register(r'follow', FollowViewSet, basename='follow')
 router.register(r'communityfollow', CommunityFollowViewSet, basename='communityfollow')
 router.register(r'communities', CommunityViewSet, basename='community')
 router.register(r'announcements', AnnouncementViewSet, basename='announcement')
+router.register(r'achievements', AchievementViewSet, basename='achievements')
+
 
 urlpatterns = [
     path("auth/jwt/create/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
