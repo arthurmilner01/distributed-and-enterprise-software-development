@@ -22,6 +22,7 @@ urlpatterns = [
     path("protected/", protected_view, name="protected-view"),
     path("event/", event_view, name="event-view"),
     path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
+    path('api/keywords/suggestions/', KeywordSuggestionsView.as_view(), name='keyword-suggestions'),
     # 🔥 FIX: User's communities (NEW ENDPOINT)
     path("api/user-communities/", UserCommunityListView.as_view(), name="user-communities"),
 

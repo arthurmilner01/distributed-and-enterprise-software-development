@@ -26,6 +26,7 @@ from django.http import JsonResponse
 from django.core.files.base import ContentFile
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.base import ContentFile
+from django.db.models import Q
 
 #Custom /auth/customjwt/create to store the refresh token as a cookie
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -287,3 +288,19 @@ class UserCommunityListView(generics.ListAPIView):
             return UserCommunity.objects.none()  # Return empty queryset if no user_id is provided
         
         return UserCommunity.objects.filter(user_id=user_id)        
+
+
+class KeywordSuggestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        query = request.query_params.get('query', '')
+        if not query or len(query) < 2:
+            return Response([], status=status.HTTP_200_OK)
+        
+        #Find keywords that start with or contain the query 
+        keywords = Keyword.objects.filter(
+            Q(keyword__istartswith=query) | Q(keyword__icontains=query)
+        ).distinct().values_list('keyword', flat=True)[:10] #Limit 10 suggestions 
+        
+        return Response(list(keywords), status=status.HTTP_200_OK)
