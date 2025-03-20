@@ -301,6 +301,6 @@ class KeywordSuggestionsView(APIView):
         #Find keywords that start with or contain the query 
         keywords = Keyword.objects.filter(
             Q(keyword__istartswith=query) | Q(keyword__icontains=query)
-        ).distinct().values_list('keyword', flat=True) 
+        ).distinct().values_list('keyword', flat=True)[:10] #Limit 10 suggestions 
         
         return Response(list(keywords), status=status.HTTP_200_OK)

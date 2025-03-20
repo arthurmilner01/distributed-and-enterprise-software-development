@@ -293,7 +293,7 @@ const DiscoverCommunitiesPage = () => {
                                     />
 
                                 </div>
-                                <small className="text-muted">Type a keyword and press Enter or click Add to filter by keyword</small>
+                                <small className="text-muted">Type a keyword and select one from the dropdown</small>
                             </div>
                             <div className="col-md-4">
                                 <select
