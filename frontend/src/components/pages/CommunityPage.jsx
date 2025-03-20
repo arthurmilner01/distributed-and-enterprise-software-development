@@ -7,13 +7,14 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 
 const CommunityPage = () => {
   const { communityId } = useParams();
-  const { user, accessToken, isAuthenticated, loading} = useAuth();
+  const { user, accessToken } = useAuth();
   const api = useApi();
 
+  // Community details
   const [community, setCommunity] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // State for editing community details
+  // Editing community details
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     community_name: "",
@@ -21,7 +22,6 @@ const CommunityPage = () => {
     rules: "",
     privacy: "public",
   });
-  console.log("communityId:", communityId); // Debug
 
   // Announcements state
   const [announcements, setAnnouncements] = useState([]);
@@ -29,44 +29,15 @@ const CommunityPage = () => {
   const [newAnnouncementTitle, setNewAnnouncementTitle] = useState("");
   const [newAnnouncementContent, setNewAnnouncementContent] = useState("");
 
-  // Dummy posts state (frontend only)
+  // Posts state
   const [posts, setPosts] = useState([]);
-
-  // Fetch posts for the current community
-  const fetchCommunityPosts = async () => {
-    try {
-      const response = await api.get(`api/posts/`, {
-        params: { community: communityId }, // Filter by community ID
-      });
-  
-      console.log("DEBUG - Posts fetched from API:", response.data);
-      setPosts(response.data);
-    } catch (error) {
-      console.error("Error fetching community posts:", error);
-    }
-  };
-  
-  // Fetch posts when the community ID changes
-  useEffect(() => {
-    if (communityId) {
-      fetchCommunityPosts();
-    }
-  }, [communityId]);
-  
-  
-  // Fetch posts when the community ID changes
-  useEffect(() => {
-    if (communityId) {
-      fetchCommunityPosts();
-    }
-  }, [communityId]);
-  
-
-  // New states for post modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState("");
 
-  // Fetch community details
+  // Whether the current user is actually a member (or leader)
+  const [isMember, setIsMember] = useState(false);
+
+  // 1) Fetch community details
   const fetchCommunity = async () => {
     try {
       const response = await api.get(`api/communities/${communityId}/`);
@@ -83,7 +54,7 @@ const CommunityPage = () => {
     }
   };
 
-  // Fetch announcements for the community
+  // 2) Fetch announcements
   const fetchAnnouncements = async () => {
     try {
       const response = await api.get(`api/announcements/?community_id=${communityId}`);
@@ -94,25 +65,60 @@ const CommunityPage = () => {
     }
   };
 
+  // 3) Fetch posts for this community
+  const fetchCommunityPosts = async () => {
+    try {
+      const response = await api.get("api/posts/", {
+        params: { community: communityId },
+      });
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+    }
+  };
+
+  // 4) Determine if the current user is a *real* member or leader
+  const fetchMembership = async () => {
+    try {
+      const resp = await api.get(`api/user-communities/?user_id=${user.id}`);
+      console.log("DEBUG - user-communities response:", resp.data); // ✅ Debugging line
+  
+      const membership = resp.data.find((mem) => {
+        const cId = parseInt(mem.community_id ?? mem.community);
+        return cId === parseInt(communityId) && ["Member", "Leader"].includes(mem.role);
+      });
+  
+      console.log("DEBUG - Is user a member (including leader)?", !!membership); // ✅ Debugging line
+      setIsMember(!!membership);
+    } catch (error) {
+      console.error("Error fetching membership:", error);
+    }
+  };
+  
+
+  // Kick off fetches once we have a communityId (and user)
+  
   useEffect(() => {
     if (communityId) {
       fetchCommunity();
       fetchAnnouncements();
+      fetchCommunityPosts();
+      if (user) {
+        fetchMembership();
+      }
     }
-  }, [communityId]);
+  }, [communityId, user]);
 
-  // Check if current user is the community leader
+  // Is the current user the leader?
   const isLeader = community?.is_community_owner === user?.id;
 
-  // Handlers for editing community details
+  // Editing logic
   const handleEditClick = () => {
     setIsEditing(true);
   };
-
   const handleEditChange = (e) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
-
   const handleSaveCommunity = async () => {
     setErrorMessage("");
     try {
@@ -130,7 +136,7 @@ const CommunityPage = () => {
     }
   };
 
-  // Handler for announcement submission (leader-only)
+  // Leader-only announcements
   const handleAnnouncementSubmit = async (e) => {
     e.preventDefault();
     setAnnouncementError("");
@@ -149,117 +155,118 @@ const CommunityPage = () => {
     }
   };
 
-  // Updated handler for post submission to send the post to the current community
+  // Create new post
   const handlePostSubmit = async (event) => {
     event.preventDefault();
-  
-    axios
-      .post(
+    try {
+      const response = await axios.post(
         "http://localhost:8000/api/posts/",
         { post_text: newPost, community: parseInt(communityId) },
         { headers: { Authorization: `Bearer ${accessToken}` } }
-      )
-      .then((response) => {
-        setPosts([response.data, ...posts]); // Add new post to the top of the list
-        setNewPost("");
-        setIsModalOpen(false);
-      })
-      .catch((error) => {
-        console.error("Failed to create post:", error);
-      });
+      );
+      setPosts((prev) => [response.data, ...prev]);
+      setNewPost("");
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+    }
   };
-  
-  
-  
-  
 
-
-
+  if (!community) {
+    return (
+      <div className="container mt-5">
+        {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+        <p>Loading community...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">
       {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-      {community ? (
-        <>
-          {/* Community Details Section */}
-          <div className="card shadow-sm mb-4">
-            <div className="card-header bg-primary text-white">
-              <h3 className="mb-0">Community Details</h3>
-            </div>
-            <div className="card-body">
-              {isEditing ? (
-                <div>
-                  <div className="mb-3">
-                    <label className="form-label">Community Name</label>
-                    <input
-                      type="text"
-                      name="community_name"
-                      className="form-control"
-                      value={editData.community_name}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Description</label>
-                    <textarea
-                      name="description"
-                      className="form-control"
-                      rows="2"
-                      value={editData.description}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Rules</label>
-                    <textarea
-                      name="rules"
-                      className="form-control"
-                      rows="2"
-                      value={editData.rules}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Privacy</label>
-                    <select
-                      name="privacy"
-                      className="form-select"
-                      value={editData.privacy}
-                      onChange={handleEditChange}
-                    >
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                    </select>
-                  </div>
-                  <button className="btn btn-success me-2" onClick={handleSaveCommunity}>
-                    Save Changes
-                  </button>
-                  <button className="btn btn-secondary" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="card-title">{community.community_name}</h2>
-                  <p className="card-text">
-                    <strong>Description:</strong> {community.description}
-                  </p>
-                  <p className="card-text">
-                    <strong>Rules:</strong> {community.rules}
-                  </p>
-                  <p className="card-text">
-                    <strong>Privacy:</strong> {community.privacy}
-                  </p>
-                  {isLeader && (
-                    <button className="btn btn-primary" onClick={handleEditClick}>
-                      Edit Community
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
 
+      {/* Community Details Section */}
+      <div className="card shadow-sm mb-4">
+        <div className="card-header bg-primary text-white">
+          <h3 className="mb-0">Community Details</h3>
+        </div>
+        <div className="card-body">
+          {isEditing ? (
+            <div>
+              <div className="mb-3">
+                <label className="form-label">Community Name</label>
+                <input
+                  type="text"
+                  name="community_name"
+                  className="form-control"
+                  value={editData.community_name}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Description</label>
+                <textarea
+                  name="description"
+                  className="form-control"
+                  rows="2"
+                  value={editData.description}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Rules</label>
+                <textarea
+                  name="rules"
+                  className="form-control"
+                  rows="2"
+                  value={editData.rules}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Privacy</label>
+                <select
+                  name="privacy"
+                  className="form-select"
+                  value={editData.privacy}
+                  onChange={handleEditChange}
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <button className="btn btn-success me-2" onClick={handleSaveCommunity}>
+                Save Changes
+              </button>
+              <button className="btn btn-secondary" onClick={() => setIsEditing(false)}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <>
+              <h2 className="card-title">{community.community_name}</h2>
+              <p className="card-text">
+                <strong>Description:</strong> {community.description}
+              </p>
+              <p className="card-text">
+                <strong>Rules:</strong> {community.rules}
+              </p>
+              <p className="card-text">
+                <strong>Privacy:</strong> {community.privacy}
+              </p>
+              {isLeader && (
+                <button className="btn btn-primary" onClick={handleEditClick}>
+                  Edit Community
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* If public or user is a real member (Leader or Member), show announcements & posts */}
+      {community.privacy === "public" || (community.privacy === "private" && isMember) ? (
+        <>
           {/* Announcements Section */}
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-info text-white">
@@ -280,7 +287,6 @@ const CommunityPage = () => {
               ) : (
                 <p>No announcements yet.</p>
               )}
-
               {isLeader && (
                 <div className="mt-3">
                   <h5>Post a New Announcement</h5>
@@ -316,160 +322,152 @@ const CommunityPage = () => {
 
           {/* Posts Section */}
           <div className="card shadow-sm mb-4">
-          <div className="card-header bg-secondary text-white">
-            <h4 className="mb-0">Community Posts</h4>
-          </div>
-          <div className="card-body">
-            {/* Button to open the post creation modal */}
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: "1rem" }}
-              onClick={() => setIsModalOpen(true)}
-            >
-              Create Post
-            </button>
-
-            {posts && posts.length > 0 ? (
-              <ul className="list-group mt-3">
-                {posts.map((post) => (
-                  <li key={post.id} className="list-group-item d-flex align-items-start">
-                    {/* User Profile Image */}
-                    <img
-                      src={post.user_image || default_profile_picture } // Fallback profile image
-                      alt="User Avatar"
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        marginRight: "15px",
-                        border: "2px solid #ddd",
-                      }}
-                    />
-
-                    {/* Post Content */}
-                    <div style={{ flex: 1 }}>
-                      <h5>{post.user_name} {post.user_last_name}</h5>
-                      <p>{post.post_text}</p>
-                      <small>{new Date(post.created_at).toLocaleDateString()}</small>
-                    </div>
-
-                    {/* Like Button */}
-                    <button
-                      className="btn btn-outline-danger"
-                      style={{ marginLeft: "auto" }}
-                    >
-                      ❤️ {post.likes}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No posts yet.</p>
-            )}
-          </div>
-        </div>
-
-
-          {/* Modal for creating a new post */}
-          {isModalOpen && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                background: "rgba(0, 0, 0, 0.75)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 1050,
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "#fff",
-                  padding: "20px",
-                  width: "400px",
-                  maxWidth: "90%",
-                  borderRadius: "8px",
-                  border: "2px solid #ccc",
-                  boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
-                  color: "#333",
-                }}
-              >
-                <h4
-                  style={{
-                    marginBottom: "15px",
-                    fontSize: "1.3rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Create a New Post
-                </h4>
-                <textarea
-                  style={{
-                    width: "100%",
-                    fontSize: "14px",
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    borderRadius: "5px",
-                    resize: "none",
-                    height: "80px",
-                    marginBottom: "10px",
-                  }}
-                  placeholder="What's on your mind?"
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  rows="3"
-                  required
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "10px",
-                    marginTop: "10px",
-                  }}
-                >
-                  <button
-                    style={{
-                      minWidth: "80px",
-                      padding: "8px 20px",
-                      fontSize: "14px",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                      border: "none",
-                      backgroundColor: "#e0e0e0",
-                      color: "#333",
-                    }}
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    style={{
-                      minWidth: "80px",
-                      padding: "8px 20px",
-                      fontSize: "14px",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                      border: "none",
-                      backgroundColor: "#007bff",
-                      color: "#fff",
-                    }}
-                    onClick={handlePostSubmit}
-                  >
-                    Post
-                  </button>
-                </div>
-              </div>
+            <div className="card-header bg-secondary text-white">
+              <h4 className="mb-0">Community Posts</h4>
             </div>
-          )}
+            <div className="card-body">
+              <button
+                className="btn btn-primary mb-3"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Create Post
+              </button>
+              {posts && posts.length > 0 ? (
+                <ul className="list-group">
+                  {posts.map((post) => (
+                    <li key={post.id} className="list-group-item d-flex align-items-start">
+                      <img
+                        src={post.user_image || default_profile_picture}
+                        alt="User Avatar"
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          marginRight: "15px",
+                          border: "2px solid #ddd",
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <h5>
+                          {post.user_name} {post.user_last_name}
+                        </h5>
+                        <p>{post.post_text}</p>
+                        <small>{new Date(post.created_at).toLocaleDateString()}</small>
+                      </div>
+                      <button className="btn btn-outline-danger" style={{ marginLeft: "auto" }}>
+                        ❤️ {post.likes}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No posts yet.</p>
+              )}
+            </div>
+          </div>
         </>
       ) : (
-        <p>Loading community...</p>
+        <div className="alert alert-warning">
+          <strong>This is a private community.</strong> Announcements and posts are visible only to members.
+        </div>
+      )}
+
+      {/* Modal for creating a new post */}
+      {isModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0, 0, 0, 0.75)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1050,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "20px",
+              width: "400px",
+              maxWidth: "90%",
+              borderRadius: "8px",
+              border: "2px solid #ccc",
+              boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
+              color: "#333",
+            }}
+          >
+            <h4
+              style={{
+                marginBottom: "15px",
+                fontSize: "1.3rem",
+                fontWeight: "bold",
+              }}
+            >
+              Create a New Post
+            </h4>
+            <textarea
+              style={{
+                width: "100%",
+                fontSize: "14px",
+                padding: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+                resize: "none",
+                height: "80px",
+                marginBottom: "10px",
+              }}
+              placeholder="What's on your mind?"
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              rows="3"
+              required
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+                marginTop: "10px",
+              }}
+            >
+              <button
+                style={{
+                  minWidth: "80px",
+                  padding: "8px 20px",
+                  fontSize: "14px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  border: "none",
+                  backgroundColor: "#e0e0e0",
+                  color: "#333",
+                }}
+                onClick={() => setIsModalOpen(false)}
+              >
+                Close
+              </button>
+              <button
+                style={{
+                  minWidth: "80px",
+                  padding: "8px 20px",
+                  fontSize: "14px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  border: "none",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                }}
+                onClick={handlePostSubmit}
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

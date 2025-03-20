@@ -271,3 +271,13 @@ class CommentListCreateView(generics.ListCreateAPIView):
             raise serializers.ValidationError({"post_id": "Invalid post ID."})
 
         serializer.save(user=self.request.user, post=post)
+class UserCommunityListView(generics.ListAPIView):
+    serializer_class = UserCommunitySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get("user_id")
+        if not user_id:
+            return UserCommunity.objects.none()  # Return empty queryset if no user_id is provided
+        
+        return UserCommunity.objects.filter(user_id=user_id)        

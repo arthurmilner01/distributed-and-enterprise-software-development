@@ -56,7 +56,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
-
 class CustomUserSerializer(UserSerializer):
     university = UniversitySerializer()
 
@@ -79,7 +78,6 @@ class UserProfileUpdateSerializer(UserSerializer):
         instance.interests = validated_data.get('interests', instance.interests)
         instance.save()
         return instance
-
 
 #Serilizer for global posts
 
@@ -138,7 +136,6 @@ class PostSerializer(serializers.ModelSerializer):
         post = Post.objects.create(user=user, **validated_data)
         return post
 
-
 #Serilizer for following
 class FollowSerializer(serializers.ModelSerializer):
     follower = serializers.HiddenField(default=serializers.CurrentUserDefault())  #Set to logged-in user
@@ -186,10 +183,9 @@ class UserFollowerSerializer(serializers.ModelSerializer):
 
     def get_is_following(self, obj):
         request = self.context.get('request')
-        # Return true if user is following false if not
+        # Return true if user is following, false if not
         if request.user:
             return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
-        # False if error
         return False
     
 class UserFollowingSerializer(serializers.ModelSerializer):
@@ -205,14 +201,9 @@ class UserFollowingSerializer(serializers.ModelSerializer):
 
     def get_is_following(self, obj):
         request = self.context.get('request')
-        # Return true if user is following false if not
         if request.user:
             return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
-        # False if error
         return False
-
-    
-# serializers.py
 
 User = get_user_model()
 class CommunitySerializer(serializers.ModelSerializer):
@@ -277,12 +268,12 @@ class CommunitySerializer(serializers.ModelSerializer):
         """Return an array of keyword strings for output."""
         return [k.keyword for k in obj.keywords.all()]
 
-
 class UserCommunitySerializer(serializers.ModelSerializer):
-    community_name = serializers.ReadOnlyField(source='community.community_name')
+    community_id = serializers.IntegerField(source="community.id", read_only=True)
+    community_name = serializers.ReadOnlyField(source="community.community_name")
     class Meta:
         model = UserCommunity
-        fields = ['id', 'community_name', 'role', 'community', 'community_id']
+        fields = ['id', 'community_id', 'community_name', 'role']
 
 #Used to return community list (GET request)
 class UserCommunityFollowerSerializer(serializers.ModelSerializer):
@@ -305,6 +296,4 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["id", "title", "content", "created_at", "created_by", "community"]
-        read_only_fields = ["id", "created_at", "created_by", "community"]        
-
-
+        read_only_fields = ["id", "created_at", "created_by", "community"]
