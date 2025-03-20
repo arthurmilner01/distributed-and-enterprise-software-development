@@ -4,6 +4,9 @@ import { Lock, UserPlus, Search } from "lucide-react";
 import useApi from "../../api"; 
 import { useNavigate } from "react-router-dom";
 import { PaginationComponent } from "../widgets/PaginationComponent";
+import { Typeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
+
 
 const DiscoverCommunitiesPage = () => {
     const navigate = useNavigate();
@@ -17,7 +20,7 @@ const DiscoverCommunitiesPage = () => {
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedKeywords, setSelectedKeywords] = useState([]);
-    const [currentKeyword, setCurrentKeyword] = useState("");
+    const [keywordOptions, setKeywordOptions] = useState([]);
     const [privacyFilter, setPrivacyFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("-id");
     
@@ -87,6 +90,19 @@ const DiscoverCommunitiesPage = () => {
         setCurrentPage(newPage);
         //performSearch will be triggered by the useEffect
     };
+
+
+    const fetchKeywordSuggestions = async (inputValue) => {
+        if (!inputValue) return;
+        
+        try {
+            const response = await api.get(`/api/keywords/suggestions/?query=${encodeURIComponent(inputValue)}`);
+            setKeywordOptions(response.data || []);
+        } catch (error) {
+            console.error("Error fetching keyword suggestions:", error);
+        }
+    };
+
 
     //Perform the search API call
     const performSearch = async (optionalKeywords = null) => {
@@ -261,22 +277,21 @@ const DiscoverCommunitiesPage = () => {
                         <div className="row mb-3">
                             <div className="col-md-8">
                                 <div className="input-group">
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder="Add keyword filter (press Enter or click Add)"
-                                        value={currentKeyword}
-                                        onChange={(e) => setCurrentKeyword(e.target.value)}
-                                        onKeyDown={handleKeywordKeyDown}
-                                        aria-label="Add keyword"
+                                    <Typeahead
+                                        id="keyword-typeahead"
+                                        multiple
+                                        onInputChange={fetchKeywordSuggestions}
+                                        onChange={(selected) => {
+                                            setSelectedKeywords(selected);
+                                            setCurrentPage(1);
+                                            performSearch(selected);
+                                        }}
+                                        options={keywordOptions}
+                                        selected={selectedKeywords}
+                                        placeholder="Add keyword filter..."
+                                        allowNew={false}
                                     />
-                                    <button 
-                                        className="btn btn-secondary" 
-                                        onClick={addKeyword}
-                                        type="button"
-                                    >
-                                        Add
-                                    </button>
+
                                 </div>
                                 <small className="text-muted">Type a keyword and press Enter or click Add to filter by keyword</small>
                             </div>
