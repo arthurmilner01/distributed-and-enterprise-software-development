@@ -426,6 +426,7 @@ const CommunityPage = () => {
           ) : (
             <>
               <h2 className="card-title">{community.community_name}</h2>
+              <p className="text-muted">Members: {community.member_count}</p>
               <p className="card-text">
                 <strong>Description:</strong> {community.description}
               </p>
