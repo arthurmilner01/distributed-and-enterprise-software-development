@@ -164,7 +164,7 @@ const CommunityPage = () => {
     }
   };
 
-  // 4) Determine if the current user is a *real* member or leader
+  // 4) Determine if the current user is a member or leader
   const fetchMembership = async () => {
     try {
       const response = await api.get("api/communityfollow/followers/");
@@ -198,8 +198,7 @@ const CommunityPage = () => {
     }
   }
 
-  // Kick off fetches once we have a communityId (and user)
-  
+  // Fetch once we have a communityId (and user) e.g. on page load
   useEffect(() => {
     if (communityId) {
       fetchCommunity();
@@ -219,9 +218,13 @@ const CommunityPage = () => {
   const handleEditClick = () => {
     setIsEditing(true);
   };
+
+  // Updating edit states according to user input
   const handleEditChange = (e) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
+
+  // When saving community edits/creation
   const handleSaveCommunity = async () => {
     setErrorMessage("");
     try {
@@ -278,11 +281,13 @@ const CommunityPage = () => {
   // Leave community
   const handleLeaveCommunity = async (communityId) => {
     try {
+      // Unfollows community
       const response = await api.delete(`api/communityfollow/unfollow/`, {
         params: { community_id: communityId }
       });
       setSuccessMessage("Successfully left the community.");
       setErrorMessage("");
+      // Refresh memberships
       fetchMembership();
       fetchUserCommunityRequests();
     } catch (error) {
@@ -303,7 +308,6 @@ const CommunityPage = () => {
         const response = await api.post(`api/communityfollow/follow/`, { community_id: communityId });
         setSuccessMessage("Successfully joined the community.");
         setErrorMessage("");
-        
         // Refresh user community data
         fetchMembership();
         fetchUserCommunityRequests();
@@ -320,7 +324,6 @@ const CommunityPage = () => {
           const response = await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
           setSuccessMessage("Request to join the community sent.");
           setErrorMessage("");
-          
           // Refresh user community data
           fetchMembership();
           fetchUserCommunityRequests();
@@ -339,6 +342,7 @@ const CommunityPage = () => {
       });
       setSuccessMessage("Join request cancelled successfully.");
       setErrorMessage("");
+      // Refresh memberships
       fetchMembership();
       fetchUserCommunityRequests();
     } catch (error) {

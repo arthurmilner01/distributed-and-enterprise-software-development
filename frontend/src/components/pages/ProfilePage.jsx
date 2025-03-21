@@ -7,55 +7,56 @@ import useApi from "../../api";
 import { useParams } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
-  const isOwner = user.id === parseInt(userId);
-  const [currentTab, setCurrentTab] = useState("posts");
-  const [isEditing, setIsEditing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const isOwner = user.id === parseInt(userId); // Is user viewing their own profile
+  const [currentTab, setCurrentTab] = useState("posts"); // Default tab set to posts
+  const [isEditing, setIsEditing] = useState(false); // State to monitor if user is editing details or not
+  const [errorMessage, setErrorMessage] = useState(""); // Store error messages
+  const [successMessage, setSuccessMessage] = useState(""); // Store success messages
   const api = useApi();
-  const [fetchedUser, setFetchedUser] = useState(null);
-  const [editableUser, setEditableUser] = useState({
+  const [fetchedUser, setFetchedUser] = useState(null); // To store user details for displaying
+  const [editableUser, setEditableUser] = useState({ // To store edits user makes, is sent when updating
     first_name: "",
     last_name: "",
     bio: "",
     interests: "",
     profile_picture: "",
   });
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [followingList, setFollowingList] = useState([]);
-  const [followerList, setFollowerList] = useState([]);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false); // Track when a user confirms edits on their profile
+  const [followerCount, setFollowerCount] = useState(0); // Count of user's followers
+  const [followingCount, setFollowingCount] = useState(0); // Count of user's following
+  const [followingList, setFollowingList] = useState([]); // List of users following
+  const [followerList, setFollowerList] = useState([]); // List of users followers
+  const [isFollowing, setIsFollowing] = useState(false); // Used to display either follow or unfollow button
 
-  const [showFollowersModal, setShowFollowersModal] = useState(false);
-  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false); // Show/hide follower modal
+  const [showFollowingModal, setShowFollowingModal] = useState(false); // Show/hide following modal
 
-  const handleShowFollowers = () => setShowFollowersModal(true);
-  const handleCloseFollowers = () => setShowFollowersModal(false);
-  const handleShowFollowing = () => setShowFollowingModal(true);
-  const handleCloseFollowing = () => setShowFollowingModal(false);
+  const handleShowFollowers = () => setShowFollowersModal(true); // Hide modal
+  const handleCloseFollowers = () => setShowFollowersModal(false); // Show modal
+  const handleShowFollowing = () => setShowFollowingModal(true); // Show modal
+  const handleCloseFollowing = () => setShowFollowingModal(false); // Hide modal
 
-  // Store user's achievements
+  // Stores list user's achievements
   const [userAchievements, setUserAchievements] = useState([]);
 
-  // For adding achievement
+  // For adding achievement, stores users input values
   const [newAchievementTitle, setNewAchievementTitle] = useState("")
   const [newAchievementDescription, setNewAchievementDescription] = useState("")
   const [newAchievementDate, setNewAchievementDate] = useState("")
 
-  // Achievement error message
+  // Achievement error/success message to display errors on the achievements tab
   const [achievementErrorMessage, setAchievementErrorMessage] = useState("");
   const [achievementSuccessMessage, setAchievementSuccessMessage] = useState("");
 
 
 
 
-  // User Posts
+  // List of user's posts
   const [userPosts, setUserPosts] = useState([]);
 
+  // Fetch the posts of the viewed user
   const fetchUserPosts = async () => {
     try {
       const response = await api.get(`api/posts/?user=${userId}`);
@@ -64,14 +65,15 @@ const ProfilePage = () => {
       console.error("Error fetching user posts:", error);
     }
   };
-  // Fetch posts when the "Posts" tab is active
-useEffect(() => {
-  if (currentTab === "posts" && userId) {
-    fetchUserPosts();
-  }
-}, [currentTab, userId]);
 
-  // NEW: State for user's communities (and roles)
+  // Fetch posts when the "Posts" tab is active
+  useEffect(() => {
+    if (currentTab === "posts" && userId) {
+      fetchUserPosts();
+    }
+  }, [currentTab, userId]);
+
+  // State for list of user's communities (and roles)
   const [userCommunities, setUserCommunities] = useState([]);
 
   // Fetch user's communities from the API
@@ -97,13 +99,16 @@ useEffect(() => {
     }
   }
 
+  // When user adds an achievement
   const handleAddAchievement = async () =>{
     try {
+      // IF any fields left blank set error and return
       if (!newAchievementTitle || !newAchievementDate || !newAchievementDescription) {
         setAchievementErrorMessage("Achievements must have a title, description, and date.");
         return;
       }
-  
+      
+      // Using the input values to add achievement
       const response = await api.post("api/achievements/", {
         title: newAchievementTitle,
         description: newAchievementDescription,
@@ -115,7 +120,7 @@ useEffect(() => {
       setNewAchievementDescription("");
       setNewAchievementDate("");
 
-      // Update achievement list
+      // Update achievements list
       fetchAchievements();
       setAchievementSuccessMessage("Achievement added.");
       setAchievementErrorMessage("");
@@ -126,6 +131,7 @@ useEffect(() => {
     }
   }
 
+  // Fetch achievements when achievement tab selected
   useEffect(() => {
     if (currentTab === "achievements" && userId) {
       fetchAchievements();
@@ -156,6 +162,7 @@ useEffect(() => {
     }
   };
 
+  // Check if user is following the currently viewed user (for updating follow/unfollow button)
   const checkFollowing = async (userId) => {
     try {
       const response = await api.get(`api/follow/check_following/?user_id=${userId}`);
@@ -166,12 +173,13 @@ useEffect(() => {
     }
   };
 
-  // Fetch user details from the API using ID
+  // Fetch user details and following from the API using ID
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await api.get(`user/${userId}/`);
         setFetchedUser(response.data);
+        // Setting editable user to user data to pre-populate them for edits
         setEditableUser({
           id: response.data.id,
           first_name: response.data.first_name || "Unknown",
@@ -194,6 +202,7 @@ useEffect(() => {
     };
     if (userId) {
       setErrorMessage("");
+      // If not editing or edits are confirmed
       if (!isEditing || isConfirmed) {
         fetchUserData();
         if (isConfirmed) {
@@ -201,9 +210,9 @@ useEffect(() => {
         }
       }
     }
-  }, [userId, isConfirmed]);
+  }, [userId, isConfirmed]); // Runs when user Id or is confirmed changes
 
-  // NEW: Fetch communities when "communities" tab is active
+  // Fetch communities when "communities" tab is active
   useEffect(() => {
     if (currentTab === "communities") {
       fetchUserCommunities();
@@ -217,6 +226,7 @@ useEffect(() => {
       </div>
     );
   }
+
   const handleProfilePictureChange = (event) => {
     const file = event.target.files[0]; // Get the selected file
     if (file) {
@@ -234,13 +244,17 @@ useEffect(() => {
     }
   };
   
-  // Handle profile editing inputs
+  // Handle profile editing inputs (sets editable user states to current values)
   const handleInputChange = (e) => {
     setEditableUser({ ...editableUser, [e.target.name]: e.target.value });
   };
+
+  // When a user confirms their edits
   const handleSaveChanges = async () => {
+    // Using form data due to profile picture
     const updatedUser = new FormData();
-  
+    
+    // Only append if value has changed from fetched user details
     if (editableUser.first_name !== fetchedUser.first_name && editableUser.first_name !== "Unknown") {
       updatedUser.append('first_name', editableUser.first_name);
     }
@@ -253,7 +267,8 @@ useEffect(() => {
     if (editableUser.interests !== fetchedUser.interests && editableUser.interests !== "This user hasn't added any interests...") {
       updatedUser.append('interests', editableUser.interests);
     }
-  
+    
+    // If not default profile picture OR same as profile picture before
     if (editableUser.profile_picture && editableUser.profile_picture !== fetchedUser.profile_picture) {
       if (editableUser.profile_picture instanceof File) {
         updatedUser.append('profile_picture', editableUser.profile_picture);
@@ -283,7 +298,7 @@ useEffect(() => {
     }
   };
   
-
+  // If user cancels edit reset ediable user state to fetched user/default values
   const handleCancel = () => {
     setEditableUser({
       first_name: fetchedUser.first_name || "Unknown",
@@ -297,9 +312,11 @@ useEffect(() => {
     setErrorMessage("Profile update cancelled.");
   };
 
+  // When a user unfollows
   const handleUnfollow = async () => {
     try {
       const response = await api.delete(`api/follow/unfollow/?user_id=${userId}`);
+      // Refresh followers and following
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
@@ -312,9 +329,11 @@ useEffect(() => {
     }
   };
 
+  // When a user follows
   const handleFollow = async () => {
     try {
       const response = await api.post(`api/follow/follow/`, { user_id: userId });
+      // Refresh followers and following
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
@@ -327,9 +346,11 @@ useEffect(() => {
     }
   };
 
+  // Unfollowing when using the modal, followerId attached to the row in modal
   const handleModalUnfollow = async (followerId) => {
     try {
       const response = await api.delete(`api/follow/unfollow/?user_id=${followerId}`);
+      // Refresh follower and following
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
@@ -342,9 +363,11 @@ useEffect(() => {
     }
   };
 
+  // Following when using the modal, followerId attached to the row in modal
   const handleModalFollow = async (followerId) => {
     try {
       const response = await api.post(`api/follow/follow/`, { user_id: followerId });
+      // Refresh follower and following
       fetchFollowers(userId);
       fetchFollowing(userId);
       checkFollowing(userId);
@@ -492,7 +515,8 @@ useEffect(() => {
           </div>
         </div>
       </div>
-
+      
+      {/* Tabs to allow show/hide of different data attached to the user */}
       <ul className="nav nav-pills mb-3 d-flex justify-content-center" id="profile-tabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
@@ -575,7 +599,7 @@ useEffect(() => {
       </div>
     )}
 
-
+        {/* Communities tab to list a user's communities */}
         {currentTab === "communities" && (
           <div className="tab-pane fade show active">
             <div className="card shadow-sm">
@@ -598,12 +622,13 @@ useEffect(() => {
           </div>
         )}
 
+        {/* Achievements tab to list user's achievements and provide inputs to add an achievments */}
         {currentTab === "achievements" && (
           <div className="tab-pane fade show active">
             <div className="card shadow-sm">
               <div className="card-body">
                 <h5 className="card-title mb-3">User Achievements</h5>
-
+                {/* Has to be viewing own profile */}
                 {isOwner && (
                   <div className="mb-4 p-3 border rounded bg-light">
                     <input
@@ -629,8 +654,10 @@ useEffect(() => {
                   </div>
                 )}
 
+                {/* If no achievements use fall back message */}
                 {userAchievements.length > 0 ? (
                   <ul className="list-group">
+                    {/* For each achievement */}
                     {userAchievements.map((achievement) => (
                       <li key={achievement.id} className="list-group-item d-flex flex-column">
                         <div className="d-flex justify-content-between align-items-center">
@@ -644,7 +671,7 @@ useEffect(() => {
                 ) : (
                   <p className="text-muted">No achievements have been added.</p>
                 )}
-
+                {/* Achievement specific error messages */}
                 {achievementSuccessMessage && <p className="text-success mt-2">{achievementSuccessMessage}</p>}
                 {achievementErrorMessage && <p className="text-danger mt-2">{achievementErrorMessage}</p>}
               </div>
@@ -652,6 +679,7 @@ useEffect(() => {
           </div>
         )}
 
+        {/* Tab for viewing user's attending events */}
         {currentTab === "events" && (
           <div className="tab-pane fade show active">
             <div className="card shadow-sm">
@@ -663,13 +691,17 @@ useEffect(() => {
           </div>
         )}
       </div>
+
+      {/* Modal which allows the viewing of followers */}
       <Modal show={showFollowersModal} onHide={handleCloseFollowers}>
       <Modal.Header closeButton>
         <Modal.Title>Followers</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {/* If no followers use fallback message */}
         {followerList.length > 0 ? (
           <ul className="list-group">
+            {/* For each follower */}
             {followerList.map((follower) => (
               <li key={follower.id} className="list-group-item d-flex align-items-center justify-content-between">
                 <img
@@ -699,11 +731,13 @@ useEffect(() => {
       </Modal.Body>
       </Modal>
 
+      {/* Modal which allows the viewing of following */}
       <Modal show={showFollowingModal} onHide={handleCloseFollowing}>
       <Modal.Header closeButton>
         <Modal.Title>Following</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {/* If no following use fallback message */}
         {followingList.length > 0 ? (
           <ul className="list-group">
             {followingList.map((following) => (

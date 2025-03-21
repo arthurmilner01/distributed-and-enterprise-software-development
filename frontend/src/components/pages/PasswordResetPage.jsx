@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
 const PasswordResetPage = () => {
+  // Stores user's edited email
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -10,6 +11,8 @@ const PasswordResetPage = () => {
   const navigate = useNavigate();
 
 
+
+  // On submit send request to handle sending password reset email to given email input
   const handleSubmit = async (e) => {
     e.preventDefault();
 

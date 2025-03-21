@@ -6,6 +6,7 @@ const PasswordResetConfirmPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  {/* Generated from password reset link */}
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
 
@@ -24,7 +25,7 @@ const PasswordResetConfirmPage = () => {
 
     setLoading(true);
     setMessage("Attempting password reset...");
-
+    {/* Sending request with uid and token along with inputted new password for appropriate validation */}
     try
     {
         const response = await axios.post("http://127.0.0.1:8000/auth/users/reset_password_confirm/", {

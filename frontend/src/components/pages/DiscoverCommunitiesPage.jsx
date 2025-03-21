@@ -35,7 +35,7 @@ const DiscoverCommunitiesPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
-    // Fetch user's communities to check membership status
+    // Fetch user's joined and requested communities to check membership status
     const fetchUserMembershipData = async () => {
         try {
             const [membershipsResponse, requestsResponse] = await Promise.all([

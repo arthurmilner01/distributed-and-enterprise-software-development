@@ -8,7 +8,7 @@ const CreateCommunityPage = () => {
   const [description, setDescription] = useState("");
   const [rules, setRules] = useState("");
   const [privacy, setPrivacy] = useState("public");
-  const [keywords, setKeywords] = useState(""); // NEW
+  const [keywords, setKeywords] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
