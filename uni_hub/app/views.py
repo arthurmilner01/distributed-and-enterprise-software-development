@@ -28,21 +28,22 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.base import ContentFile
 from django.db.models import Q
 
-#Custom /auth/customjwt/create to store the refresh token as a cookie
+# Custom /auth/customjwt/create to store the refresh token as a cookie
+# Using customized Djoser TokenObtainPairView
 class CustomTokenObtainPairView(TokenObtainPairView):
-    #Use custom serializer
+    # Use custom serializer
     serializer_class = CustomTokenObtainPairSerializer  
     
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         
-        #If credentials okay
+        # If credentials okay
         if response.status_code == 200:
-            #Grab refresh token from response
+            # Grab refresh token from response
             refresh = response.data.pop("refresh", None)
             
             
-            #Storing in http cookie using simple jwt settings
+            # Storing in http cookie using simple jwt settings
             response.set_cookie(
                 key="refresh_token",
                 value=refresh,
@@ -56,14 +57,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return response
     
             
-#When getting new access/refresh tokens, refresh will store in http only cookie
+# When getting new access/refresh tokens, refresh will store in http only cookie
+# Using customized Djoser TokenRefreshView
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
+        # Get refresh token from the HTTP only cookie
         refresh_token = request.COOKIES.get("refresh_token")
 
-        #If no refresh token found, send 400
+        # If no refresh token found, send 400
         if not refresh_token:
             return Response({"error": "No refresh token provided"}, status=status.HTTP_400_BAD_REQUEST)
+
 
         request.data["refresh"] = refresh_token
 
@@ -71,27 +75,27 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         if response.status_code == 200:
            
-            #Get current user from the token
+            # Get current user from the token
             access_token = response.data.get("access")
             token_data = AccessToken(access_token)
             user_id = token_data.get("user_id")
             
-            #Get fresh user data from the database
+            # Get fresh user data from the database
             user = User.objects.get(id=user_id)
             
-            #Create new token with updated user data 
-            #Neccesary to update user info incase of when updating profile
+            # Create new token with updated user data 
+            # Neccesary to update user info incase of when updating profile
             serializer = CustomTokenObtainPairSerializer()
             token = serializer.get_token(user)
             
-            #Update the access token in the response
+            # Update the access token in the response
             response.data["access"] = str(token.access_token)
             
-            #Handle refresh token
+            # Handle new refresh token
             new_refresh = str(token)
             response.data.pop("refresh", None)
             
-            #Store new refresh token in HttpOnly cookie
+            # Store new refresh token in HttpOnly cookie
             response.set_cookie(
                 key="refresh_token",
                 value=new_refresh,
@@ -113,19 +117,19 @@ def logout_view(request):
     return response
 
 
-#View for fetching user details
+# View for fetching user details for displaying on front-end
 class GetProfileDetailsView(APIView):
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated] # Require login
     serializer_class = CustomUserSerializer
-    #Only allow GET
+    # Only allow GET
     def get(self, request, *args, **kwargs):
-        user_id = kwargs.get('id')
+        user_id = kwargs.get('id') # Passed user ID
 
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(id=user_id) # Get the user
             serializer = self.serializer_class(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except ObjectDoesNotExist:
+        except ObjectDoesNotExist: # If user not found
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         except ValueError:
             return Response({"error": "Invalid user ID format."}, status=status.HTTP_400_BAD_REQUEST)
@@ -133,16 +137,18 @@ class GetProfileDetailsView(APIView):
 
 
 
-#View for updating user first name, last name, bio, and interests
+# View for updating user first name, last name, bio, and interests
 class UserProfileUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)  # ✅ Allow file uploads
+    permission_classes = [IsAuthenticated] # Required login
+    parser_classes = (MultiPartParser, FormParser)  # Allow file uploads
 
+    # PATCH to allow only partial edits of user data
     def patch(self, request, user_id):
         user = User.objects.filter(id=user_id).first()
         if not user:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         
+        # If the user isn't the logged in user do not allow updating
         if user != request.user:
             return Response({"detail": "You do not have permission to update this profile."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -151,16 +157,15 @@ class UserProfileUpdateView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # ✅ DEBUG LOGGING
             if 'profile_picture' in request.FILES:
-                print("DEBUG - Profile Picture Successfully Uploaded to S3:", user.profile_picture)
+                print("Profile Picture Successfully Uploaded to S3:", user.profile_picture)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+#! TODO: Used for testing remove
 @api_view(['GET', 'POST'])  #Allowed http methods
 @permission_classes([IsAuthenticated])  #Require login
 def protected_view(request):
@@ -178,6 +183,7 @@ def protected_view(request):
     elif request.method == 'POST':
         return Response({"message": "POST request successful!"}, status=200)
 
+#! TODO: Used for testing remove
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated, IsEventManager])
 def event_view(request):

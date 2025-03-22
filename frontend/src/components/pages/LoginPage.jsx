@@ -11,9 +11,11 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { refreshAccessToken, loading } = useAuth();
 
+  // On user log-in
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Calls the endpoints to create the access and refresh token, including cookie storage
       await axios.post(
         "http://localhost:8000/auth/jwt/create/",
         { email, password },
@@ -21,6 +23,7 @@ const LoginPage = () => {
       );
       
       await refreshAccessToken();
+      // Attempt to navigate to home page, which should now be accessible
       navigate("/dashboard");
     } catch (err) {
       setError("Invalid login credentials. Please try again.");

@@ -10,17 +10,17 @@ from django.db.models import Q, Count
 from django.db import transaction
 
 
-#View set for following
+# View set for following/unfollowing users and returning list of followed/following users
 class FollowViewSet(viewsets.ModelViewSet):
-    #All rows
+    # All rows in Follow table
     queryset = Follow.objects.all()
-    #Use follow serializer
+    # Use follow serializer
     serializer_class = FollowSerializer
-    #Required logged in user
+    # Required logged in user
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        #If a user ID is passed filter by that ID otherwise use logged in user id
+        # If a user ID is passed filter by that ID otherwise use logged in user id
         user_id = self.request.query_params.get("user_id")
 
         if user_id:
@@ -33,30 +33,31 @@ class FollowViewSet(viewsets.ModelViewSet):
 
         return Follow.objects.filter(following_user=user)  #Get users following
     
+    # To follow a user
     @action(detail=False, methods=["POST"])
     def follow(self, request):
         #ID to follow
         user_id = request.data.get("user_id")
 
-        #If user ID not provided
+        # If user ID not provided
         if not user_id:
             return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Ensure the user is not trying to follow themselves
+        # Ensure the user is not trying to follow themselves
         if int(user_id) == request.user.id:
             return Response({"error": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Get user to follow details
+        # Get user to follow details
         try:
             followed_user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        #Check if already following
+        # Check if already following
         if Follow.objects.filter(following_user=request.user, followed_user=followed_user).exists():
             return Response({"error": "You are already following this user."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Create the follow row in db
+        # Create the follow row in db
         Follow.objects.create(following_user=request.user, followed_user=followed_user)
 
         return Response({"success": "Followed successfully."}, status=status.HTTP_201_CREATED)
@@ -88,11 +89,13 @@ class FollowViewSet(viewsets.ModelViewSet):
         #Else return error
         return Response({"error": "You are not following this user."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Gets list of followers of the given user ID
     @action(detail=False, methods=["GET"])
     def followers(self, request):
-        #Get passed user ID if applicable to allow fetching of any users followers
+        # Get passed user ID if applicable to allow fetching of any users followers
         user_id = request.query_params.get("user_id")
 
+        # If user ID is passed check it exists
         if user_id:  
             try:
                 user = User.objects.get(id=user_id)
@@ -109,11 +112,13 @@ class FollowViewSet(viewsets.ModelViewSet):
 
         return Response(follower_data.data, status=status.HTTP_200_OK)
     
+    # Gets list of followed users the given user ID
     @action(detail=False, methods=["GET"])
     def following(self, request):
-        #Get passed user ID if applicable to allow fetching of any users followers
+        # Get passed user ID if applicable to allow fetching of any users followers
         user_id = request.query_params.get("user_id")
 
+        # If user ID is passed check it exists
         if user_id:  
             try:
                 user = User.objects.get(id=user_id)
@@ -122,38 +127,42 @@ class FollowViewSet(viewsets.ModelViewSet):
         else:
             user = request.user  #Use logged in user
         
-        #Get list of following
+        # Get list of following
         following = Follow.objects.filter(following_user=user).select_related("followed_user")
-        #Get list of follows
+        # Get list of follows
         following_users = [f.followed_user for f in following]
-        #Using separate serializer that wont use logged in user ID, request context passed to get if logged-in user follows
+        # Using separate serializer that wont use logged in user ID, request context passed to get if logged-in user follows
         following_data = UserFollowingSerializer(following_users, many=True, context={'request': request})
 
         return Response(following_data.data, status=status.HTTP_200_OK)
     
+    # Used on profile page to set the isFollowing to true/false
     @action(detail=False, methods=["GET"])
     def check_following(self, request):
         user_id = request.query_params.get("user_id")
 
+        # If user ID not passed
         if not user_id:
             return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        #If viewing own profile return true
+        # If viewing own profile just return true
         if int(user_id) == request.user.id:
             return Response({"is_following": True}, status=status.HTTP_200_OK)
 
+        # Check user exists
         try:
             followed_user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        #Check logged-in user follows viewed user
+        # Check logged-in user follows viewed user
         is_following = Follow.objects.filter(following_user=request.user, followed_user=followed_user).exists()
 
         return Response({"is_following": is_following}, status=status.HTTP_200_OK)
     
 
-#View set for joining/leaving communities
+# View set for joining/leaving, requesting/canelling requests to join, and for leaders to approve/deny join requests on communities
+# Also includes routes for returning list of a users joined/requested communties
 class CommunityFollowViewSet(viewsets.ModelViewSet):
     #All rows
     queryset = UserCommunity.objects.all()
@@ -168,30 +177,31 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
 
         return UserCommunity.objects.filter(user=user)  #Get joined communities
     
+    # To follow/join a community
     @action(detail=False, methods=["POST"])
     def follow(self, request):
-        #ID to follow
+        # ID to follow
         community_id = request.data.get("community_id")
 
-        #If user ID not provided
+        # If ID not provided
         if not community_id:
             return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Get user to follow details
+        # Get community to join details
         try:
             followed_community = Community.objects.get(id=community_id)
         except Community.DoesNotExist:
             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        #Check if already following
+        # Check if already a member
         if UserCommunity.objects.filter(user=request.user, community=followed_community).exists():
             return Response({"error": "You are already a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
         
-        #Check if community is private
+        # Check if community is private, need to request to join if private
         if followed_community.privacy == "private":
             return Response({"error": "This community is private. You need to request to join."}, status=status.HTTP_403_FORBIDDEN)
 
-        #Create the follow row in db
+        # Create the follow relationship in db
         try:
             UserCommunity.objects.create(user=request.user, community=followed_community)
         except Exception as e:
@@ -199,48 +209,50 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
 
         return Response({"success": "Joined community successfully."}, status=status.HTTP_201_CREATED)
 
-    #To unfollow a community
+    # To unfollow/leave a community
     @action(detail=False, methods=["DELETE"])
     def unfollow(self, request):
-        #User ID to unfolow
+        # Community ID to unfolow
         community_id = request.query_params.get("community_id")
 
-        #If user not passed
+        # If community ID not passed
         if not community_id:
             return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Get user to unfollow
+        # Get community to unfollow
         try:
             unfollowed_community = Community.objects.get(id=community_id)
-        #If user ID not in database
+        # If community ID not in database
         except Community.DoesNotExist:
             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        #Get follow row to delete
+        # Get row to delete
         unfollow = UserCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
 
         #If user not following
         if not unfollow:
             return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Check user isn't leader of community        
+        # Check user isn't leader of community (leaders cannot leave without transferring ownership)        
         if unfollow.role == "Leader":
             return Response(
                 {"error": "You cannot leave the community as a leader. Please transfer leadership first."},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-        #If exists detete
+        # If exists detete
         try:
             unfollow.delete()
             return Response({"success": "Successfully left the community."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
+    # Requests to follow a community
     @action(detail=False, methods=["POST"])
     def request_follow(self, request):
         community_id = request.data.get("community_id")
 
+        # If community ID not passed
         if not community_id:
             return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -250,7 +262,7 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         except Community.DoesNotExist:
             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Check privacy
+        # Check privacy, if not private dont attempt request
         if community.privacy != "private":
             return Response({"error": "This community is not private. You can join directly."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -265,37 +277,37 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    #To cancel a community request to join
+    # To cancel a community request to join
     @action(detail=False, methods=["DELETE"])
     def cancel_follow_request(self, request):
-        #Community ID to unfolow
+        # Community ID to cancel request
         community_id = request.query_params.get("community_id")
 
-        #If user not passed
+        # If community ID not passed
         if not community_id:
             return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        #Get community to unfollow
+        # Get community to cancel request
         try:
             unfollowed_community = Community.objects.get(id=community_id)
-        #If community ID not in database
+        # If community ID not in database
         except Community.DoesNotExist:
             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        #Get row to delete
+        # Get request row to delete
         unfollow = UserRequestCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
-        #If exists detete
+        # If exists detete
         if unfollow:
             unfollow.delete()
             return Response({"success": "Successfully cancelled the follow request."}, status=status.HTTP_204_NO_CONTENT)
         
-        #Else return error
+        # Else return error
         return Response({"error": "You are not a member of this community."}, status=status.HTTP_400_BAD_REQUEST)
     
-    #Gets user communities with the user's role
+    # Gets user communities with the user's role
     @action(detail=False, methods=["GET"])
     def user_communities_list(self, request):
-        #If a user ID is passed filter by that ID otherwise use logged in user id
+        # If a user ID is passed filter by that ID otherwise use logged in user id
         user_id = request.GET.get('user_id')
 
         if user_id:
@@ -304,64 +316,39 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
             except User.DoesNotExist:
                 return Response({"error": "User not found."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            user = request.user #Use logged in user
+            user = request.user # Use logged in user
 
+        # If user not found
         if not user:
             return Response({"error": "Missing user credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
-
+        # Return list of communities in response
         user_communities = UserCommunity.objects.filter(user_id=user.id).select_related('community')
         serializer = UserCommunitySerializer(user_communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)   
         
 
     @action(detail=False, methods=["GET"])
-    def followers(self, request):
-        user = request.user  #Use logged in user
+    def followers(self, request): # List of joined communities for the logged-in user
+        user = request.user  # Use logged in user
         
-        #Get list of followed communities
+        # Get list of joined communities
         followed_communities = UserCommunity.objects.filter(user=user).select_related("community")
-        #Get list of follows in json as the response
+        # Get list of communities with details in json as the response
         community_data = UserCommunityFollowerSerializer([f.community for f in followed_communities], many=True)
 
         return Response(community_data.data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["GET"])
-    def follow_requests(self, request):
-        user = request.user  #Use logged in user
+    def follow_requests(self, request): # List of outgoing requests of the logged-in user
+        user = request.user  # Use logged in user
         
-        #Get list of followed communities
+        # Get list of requested communities
         requested_communities = UserRequestCommunity.objects.filter(user=user).select_related("community")
-        #Get list of follows in json as the response
+        # Get list of communities with details in json as the response
         community_data = UserCommunityFollowerSerializer([f.community for f in requested_communities], many=True)
 
         return Response(community_data.data, status=status.HTTP_200_OK)
-
-    
-    @action(detail=False, methods=["GET"])
-    def check_following(self, request):
-        community_id = request.query_params.get("community_id")
-
-        if not community_id:
-            return Response({"error": "Community ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            followed_community = Community.objects.get(id=community_id)
-        except Community.DoesNotExist:
-            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        #Check logged-in user follows viewed community
-        is_following = UserCommunity.objects.filter(user=request.user, community=followed_community).exists()
-
-        return Response({"is_following": is_following}, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=["GET"])
-    def communities_all(self, request):
-        #Fetch all available communities
-        communities = Community.objects.all()
-        serializer = UserCommunityFollowerSerializer(communities, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
     
     #For filtering only to communities user has not request/joined
     @action(detail=False, methods=["GET"])
@@ -451,14 +438,14 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         # Request ID to deny
         request_id = request.query_params.get("request_id")
 
-        #If user not passed
+        # If user not passed
         if not request_id:
             return Response({"error": "Request ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
         # Get request details
         try:
             join_request = UserRequestCommunity.objects.filter(id= request_id).first()
-        #If request ID not in database
+        # If request ID not in database
         except UserRequestCommunity.DoesNotExist:
             return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
 

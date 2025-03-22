@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .viewsets import *
 from .views import *
 
+# Using router to generate the URLs for viewsets
 router = DefaultRouter()
 router.register(r'follow', FollowViewSet, basename='follow')
 router.register(r'communityfollow', CommunityFollowViewSet, basename='communityfollow')
@@ -23,7 +24,6 @@ urlpatterns = [
     path("event/", event_view, name="event-view"),
     path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
     path('api/keywords/suggestions/', KeywordSuggestionsView.as_view(), name='keyword-suggestions'),
-    # 🔥 FIX: User's communities (NEW ENDPOINT)
     path("api/user-communities/", UserCommunityListView.as_view(), name="user-communities"),
 
 ]

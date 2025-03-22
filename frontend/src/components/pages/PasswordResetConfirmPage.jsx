@@ -25,15 +25,16 @@ const PasswordResetConfirmPage = () => {
 
     setLoading(true);
     setMessage("Attempting password reset...");
-    {/* Sending request with uid and token along with inputted new password for appropriate validation */}
+    // Sending request with uid and token along with inputted new password for appropriate validation
     try
     {
-        const response = await axios.post("http://127.0.0.1:8000/auth/users/reset_password_confirm/", {
-            uid,
-            token,
-            new_password: password,
-        });
-
+      // Uses uid and token from password reset link to validate reset request
+      const response = await axios.post("http://127.0.0.1:8000/auth/users/reset_password_confirm/", {
+          uid,
+          token,
+          new_password: password,
+      });
+        // Redirect user to login page
         setMessage("Password reset successful! Redirecting to login...");
         setTimeout(() => navigate("/login"), 3000);
     }

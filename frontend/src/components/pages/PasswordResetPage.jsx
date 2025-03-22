@@ -20,6 +20,7 @@ const PasswordResetPage = () => {
     setMessage("Sending password reset email...");
 
     try {
+      // Calling the endpoint which generates the password reset link and sends email
       await axios.post("http://0.0.0.0:8000/auth/users/reset_password/", {
         email: email,
       });
