@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
-import { Edit, Check, X, UserPlus, UserCheck } from "lucide-react";
+import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star } from "lucide-react";
 import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
@@ -49,6 +49,10 @@ const ProfilePage = () => {
   // Achievement error/success message to display errors on the achievements tab
   const [achievementErrorMessage, setAchievementErrorMessage] = useState("");
   const [achievementSuccessMessage, setAchievementSuccessMessage] = useState("");
+
+  // Profile badges to display (bronze, silver, gold)
+  // Count order: joined communities, following, followers, posts, comments, achievements 
+  const [profileBadges, setProfileBadges] = useState([]);
 
 
 
@@ -162,6 +166,39 @@ const ProfilePage = () => {
     }
   };
 
+  // Fetch badges for displaying the approriate badge icon and colour
+  const fetchBadges = async (userId) => {
+    try {
+      const response = await api.get(`api/user-badges/?user_id=${userId}`);
+      // Set badge colour
+      setProfileBadges(response.data);
+      console.log("Count and Colours for Badges:", response.data)
+    } catch (error) {
+      console.error("Error fetching user badges:", error);
+      setErrorMessage("Failed to load user badges.");
+    }
+  };
+  
+  // Used to render the appropriate lucide-react icon
+  const renderIcon = (iconName) => {
+    switch (iconName) {
+      case 'Users':
+        return <Users size={14} />;
+      case 'UserPlus':
+        return <UserPlus size={14} />;
+      case 'UserCheck':
+        return <UserCheck size={14} />;
+      case 'FileText':
+        return <FileText size={14} />;
+      case 'MessageCircle':
+        return <MessageCircle size={14} />;
+      case 'Star':
+        return <Star size={14} />;
+      default:
+        return;
+    }
+  };
+
   // Check if user is following the currently viewed user (for updating follow/unfollow button)
   const checkFollowing = async (userId) => {
     try {
@@ -191,6 +228,7 @@ const ProfilePage = () => {
         fetchFollowers(response.data.id);
         fetchFollowing(response.data.id);
         checkFollowing(response.data.id);
+        fetchBadges(response.data.id);
       } catch (error) {
         console.error("Error fetching user data:", error);
         if (error.response && error.response.data && error.response.data.error) {
@@ -414,37 +452,59 @@ const ProfilePage = () => {
 
         <div className="col-md-9">
           <div className="d-flex flex-column justify-content-center">
-            <h2 className="mt-4">
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={editableUser.first_name}
-                    onChange={handleInputChange}
-                    className="form-control d-inline w-auto"
-                  />
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={editableUser.last_name}
-                    onChange={handleInputChange}
-                    className="form-control d-inline w-auto ms-2"
-                  />
-                </>
-              ) : (
-                <>
-                  {fetchedUser.first_name || "Unknown"} {fetchedUser.last_name || "Unknown"}
-                </>
-              )}
-              
-              {isOwner && !isEditing && (
-                <button className="btn text-info p-0 ms-2" onClick={() => setIsEditing(true)}>
-                  <Edit size={25} />
-                </button>
-              )}
-            </h2>
+            <div className="d-flex justify-content-between align-items-center">
+              <h2 className="mt-4">
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={editableUser.first_name}
+                      onChange={handleInputChange}
+                      className="form-control d-inline w-auto"
+                    />
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={editableUser.last_name}
+                      onChange={handleInputChange}
+                      className="form-control d-inline w-auto ms-2"
+                    />
+                  </>
+                ) : (
+                  <>
+                    {fetchedUser.first_name || "Unknown"} {fetchedUser.last_name || "Unknown"}
+                  </>
+                )}
+                
+                {isOwner && !isEditing && (
+                  <button className="btn text-info p-0 ms-2" onClick={() => setIsEditing(true)}>
+                    <Edit size={25} />
+                  </button>
+                )}
+              </h2>
 
+              {/* Display the profiles badges */}
+              <div className="d-flex flex-wrap ms-auto">      
+                {/* For each badge create icon, colour and count and format title from the key */}      
+                {profileBadges && Object.keys(profileBadges).map((badgeKey) => {
+                  const badge = profileBadges[badgeKey];
+
+                    return (
+                      // Using bootstrap danger, success and warning to display badge colour
+                      // Using lucide-react icons
+                      // Count is number of occurences in db for specific badge
+                      <div
+                        key={badgeKey}
+                        className={`badge-item me-3 p-2 text-${badge.badge_level}`}
+                        title={badge.badge_title}
+                      >
+                        {renderIcon(badge.badge_icon)}
+                      </div>
+                    );
+                })}
+              </div>
+            </div>
             <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
             <div className="d-flex gap-1">
               <p className="text-muted">Followers: </p>
@@ -456,6 +516,7 @@ const ProfilePage = () => {
                 {followingCount}
               </p>
             </div>
+
             {!isOwner && (
               <div className="d-flex mt-3">
                 {isFollowing ? (
@@ -501,7 +562,8 @@ const ProfilePage = () => {
 
             {errorMessage && <p className="text-danger">{errorMessage}</p>}
             {successMessage && <p className="text-success">{successMessage}</p>}
-
+            
+            {/* Only display if own profile and is editing */}
             {isOwner && isEditing && (
               <div className="d-flex gap-2 mt-2 mb-3">
                 <button className="btn btn-success" onClick={handleSaveChanges}>
@@ -512,6 +574,7 @@ const ProfilePage = () => {
                 </button>
               </div>
             )}
+
           </div>
         </div>
       </div>

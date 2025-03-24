@@ -25,5 +25,6 @@ urlpatterns = [
     path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
     path('api/keywords/suggestions/', KeywordSuggestionsView.as_view(), name='keyword-suggestions'),
     path("api/user-communities/", UserCommunityListView.as_view(), name="user-communities"),
+    path("api/user-badges/", ProfileBadgesView.as_view(), name="user-badges"),
 
 ]

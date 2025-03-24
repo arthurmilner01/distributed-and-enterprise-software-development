@@ -239,16 +239,14 @@ class GlobalPostListCreateView(generics.ListCreateAPIView):
 
         serializer.save(user=self.request.user, community=community)
 
-
-
 class CommunityPostListCreateView(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Fetch posts only for a specific community."""
+        # Fetch posts only for a specific community
         community_id = self.kwargs.get("community_id")
-        print(f"DEBUG - Fetching posts for Community ID: {community_id}")  # Debugging
+        print(f"Fetching posts for Community ID: {community_id}")  # Debugging
         return Post.objects.filter(community_id=community_id).order_by("-created_at")
 
 
@@ -269,11 +267,8 @@ class CommentListCreateView(generics.ListCreateAPIView):
         return Comment.objects.filter(post_id=post_id).order_by("created_at")
 
     def perform_create(self, serializer):
-        """Ensure the authenticated user is set for the comment."""
+        # Ensure the authenticated user is set for the comment
         post_id = self.kwargs.get("post_id")
-        
-        # ✅ Debugging: Ensure `post_id` exists
-        print(f"DEBUG - Creating comment for post_id: {post_id}")
 
         if not post_id:
             raise serializers.ValidationError({"post_id": "This field is required."})
@@ -284,6 +279,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
             raise serializers.ValidationError({"post_id": "Invalid post ID."})
 
         serializer.save(user=self.request.user, post=post)
+
 class UserCommunityListView(generics.ListAPIView):
     serializer_class = UserCommunitySerializer
     permission_classes = [IsAuthenticated]
@@ -310,3 +306,89 @@ class KeywordSuggestionsView(APIView):
         ).distinct().values_list('keyword', flat=True)[:10] #Limit 10 suggestions 
         
         return Response(list(keywords), status=status.HTTP_200_OK)
+    
+class ProfileBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get user ID from parameters
+        user_id = self.request.query_params.get("user_id")
+
+        # Use passed user ID
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Cannot get user's badges."}, status=404)
+        
+        # Return count of occurence for the user ID in each of these tables
+        community_count = UserCommunity.objects.filter(user=user).count()
+        following_count = Follow.objects.filter(following_user=user).count()
+        followed_count = Follow.objects.filter(followed_user=user).count()
+        post_count = Post.objects.filter(user=user).count()
+        comment_count = Comment.objects.filter(user=user).count()
+        achievement_count = Achievement.objects.filter(user=user).count()
+
+        # Get respone stucture and colour to use for badge
+        data = {
+            "user_id": user_id,
+            "communities_count": {
+                "count": community_count,
+                "badge_level": self.get_badge_level(community_count),
+                "badge_icon": "Users",
+                "badge_title": self.get_badge_title("Community Member", community_count)
+            },
+            "posts_count": {
+                "count": post_count,
+                "badge_level": self.get_badge_level(post_count),
+                "badge_icon": "FileText",
+                "badge_title": self.get_badge_title("Poster", post_count)
+            },
+            "following_count": {
+                "count": following_count,
+                "badge_level": self.get_badge_level(following_count),
+                "badge_icon": "UserPlus",
+                "badge_title": self.get_badge_title("Follower", following_count)
+            },
+            "followed_count": {
+                "count": followed_count,
+                "badge_level": self.get_badge_level(followed_count),
+                "badge_icon": "UserCheck",
+                "badge_title": self.get_badge_title("Popularity", followed_count)
+            },
+            "achievements_count": {
+                "count": achievement_count,
+                "badge_level": self.get_badge_level(achievement_count),
+                "badge_icon": "Star",
+                "badge_title": self.get_badge_title("Achiever", achievement_count)
+            },
+            "comments_count": {
+                "count": comment_count,
+                "badge_level": self.get_badge_level(comment_count),
+                "badge_icon": "MessageCircle",
+                "badge_title": self.get_badge_title("Commenter", comment_count)
+            },
+        }
+
+        return Response(data)
+    
+    # Returns the colour to use for the badge
+    def get_badge_level(self, count):
+        # Return badge level based on count
+        if count < 25:
+            return "muted"
+        elif 25 <= count <= 50:
+            return "success"
+        else:
+            return "info"
+        
+    # Returns the title to display on the badge
+    def get_badge_title(self, badge_title, count):
+        # Return badge title
+        
+        # Append "Beginner", "Intermediate", or "Advanced" based on the count
+        if count < 25:
+            return "Beginner " + badge_title
+        elif 25 <= count <= 50:
+            return "Intermediate " + badge_title
+        else:
+            return "Advanced " + badge_title
