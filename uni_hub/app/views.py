@@ -332,37 +332,31 @@ class ProfileBadgesView(APIView):
         data = {
             "user_id": user_id,
             "communities_count": {
-                "count": community_count,
                 "badge_level": self.get_badge_level(community_count),
                 "badge_icon": "Users",
                 "badge_title": self.get_badge_title("Community Member", community_count)
             },
             "posts_count": {
-                "count": post_count,
                 "badge_level": self.get_badge_level(post_count),
                 "badge_icon": "FileText",
                 "badge_title": self.get_badge_title("Poster", post_count)
             },
             "following_count": {
-                "count": following_count,
                 "badge_level": self.get_badge_level(following_count),
                 "badge_icon": "UserPlus",
                 "badge_title": self.get_badge_title("Follower", following_count)
             },
             "followed_count": {
-                "count": followed_count,
                 "badge_level": self.get_badge_level(followed_count),
                 "badge_icon": "UserCheck",
                 "badge_title": self.get_badge_title("Popularity", followed_count)
             },
             "achievements_count": {
-                "count": achievement_count,
                 "badge_level": self.get_badge_level(achievement_count),
                 "badge_icon": "Star",
                 "badge_title": self.get_badge_title("Achiever", achievement_count)
             },
             "comments_count": {
-                "count": comment_count,
                 "badge_level": self.get_badge_level(comment_count),
                 "badge_icon": "MessageCircle",
                 "badge_title": self.get_badge_title("Commenter", comment_count)
