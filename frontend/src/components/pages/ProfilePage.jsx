@@ -183,17 +183,17 @@ const ProfilePage = () => {
   const renderIcon = (iconName) => {
     switch (iconName) {
       case 'Users':
-        return <Users size={14} />;
+        return <Users size={20} />;
       case 'UserPlus':
-        return <UserPlus size={14} />;
+        return <UserPlus size={20} />;
       case 'UserCheck':
-        return <UserCheck size={14} />;
+        return <UserCheck size={20} />;
       case 'FileText':
-        return <FileText size={14} />;
+        return <FileText size={20} />;
       case 'MessageCircle':
-        return <MessageCircle size={14} />;
+        return <MessageCircle size={20} />;
       case 'Star':
-        return <Star size={14} />;
+        return <Star size={20} />;
       default:
         return;
     }
