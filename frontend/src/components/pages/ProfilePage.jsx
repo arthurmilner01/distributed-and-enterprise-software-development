@@ -505,7 +505,7 @@ const ProfilePage = () => {
                 })}
               </div>
             </div>
-            <p className="text-muted">{fetchedUser.email || "Unknown"}</p>
+            <p className="text-muted">{fetchedUser.university.university_name || "Unknown"}</p>
             <div className="d-flex gap-1">
               <p className="text-muted">Followers: </p>
               <p className="text-primary" style={{ cursor: "pointer", textDecoration: "underline"}} onClick={handleShowFollowers}>
