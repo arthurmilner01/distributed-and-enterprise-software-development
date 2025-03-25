@@ -193,7 +193,14 @@ class PostSerializer(serializers.ModelSerializer):
             return storage.url(obj.user.profile_picture.name)
         return "https://via.placeholder.com/150"
 
+    def validate(self, data):
+        post_text = data.get('post_text', '').strip()
+        image = data.get('image')
 
+        if not post_text and not image:
+            raise serializers.ValidationError("Post must have text or an image.")
+
+        return data
 
 # Serializer for creating a following relationship
 class FollowSerializer(serializers.ModelSerializer):

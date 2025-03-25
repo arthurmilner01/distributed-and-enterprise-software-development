@@ -36,13 +36,19 @@ const DashboardPage = () => {
 
   const handlePostSubmit = async (event) => {
     event.preventDefault();
-
+  
+    // Prevent submission if both text and image are missing
+    if (!newPost.trim() && !newPostImage) {
+      setErrorMessage("Please add text or an image before posting.");
+      return;
+    }
+  
     const formData = new FormData();
     formData.append("post_text", newPost);
     if (newPostImage) {
       formData.append("image", newPostImage);
     }
-
+  
     axios
       .post("http://localhost:8000/api/posts/", formData, {
         headers: {
@@ -53,13 +59,14 @@ const DashboardPage = () => {
       .then((response) => {
         setPosts([response.data, ...posts]);
         setNewPost("");
-        setNewPostImage(null); // Clear selected image
+        setNewPostImage(null);
         setIsModalOpen(false);
       })
       .catch((error) => {
         console.error("Failed to create post:", error);
       });
   };
+  
   // Handles submitting likes on a specific post
   const handleLikeToggle = async (postId) => {
     try {
