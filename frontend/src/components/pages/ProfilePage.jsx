@@ -623,7 +623,8 @@ const ProfilePage = () => {
             <h5 className="card-title">User Posts</h5>
             {userPosts.length > 0 ? (
               <ul className="list-group">
-                {userPosts.map((post) => (
+                {/* Limit to last  5 posts */}
+                {userPosts.slice(0, 5).map((post) => (
                   <li key={post.id} className="list-group-item d-flex align-items-start">
                     {/* Profile Image */}
                     <img
