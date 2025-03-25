@@ -133,6 +133,7 @@ class PostSerializer(serializers.ModelSerializer):
     user_last_name = serializers.CharField(source="user.last_name", read_only=True)
     user_image = serializers.SerializerMethodField() 
     image_url = serializers.SerializerMethodField()
+    like_count = serializers.IntegerField(read_only=True)
     community = serializers.PrimaryKeyRelatedField(
         queryset=Community.objects.all(),
         required=False,
@@ -153,10 +154,10 @@ class PostSerializer(serializers.ModelSerializer):
             "image",             
             "image_url",       
             "created_at",
-            "likes",
+            "like_count",
             "comments",
         ]
-        read_only_fields = ["id", "user", "created_at", "likes", "comments"]
+        read_only_fields = ["id", "user", "created_at", "comments"]
     def get_image_url(self, obj):
         if obj.image:
             storage = S3Boto3Storage()

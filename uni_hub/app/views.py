@@ -424,3 +424,25 @@ def get_community_members(request):
     ]
 
     return Response(users)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def toggle_like(request, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    like, created = PostLike.objects.get_or_create(user=request.user, post=post)
+
+    if not created:
+        like.delete()
+        liked = False
+    else:
+        liked = True
+
+    like_count = PostLike.objects.filter(post=post).count()
+
+    return Response({
+        "liked": liked,
+        "like_count": like_count
+    }, status=status.HTTP_200_OK)

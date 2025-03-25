@@ -136,7 +136,6 @@ s3_storage = S3Boto3Storage()
 class Post(models.Model):
     created_at = models.DateField(auto_now_add=True)
     post_text = models.TextField(null=True, blank=True)
-    likes = models.IntegerField(default=0)
     image = models.ImageField(upload_to='post_images/', storage=s3_storage, null=True, blank=True)
     community = models.ForeignKey(
         Community, on_delete=models.CASCADE, related_name="posts", null=True, blank=True  # Allow global posts
@@ -145,6 +144,24 @@ class Post(models.Model):
 
     def __str__(self):
         return f"Post {self.id} by {self.user.email} {'in ' + self.community.community_name if self.community else ' (Global)'}"
+
+    @property
+    def like_count(self):
+        return self.post_likes.count()  # ✅ Use the related_name from PostLike
+
+    
+# New class M2M relationship for keeping track of likes on posts
+class PostLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="post_likes")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_likes")  
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "post") # Prevent duplicate likes
+
+    def __str__(self):
+        return f"{self.user.email} liked Post {self.post.id}"
+
 
 
 #PinnedPost

@@ -27,4 +27,5 @@ urlpatterns = [
     path("api/user-communities/", UserCommunityListView.as_view(), name="user-communities"),
     path("api/user-badges/", ProfileBadgesView.as_view(), name="user-badges"),
     path("api/community/members/", get_community_members, name="community-members"),
+    path("api/posts/<int:post_id>/toggle-like/", toggle_like, name="toggle-like"),
 ]
