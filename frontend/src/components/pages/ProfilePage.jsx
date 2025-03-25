@@ -223,7 +223,7 @@ const ProfilePage = () => {
           last_name: response.data.last_name || "Unknown",
           bio: response.data.bio || "This user hasn't added a bio...",
           interests: response.data.interests || "This user hasn't added any interests...",
-          profile_picture: response.data.profile_picture || default_profile_picture
+          profile_picture: response.data.profile_picture_url || default_profile_picture
         });
         fetchFollowers(response.data.id);
         fetchFollowing(response.data.id);

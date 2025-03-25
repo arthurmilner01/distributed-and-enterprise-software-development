@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -212,6 +213,6 @@ AWS_STORAGE_BUCKET_NAME = "uni-hub-pictures"
 AWS_S3_REGION_NAME = "us-east-1"
 
 
-AWS_S3_CUSTOM_DOMAIN = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
 MEDIA_URL = f"{AWS_S3_CUSTOM_DOMAIN}/"

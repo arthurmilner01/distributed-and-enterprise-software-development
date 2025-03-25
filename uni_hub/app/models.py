@@ -123,11 +123,15 @@ class Event(models.Model):
 
     def __str__(self):
         return self.event_name
+    
+from storages.backends.s3boto3 import S3Boto3Storage
+s3_storage = S3Boto3Storage()
 
 class Post(models.Model):
     created_at = models.DateField(auto_now_add=True)
     post_text = models.TextField(null=True, blank=True)
     likes = models.IntegerField(default=0)
+    image = models.ImageField(upload_to='post_images/', storage=s3_storage, null=True, blank=True)
     community = models.ForeignKey(
         Community, on_delete=models.CASCADE, related_name="posts", null=True, blank=True  # Allow global posts
     )

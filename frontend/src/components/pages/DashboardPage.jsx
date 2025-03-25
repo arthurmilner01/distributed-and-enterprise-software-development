@@ -13,6 +13,7 @@ const DashboardPage = () => {
   const [newComment, setNewComment] = useState({});
   const api = useApi();
   const [expandedPost, setExpandedPost] = useState(null);
+  const [newPostImage, setNewPostImage] = useState(null);
 
   const fetchPosts = async () => {
     try {
@@ -35,21 +36,31 @@ const DashboardPage = () => {
 
   const handlePostSubmit = async (event) => {
     event.preventDefault();
+
+    const formData = new FormData();
+    formData.append("post_text", newPost);
+    if (newPostImage) {
+      formData.append("image", newPostImage);
+    }
+
     axios
-      .post(
-        "http://localhost:8000/api/posts/",
-        { post_text: newPost },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      )
+      .post("http://localhost:8000/api/posts/", formData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data"
+        }
+      })
       .then((response) => {
         setPosts([response.data, ...posts]);
         setNewPost("");
+        setNewPostImage(null); // Clear selected image
         setIsModalOpen(false);
       })
       .catch((error) => {
         console.error("Failed to create post:", error);
       });
   };
+
 
   const handleCommentSubmit = async (event, postId) => {
     event.preventDefault();
@@ -85,7 +96,40 @@ const DashboardPage = () => {
           value={newPost}
           onChange={(e) => setNewPost(e.target.value)}
         />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <label htmlFor="photoInput" style={{
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: "#f0f2f5",
+            border: "none",
+            borderRadius: "5px",
+            padding: "8px 12px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: "500"
+          }}>
+            📷 Photo
+          </label>
+          <input
+            type="file"
+            id="photoInput"
+            accept="image/*"
+            onChange={(e) => setNewPostImage(e.target.files[0])}
+            style={{ display: "none" }}
+          />
+        </div>
+
+
         <button className="post-btn" style={{ background: "#4267B2", color: "#fff", padding: "8px 16px", border: "none", borderRadius: "5px", cursor: "pointer" }} onClick={handlePostSubmit}>Post</button>
+        {newPostImage && (
+          <div style={{ marginBottom: "10px" }}>
+            <img
+              src={URL.createObjectURL(newPostImage)}
+              alt="Selected"
+              style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "8px" }}
+            />
+          </div>
+        )}
       </div>
 
       <div>
@@ -103,7 +147,13 @@ const DashboardPage = () => {
               </div>
             </div>
             <p>{post.post_text}</p>
-
+            {post.image_url && (
+              <img
+                src={post.image_url}
+                alt="Post"
+                style={{ maxWidth: "100%", borderRadius: "8px", marginTop: "10px" }}
+              />
+            )}
             <div className="comment-section">
               <h6>Comments</h6>
               {post.comments?.length > 0 ? (
