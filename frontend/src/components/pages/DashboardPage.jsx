@@ -14,6 +14,7 @@ const DashboardPage = () => {
   const api = useApi();
   const [expandedPost, setExpandedPost] = useState(null);
   const [newPostImage, setNewPostImage] = useState(null);
+  const [newPostVideo, setNewPostVideo] = useState(null);
 
   const fetchPosts = async () => {
     try {
@@ -36,19 +37,19 @@ const DashboardPage = () => {
 
   const handlePostSubmit = async (event) => {
     event.preventDefault();
-  
+
     // Prevent submission if both text and image are missing
     if (!newPost.trim() && !newPostImage) {
       setErrorMessage("Please add text or an image before posting.");
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("post_text", newPost);
     if (newPostImage) {
       formData.append("image", newPostImage);
     }
-  
+
     axios
       .post("http://localhost:8000/api/posts/", formData, {
         headers: {
@@ -66,7 +67,7 @@ const DashboardPage = () => {
         console.error("Failed to create post:", error);
       });
   };
-  
+
   // Handles submitting likes on a specific post
   const handleLikeToggle = async (postId) => {
     try {
@@ -74,10 +75,10 @@ const DashboardPage = () => {
       const updatedPosts = posts.map((post) =>
         post.id === postId
           ? {
-              ...post,
-              liked_by_user: response.data.liked,
-              like_count: response.data.like_count,
-            }
+            ...post,
+            liked_by_user: response.data.liked,
+            like_count: response.data.like_count,
+          }
           : post
       );
       setPosts(updatedPosts);
@@ -85,7 +86,7 @@ const DashboardPage = () => {
       console.error("Error toggling like:", error);
     }
   };
-  
+
   const handleCommentSubmit = async (event, postId) => {
     event.preventDefault();
     if (!newComment[postId] || newComment[postId].trim() === "") return;
@@ -110,11 +111,11 @@ const DashboardPage = () => {
   return (
     <div className="container" style={{ maxWidth: "800px", margin: "20px auto" }}>
       <h2>Welcome, {user.first_name || "User"}!</h2>
-  
+
       {errorMessage && (
         <div className="alert alert-danger mt-3">{errorMessage}</div>
       )}
-  
+
       {/* Create Post Section */}
       <div
         className="create-post mb-4"
@@ -133,9 +134,10 @@ const DashboardPage = () => {
           onChange={(e) => setNewPost(e.target.value)}
         />
         <div className="d-flex align-items-center gap-2 mb-2">
+          {/* Photo Upload Button */}
           <label
             htmlFor="photoInput"
-            className="btn btn-light border"
+            className="btn btn-light  border"
             style={{ fontWeight: 500 }}
           >
             📷 Photo
@@ -147,7 +149,24 @@ const DashboardPage = () => {
             onChange={(e) => setNewPostImage(e.target.files[0])}
             style={{ display: "none" }}
           />
+
+          {/* Video Upload Button */}
+          <label
+            htmlFor="videoInput"
+            className="btn btn-light  border"
+            style={{ fontWeight: 500 }}
+          >
+            🎥 Video
+          </label>
+          <input
+            type="file"
+            id="videoInput"
+            accept="video/*"
+            onChange={(e) => setNewPostVideo(e.target.files[0])}
+            style={{ display: "none" }}
+          />
         </div>
+
         {newPostImage && (
           <div className="mb-2">
             <img
@@ -159,7 +178,7 @@ const DashboardPage = () => {
         )}
         <button className="btn btn-primary" onClick={handlePostSubmit}>Post</button>
       </div>
-  
+
       {/* Posts Section */}
       <div>
         {posts.length === 0 ? (
@@ -191,9 +210,9 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-  
+
               <p>{post.post_text}</p>
-  
+
               {post.image_url && (
                 <img
                   src={post.image_url}
@@ -206,7 +225,7 @@ const DashboardPage = () => {
                   }}
                 />
               )}
-  
+
               {/* Like Button and Count */}
               <div className="d-flex align-items-center mb-3">
                 <button
@@ -226,7 +245,7 @@ const DashboardPage = () => {
                   {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
                 </span>
               </div>
-  
+
               {/* Comments Section */}
               <div className="comment-section">
                 <h6>Comments</h6>
@@ -263,7 +282,7 @@ const DashboardPage = () => {
                   <p className="text-muted">No comments yet.</p>
                 )}
               </div>
-  
+
               {/* Add Comment */}
               <form
                 onSubmit={(e) => handleCommentSubmit(e, post.id)}
@@ -292,6 +311,7 @@ const DashboardPage = () => {
         )}
       </div>
     </div>
-  )}
+  )
+}
 export default DashboardPage;
-  
+

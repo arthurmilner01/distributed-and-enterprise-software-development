@@ -147,7 +147,7 @@ class Post(models.Model):
 
     @property
     def like_count(self):
-        return self.post_likes.count()  # ✅ Use the related_name from PostLike
+        return self.post_likes.count() 
 
     
 # New class M2M relationship for keeping track of likes on posts
