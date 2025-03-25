@@ -55,6 +55,12 @@ const CommunityPage = () => {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [communityMembers, setCommunityMembers] = useState([]);
 
+  // For changing user roles within a communtity 
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedMember, setSelectedMember] = useState("");
+
+
   const fetchCommunityMembers = async () => {
     try {
       const res = await api.get(`/api/community/members/?community_id=${community.id}`);
@@ -404,6 +410,27 @@ const CommunityPage = () => {
     }
   };
 
+  // Create role update for user 
+  const handleRoleUpdate = async () => {
+    try {
+      await api.post(`/api/communities/${community.id}/update-role/`, {
+        user_id: selectedUserId,
+        role: selectedRole,
+      });
+
+      setSuccessMessage("Role updated!");
+      setShowRoleModal(false);
+      fetchCommunityMembers(); // Refresh roles
+
+    } catch (error) {
+      console.error("Error updating role:", error);
+      setErrorMessage("Failed to update role.");
+      console.log("Member Roles:", communityMembers);
+
+    }
+  };
+
+
 
   if (!community) {
     return (
@@ -526,7 +553,16 @@ const CommunityPage = () => {
                 <button className="btn btn-warning" onClick={() => setShowTransferModal(true)}>
                   Transfer Ownership
                 </button>
+
+
               )}
+              {isLeader && (
+                <Button variant="secondary" onClick={() => setShowRoleModal(true)} className="mx-2">
+                  Manage Roles
+                </Button>
+              )}
+
+
 
 
             </>
@@ -769,6 +805,58 @@ const CommunityPage = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Assign Role</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select a member and their new role:</p>
+
+          <div className="mb-3">
+            <label>User</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="form-select"
+            >
+              <option value="">-- Select Member --</option>
+              {communityMembers
+                .filter((member) => member.role?.toLowerCase() !== "leader") // filter out leader
+                .map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.first_name} {member.last_name} ({member.role || "No Role"})
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label>Role</label>
+            <select
+              className="form-control"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+            >
+              <option value="">-- Select Role --</option>
+              <option value="Member">Member</option>
+              <option value="Moderator">Moderator</option>
+              <option value="EventManager">Event Manager</option>
+            </select>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRoleModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleRoleUpdate} disabled={!selectedUserId || !selectedRole}>
+            Update Role
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
 
 
       <Modal show={requestModalShowHide} onHide={closeFollowRequestsModal}>

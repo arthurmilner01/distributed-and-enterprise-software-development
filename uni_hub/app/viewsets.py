@@ -515,7 +515,6 @@ class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-
     def get_queryset(self):
         """
         Customize the queryset based on query parameters.
@@ -598,6 +597,33 @@ class CommunityViewSet(viewsets.ModelViewSet):
         membership.save()
 
         return Response({"success": "Ownership transferred successfully."}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["POST"], url_path="update-role")
+    def update_role(self, request, pk=None):
+        community = self.get_object()
+        user_id = request.data.get("user_id")
+        new_role = request.data.get("role")
+        COMMUNITY_ROLES = (
+            ("Leader", "Leader"),
+            ("EventManager", "Event Manager"),
+            ("Moderator", "Moderator"),
+            ("Member", "Member"),
+            )
+        if community.is_community_owner != request.user:
+            return Response({"error": "Only the leader can update roles."}, status=403)
+
+        try:
+            user_community = UserCommunity.objects.get(community=community, user__id=user_id)
+        except UserCommunity.DoesNotExist:
+            return Response({"error": "User is not a member of this community."}, status=404)
+
+        if new_role not in dict(COMMUNITY_ROLES):
+            return Response({"error": "Invalid role."}, status=400)
+
+        user_community.role = new_role
+        user_community.save()
+
+        return Response({"success": "Role updated successfully."})
 
 class AchievementViewSet(viewsets.ModelViewSet):
     serializer_class = AchievementSerializer

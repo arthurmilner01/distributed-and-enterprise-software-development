@@ -401,10 +401,26 @@ class ProfileBadgesView(APIView):
 def get_community_members(request):
     community_id = request.query_params.get("community_id")
 
+    # If fetching from a community that doesnt exist throw an error
     if not community_id:
         return Response({"error": "Missing community_id"}, status=400)
 
-    members = UserCommunity.objects.filter(community__id=community_id).select_related("user")
-    users = [uc.user for uc in members]
-    serialized = UserFollowerSerializer(users, many=True, context={"request": request})
-    return Response(serialized.data)
+    members = UserCommunity.objects.filter(
+        community__id=community_id
+    ).select_related("user")
+
+    users = [
+        {
+            "id": uc.user.id,
+            "first_name": uc.user.first_name,
+            "last_name": uc.user.last_name,
+            "profile_picture": uc.user.profile_picture.url if uc.user.profile_picture else None,
+            "is_following": Follow.objects.filter(
+                following_user=request.user, followed_user=uc.user
+            ).exists(),
+            "role": uc.role # Display users role for drop down list
+        }
+        for uc in members
+    ]
+
+    return Response(users)

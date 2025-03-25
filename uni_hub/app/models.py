@@ -93,6 +93,12 @@ class CommunityKeyword(models.Model):
 
 #Junction table for Users and Communities (Many to many)
 class UserCommunity(models.Model):
+    COMMUNITY_ROLES = (
+    ("Leader", "Leader"),
+    ("EventManager", "Event Manager"),
+    ("Moderator", "Moderator"),
+    ("Member", "Member"),
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_communities")
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="user_communities")
     joined_at = models.DateTimeField(auto_now_add=True) 
