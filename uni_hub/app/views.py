@@ -394,3 +394,17 @@ class ProfileBadgesView(APIView):
             return "Intermediate " + badge_title
         else:
             return "Advanced " + badge_title
+
+# Gets all users within a community 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_community_members(request):
+    community_id = request.query_params.get("community_id")
+
+    if not community_id:
+        return Response({"error": "Missing community_id"}, status=400)
+
+    members = UserCommunity.objects.filter(community__id=community_id).select_related("user")
+    users = [uc.user for uc in members]
+    serialized = UserFollowerSerializer(users, many=True, context={"request": request})
+    return Response(serialized.data)

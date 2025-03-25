@@ -246,7 +246,26 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
             return Response({"success": "Successfully left the community."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
+        
+    # Request to transfer ownership of a community 
+    @action(detail=True, methods=["POST"], url_path="transfer-ownership")
+    def transfer_ownership(self, request, pk=None):
+        new_owner_id = request.data.get("new_owner_id")
+        community = self.get_object()
+
+        if community.is_community_owner != request.user:
+            return Response({"error": "Only the current owner can transfer ownership."}, status=403)
+
+        try:
+            new_owner = User.objects.get(id=new_owner_id)
+            UserCommunity.objects.filter(user=new_owner, community=community).update(role="Leader")
+            UserCommunity.objects.filter(user=request.user, community=community).update(role="Member")
+            community.is_community_owner = new_owner
+            community.save()
+            return Response({"success": "Ownership transferred."})
+        except User.DoesNotExist:
+            return Response({"error": "New owner user not found."}, status=404)  
+              
     # Requests to follow a community
     @action(detail=False, methods=["POST"])
     def request_follow(self, request):
@@ -548,6 +567,37 @@ class CommunityViewSet(viewsets.ModelViewSet):
     def get_serializer_context(self):
         #Pass the request to the serializer to access request.user in create()
         return {"request": self.request}
+    
+    @action(detail=True, methods=["POST"], url_path="transfer-ownership")
+    def transfer_ownership(self, request, pk=None):
+        community = self.get_object()
+        new_owner_id = request.data.get("new_owner_id")
+
+        # Only current owner can transfer ownership
+        if community.is_community_owner != request.user:
+            return Response({"error": "You are not the owner of this community."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            new_owner = User.objects.get(id=new_owner_id)
+        except User.DoesNotExist:
+            return Response({"error": "New owner not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Make sure the new owner is a current member
+        try:
+            membership = UserCommunity.objects.get(user=new_owner, community=community)
+        except UserCommunity.DoesNotExist:
+            return Response({"error": "Selected user is not a member of the community."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Transfer ownership
+        community.is_community_owner = new_owner
+        community.save()
+
+        # Update roles
+        UserCommunity.objects.filter(user=request.user, community=community).update(role="Member")
+        membership.role = "Leader"
+        membership.save()
+
+        return Response({"success": "Ownership transferred successfully."}, status=status.HTTP_200_OK)
 
 class AchievementViewSet(viewsets.ModelViewSet):
     serializer_class = AchievementSerializer

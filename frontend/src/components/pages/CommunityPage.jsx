@@ -50,6 +50,28 @@ const CommunityPage = () => {
   const [requestErrorMessage, setRequestErrorMessage] = useState("")
   const [requestSuccessMessage, setRequestSuccessMessage] = useState("")
 
+  // For transfer ownership modal
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [communityMembers, setCommunityMembers] = useState([]);
+
+  const fetchCommunityMembers = async () => {
+    try {
+      const res = await api.get(`/api/community/members/?community_id=${community.id}`);
+      setCommunityMembers(res.data);
+    } catch (err) {
+      console.error("Failed to load community members", err);
+    }
+  };
+
+  useEffect(() => {
+    if (community?.id) {
+      fetchCommunityMembers();
+    }
+  }, [community?.id]);
+
+
+
   // To control modal show/hide
   const openFollowRequestsModal = () => {
     if (isLeader) {
@@ -175,26 +197,26 @@ const CommunityPage = () => {
       });
       console.log("User follows community?", isFollowedCommunity);
       setIsMember(isFollowedCommunity);
-  } catch (error) {
+    } catch (error) {
       console.error("Error fetching communiy requests:", error);
       setErrorMessage("Failed to fetch users community requests.");
-  }
+    }
   };
-  
+
   // 5) Fetch users outgoing community requests
   const fetchUserCommunityRequests = async () => {
     try {
-        const response = await api.get("api/communityfollow/follow_requests/");
-        console.log("Request response", response);
-        // Search if viewed community id is found in community request data for logged in user
-        const isRequestedCommunity = response.data.some(community => {
-          return parseInt(community.id) === parseInt(communityId);
-        });
-        console.log("User has outgoing request?", isRequestedCommunity);
-        setIsRequested(isRequestedCommunity);
+      const response = await api.get("api/communityfollow/follow_requests/");
+      console.log("Request response", response);
+      // Search if viewed community id is found in community request data for logged in user
+      const isRequestedCommunity = response.data.some(community => {
+        return parseInt(community.id) === parseInt(communityId);
+      });
+      console.log("User has outgoing request?", isRequestedCommunity);
+      setIsRequested(isRequestedCommunity);
     } catch (error) {
-        console.error("Error fetching communiy requests:", error);
-        setErrorMessage("Failed to fetch users community requests.");
+      console.error("Error fetching communiy requests:", error);
+      setErrorMessage("Failed to fetch users community requests.");
     }
   }
 
@@ -297,7 +319,7 @@ const CommunityPage = () => {
       } else {
         setErrorMessage("Failed to leave the community. Please try again.");
       }
-  
+
       setSuccessMessage("");
     }
   };
@@ -305,33 +327,59 @@ const CommunityPage = () => {
   // Join a community
   const handleJoinCommunity = async (communityId) => {
     try {
-        const response = await api.post(`api/communityfollow/follow/`, { community_id: communityId });
-        setSuccessMessage("Successfully joined the community.");
-        setErrorMessage("");
-        // Refresh user community data
-        fetchMembership();
-        fetchUserCommunityRequests();
+      const response = await api.post(`api/communityfollow/follow/`, { community_id: communityId });
+      setSuccessMessage("Successfully joined the community.");
+      setErrorMessage("");
+      // Refresh user community data
+      fetchMembership();
+      fetchUserCommunityRequests();
     } catch (error) {
-        console.error("Error joining community:", error);
-        setErrorMessage("Failed to join community. Please try again.");
-        setSuccessMessage("");
+      console.error("Error joining community:", error);
+      setErrorMessage("Failed to join community. Please try again.");
+      setSuccessMessage("");
     }
   };
 
   // Request to join a private community
   const handleRequestToJoin = async (communityId) => {
-      try {
-          const response = await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
-          setSuccessMessage("Request to join the community sent.");
-          setErrorMessage("");
-          // Refresh user community data
-          fetchMembership();
-          fetchUserCommunityRequests();
-      } catch (error) {
-          console.error("Error requesting to join community:", error);
-          setErrorMessage("Failed to request to join the community. Please try again.");
-          setSuccessMessage("");
+    try {
+      const response = await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
+      setSuccessMessage("Request to join the community sent.");
+      setErrorMessage("");
+      // Refresh user community data
+      fetchMembership();
+      fetchUserCommunityRequests();
+    } catch (error) {
+      console.error("Error requesting to join community:", error);
+      setErrorMessage("Failed to request to join the community. Please try again.");
+      setSuccessMessage("");
+    }
+  };
+  const handleTransferOwnership = async () => {
+    if (!selectedUserId) {
+      alert("Please select a new owner.");
+      return;
+    }
+
+    try {
+      await api.post(`/api/communities/${community.id}/transfer-ownership/`, {
+        new_owner_id: selectedUserId,
+      });
+
+      setSuccessMessage("Ownership transferred successfully.");
+      setShowTransferModal(false);
+      window.location.reload();
+
+
+      // Optional: refresh community details if you have this function
+      if (typeof fetchCommunityDetails === "function") {
+        fetchCommunityDetails();
       }
+
+    } catch (error) {
+      console.error("Transfer failed:", error);
+      setErrorMessage("Failed to transfer ownership.");
+    }
   };
 
   // Cancel join request
@@ -355,6 +403,7 @@ const CommunityPage = () => {
       setSuccessMessage(""); // Reset success message on error
     }
   };
+
 
   if (!community) {
     return (
@@ -441,8 +490,8 @@ const CommunityPage = () => {
                 <strong>Privacy:</strong> {community.privacy}
               </p>
               {isLeader && (
-                <p className="text-primary" style={{ cursor: "pointer", textDecoration: "none"}} onClick={openFollowRequestsModal}>
-                 Approve/deny join requests
+                <p className="text-primary" style={{ cursor: "pointer", textDecoration: "none" }} onClick={openFollowRequestsModal}>
+                  Approve/deny join requests
                 </p>
               )}
               {isLeader && (
@@ -452,7 +501,11 @@ const CommunityPage = () => {
               )}
 
               {isMember ? (
-                <Button onClick={() => handleLeaveCommunity(community.id)} variant="danger">
+                <Button
+                  onClick={() => handleLeaveCommunity(community.id)}
+                  variant="danger"
+                  className="mx-2"
+                >
                   Leave Community
                 </Button>
               ) : isRequested ? (
@@ -467,7 +520,14 @@ const CommunityPage = () => {
                 <Button onClick={() => handleRequestToJoin(community.id)} variant="warning">
                   Request to Join
                 </Button>
+              )
+              }
+              {isLeader && (
+                <button className="btn btn-warning" onClick={() => setShowTransferModal(true)}>
+                  Transfer Ownership
+                </button>
               )}
+
 
             </>
           )}
@@ -679,6 +739,37 @@ const CommunityPage = () => {
           </div>
         </div>
       )}
+      <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Transfer Ownership</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select a new community leader:</p>
+          <select
+            className="form-control"
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+          >
+            <option value="">-- Select Member --</option>
+            {communityMembers
+              .filter((member) => member.id !== user.id)
+              .map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.first_name} {member.last_name}
+                </option>
+              ))}
+          </select>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowTransferModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleTransferOwnership} disabled={!selectedUserId}>
+            Confirm Transfer
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
 
       <Modal show={requestModalShowHide} onHide={closeFollowRequestsModal}>
         <Modal.Header closeButton>
@@ -693,22 +784,22 @@ const CommunityPage = () => {
                     src={request.user_details.profile_picture || default_profile_picture}
                     alt="Profile"
                     className="rounded-circle me-2"
-                    style={{ width: "50px", height: "50px", margin:"10px" }}
+                    style={{ width: "50px", height: "50px", margin: "10px" }}
                   />
                   <div>
                     <strong>{request.user_details.first_name} </strong>
                     <strong>{request.user_details.last_name}</strong>
                   </div>
                   <div>
-                    <Button 
-                      className="btn btn-success me-2" 
+                    <Button
+                      className="btn btn-success me-2"
                       onClick={() => handleApproveRequest(request.id)}
                     >
                       <CheckCircle size={20} />
                     </Button>
 
-                    <Button 
-                      className="btn btn-danger" 
+                    <Button
+                      className="btn btn-danger"
                       onClick={() => handleDenyRequest(request.id)}
                     >
                       <XCircle size={20} />
@@ -722,9 +813,9 @@ const CommunityPage = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-            {requestErrorMessage && <div className="alert alert-danger">{requestErrorMessage}</div>}
-            {requestSuccessMessage && <div className="alert alert-success">{requestSuccessMessage}</div>}
-          </Modal.Footer>
+          {requestErrorMessage && <div className="alert alert-danger">{requestErrorMessage}</div>}
+          {requestSuccessMessage && <div className="alert alert-success">{requestSuccessMessage}</div>}
+        </Modal.Footer>
       </Modal>
     </div>
   );
