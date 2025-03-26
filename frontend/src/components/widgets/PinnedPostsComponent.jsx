@@ -33,6 +33,7 @@ const PinnedPostsComponent = ({ pinnedPosts, isLeader, onUnpin }) => {
             <li 
               key={pinnedPost.id} 
               className="list-group-item d-flex align-items-start"
+              style={{ borderLeft: '4px solid #FFC107' }}
             >
               <img
                 src={pinnedPost.user_image || default_profile_picture}
