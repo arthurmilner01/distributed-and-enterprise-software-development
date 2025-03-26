@@ -217,6 +217,10 @@ class GlobalPostListCreateView(generics.ListCreateAPIView):
         queryset = Post.objects.all().order_by("-created_at")
         community_id = self.request.query_params.get("community")  # Get query param
 
+        # If requesting to fetch all community posts except global community
+        if community_id == "all":
+            return queryset.exclude(community__community_name="Global Community (News Feed)")
+
         if community_id:
             return queryset.filter(community_id=community_id)
 

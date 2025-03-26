@@ -7,7 +7,9 @@ import axios from "axios";
 const DashboardPage = () => {
   const { user, accessToken, loading } = useAuth();
   const [posts, setPosts] = useState([]);
+  // Stores all posts under the global community
   const [userPosts, setUserPosts] = useState([]);
+  // Stores community posts to be filtered by user's joined communities
   const [communityPosts, setCommunityPosts] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [newPost, setNewPost] = useState("");
@@ -23,6 +25,9 @@ const DashboardPage = () => {
   const [userFollowing, setUserFollowing] = useState([]);
   // Stores user's communities for filtering posts
   const [userCommunities, setUserCommunities] = useState([]);
+  // Stores filtered community posts
+  const [filteredCommunityPosts, setFilteredCommunityPosts] = useState([]);
+
 
 
 
@@ -39,22 +44,27 @@ const DashboardPage = () => {
     }
   };
 
+  // Fetch all community posts
   const fetchCommunityPosts = async () => {
+    // "all" param returns all community posts except global community
     try {
-      const response = await api.get("api/posts/");
-      const data = response.data.results ? response.data.results : response.data;
-      setPosts(Array.isArray(data) ? data : []);
-      console.log("Posts:", posts);
+      const response = await api.get("api/posts/", {
+        params: { community: "all" },
+      });      
+      setCommunityPosts(response.data);
+      console.log("Community Posts:", communityPosts);
     } catch (error) {
-      console.error("Error fetching posts:", error);
-      setErrorMessage("Failed to fetch posts.");
+      console.error("Error fetching community posts:", error);
+      setErrorMessage("Failed to fetch community posts.");
       setPosts([]);
     }
   };
 
+  // Get list of user's following, used to filter posts
   const fetchFollowingList = async () => {
     try {
       const response = await api.get(`api/follow/following`);
+      // Return only the user IDs
       const followingUserIds = response.data.map(user => user.id);
       setUserFollowing(followingUserIds);
       console.log("Following IDs:", userFollowing);
@@ -63,10 +73,12 @@ const DashboardPage = () => {
     }
   };
 
+  // Get list of user's communities, used to filter community posts
   const fetchCommunityList = async () => {
     try {
       const response = await api.get(`api/communityfollow/user_communities_list`);
-      const followingCommunityIDs = response.data.map(community => community.id);
+      // Return only the community IDs
+      const followingCommunityIDs = response.data.map(community => community.community_id);
       setUserCommunities(followingCommunityIDs);
       console.log("Community Following IDs:", followingCommunityIDs);
 
@@ -83,27 +95,39 @@ const DashboardPage = () => {
     }
   }, [currentTab]);
 
+  useEffect(() => {
+    if (currentTab === "community-posts") {
+      fetchCommunityPosts();
+    }
+  }, [currentTab]);
+
   // Update user following posts when the "user-posts" tab is set to active
   // And when posts changes
   useEffect(() => {
     if (currentTab === "user-posts") {
       if (posts.length > 0 && userFollowing.length > 0) {
+        // Filter by following IDs
         const filteredPosts = posts.filter((post) => userFollowing.includes(post.user));
         setUserPosts(filteredPosts);
         console.log("User Posts:", userPosts);
       }
     }
-  }, [currentTab, posts]);
+  }, [currentTab, posts, userFollowing]);
 
   // Fetch community posts on community-posts tab
   useEffect(() => {
     if (currentTab === "community-posts") {
-      fetchCommunityPosts();
+      if (communityPosts.length > 0 && userCommunities.length > 0) {
+        // Filter by community IDs
+        const filteredPosts = communityPosts.filter((communityPost) => userCommunities.includes(communityPost.community));
+        setFilteredCommunityPosts(filteredPosts);
+      }
     }
-  }, [currentTab, posts]);
+  }, [currentTab, communityPosts, userCommunities]);
 
   useEffect(() => {
     fetchPosts();
+    fetchCommunityPosts();
     fetchFollowingList();
     fetchCommunityList();
   }, []);
@@ -557,7 +581,42 @@ const DashboardPage = () => {
         <div className="tab-pane fade show active">
           {/* Community Posts Section */}
           <div>
-            Community Posts
+            <div className="card shadow-sm mb-4">
+              <div className="card-body">
+                {filteredCommunityPosts && filteredCommunityPosts.length > 0 ? (
+                  <ul className="list-group">
+                    {filteredCommunityPosts.map((communityPost) => (
+                      <li key={communityPost.id} className="list-group-item d-flex align-items-start">
+                        <img
+                          src={communityPost.user_image || default_profile_picture}
+                          alt="User Avatar"
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            marginRight: "15px",
+                            border: "2px solid #ddd",
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <h5>
+                            {communityPost.user_name} {communityPost.user_last_name}
+                          </h5>
+                          <p>{communityPost.post_text}</p>
+                          <small>{new Date(communityPost.created_at).toLocaleDateString()}</small>
+                        </div>
+                        <button className="btn btn-outline-danger" style={{ marginLeft: "auto" }}>
+                          ❤️ {communityPost.likes}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No community posts yet.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
         )}
