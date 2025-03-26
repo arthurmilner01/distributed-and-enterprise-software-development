@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
-import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star } from "lucide-react";
+import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star, Trash } from "lucide-react";
 import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
@@ -106,7 +106,7 @@ const ProfilePage = () => {
   // When user adds an achievement
   const handleAddAchievement = async () =>{
     try {
-      // IF any fields left blank set error and return
+      // If any fields left blank set error and return
       if (!newAchievementTitle || !newAchievementDate || !newAchievementDescription) {
         setAchievementErrorMessage("Achievements must have a title, description, and date.");
         return;
@@ -132,6 +132,21 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Error adding achievement:", error);
       setAchievementErrorMessage("Failed to add achievement. Please try again.");
+    }
+  }
+
+  const handleDeleteAchievement = async (achievementID) =>{
+    try {
+      // Delete on passed ID
+      await api.delete(`api/achievements/${achievementID}/`);
+      
+      // Update achievements list
+      fetchAchievements();
+      setAchievementSuccessMessage("Achievement removed.");
+      setAchievementErrorMessage("");
+    } catch (error) {
+      console.error("Error removing achievement:", error);
+      setAchievementErrorMessage("Failed to remove achievement. Please try again.");
     }
   }
 
@@ -727,6 +742,14 @@ const ProfilePage = () => {
                         <div className="d-flex justify-content-between align-items-center">
                           <strong className="fs-5">{achievement.title}</strong>
                           <span className="text-muted small">Date Achieved: {achievement.date_achieved}</span>
+                          {isOwner && (
+                            <button
+                              className="btn btn-outline-danger btn-sm mt-2"
+                              onClick={() => handleDeleteAchievement(achievement.id)}
+                            >
+                              <Trash size={20} />
+                            </button>
+                          )}
                         </div>
                         <p className="mb-1 text-secondary">{achievement.description}</p>
                       </li>
