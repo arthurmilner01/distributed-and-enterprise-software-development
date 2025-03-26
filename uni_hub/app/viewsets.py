@@ -696,7 +696,19 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
             
-                  
+        # Check if user is community leader
+        if community.is_community_owner != request.user:
+            return Response(
+                {"error": "Only community leaders can pin posts."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Check if post belongs to the community
+        if post.community != community:
+            return Response(
+                {"error": "This post does not belong to the specified community."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
             
         # Check if post is already pinned
         if PinnedPost.objects.filter(post=post).exists():
@@ -705,6 +717,13 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
+        # Check if community already has 3 pinned posts
+        pinned_count = PinnedPost.objects.filter(community=community).count()
+        if pinned_count >= 3:
+            return Response(
+                {"error": "A community can have at most 3 pinned posts. Please unpin a post before pinning another."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
             
         # Create pinned post
         pinned_post = PinnedPost.objects.create(
@@ -736,7 +755,13 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
             
-                    
+        # Check if user is community leader
+        if pinned_post.community.is_community_owner != request.user:
+            return Response(
+                {"error": "Only community leaders can unpin posts."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
         # Delete pinned post
         pinned_post.delete()
         return Response(
