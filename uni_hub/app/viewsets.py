@@ -654,3 +654,92 @@ class AchievementViewSet(viewsets.ModelViewSet):
         if achievement.user != request.user:
             return Response({"error": "You can only delete your own achievements."}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
+
+
+
+class PinnedPostViewSet(viewsets.ModelViewSet):
+    """
+    Viewset for managing pinned posts in communities.
+    Community leaders can pin/unpin posts.
+    """
+    serializer_class = PinnedPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Fetch pinned posts for a specific community.
+        """
+        community_id = self.request.query_params.get('community_id')
+        if community_id:
+            return PinnedPost.objects.filter(community_id=community_id).order_by('pinned_at')
+        return PinnedPost.objects.none()
+    
+    @action(detail=False, methods=["POST"])
+    def pin_post(self, request):
+        community_id = request.data.get('community_id')
+        post_id = request.data.get('post_id')
+        
+        # Validate input
+        if not community_id or not post_id:
+            return Response(
+                {"error": "Both community_id and post_id are required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Get community and post
+        try:
+            community = Community.objects.get(id=community_id)
+            post = Post.objects.get(id=post_id)
+        except (Community.DoesNotExist, Post.DoesNotExist):
+            return Response(
+                {"error": "Community or Post not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+                  
+            
+        # Check if post is already pinned
+        if PinnedPost.objects.filter(post=post).exists():
+            return Response(
+                {"error": "This post is already pinned."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+            
+        # Create pinned post
+        pinned_post = PinnedPost.objects.create(
+            post=post,
+            community=community,
+            pinned_by=request.user
+        )
+        
+        serializer = PinnedPostSerializer(pinned_post)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=["DELETE"])
+    def unpin_post(self, request):
+        post_id = request.query_params.get('post_id')
+        
+        # Validate input
+        if not post_id:
+            return Response(
+                {"error": "post_id is required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Get pinned post
+        try:
+            pinned_post = PinnedPost.objects.get(post_id=post_id)
+        except PinnedPost.DoesNotExist:
+            return Response(
+                {"error": "Pinned post not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+                    
+        # Delete pinned post
+        pinned_post.delete()
+        return Response(
+            {"success": "Post unpinned successfully."}, 
+            status=status.HTTP_204_NO_CONTENT
+        )

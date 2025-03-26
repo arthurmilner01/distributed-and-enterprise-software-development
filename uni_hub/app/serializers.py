@@ -399,3 +399,28 @@ class AchievementSerializer(serializers.ModelSerializer):
         # No user because auto assigned by perform_create
         model = Achievement
         fields = ['id', 'title', 'description', 'date_achieved']
+
+
+
+class PinnedPostSerializer(serializers.ModelSerializer):
+    post_text = serializers.CharField(source='post.post_text', read_only=True)
+    user_name = serializers.CharField(source='post.user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='post.user.last_name', read_only=True)
+    user_image = serializers.SerializerMethodField()
+    post_created_at = serializers.DateField(source='post.created_at', read_only=True)  
+    post_id = serializers.IntegerField(source='post.id', read_only=True)
+
+    class Meta:
+        model = PinnedPost
+        fields = [
+            'id', 'post_id', 'post_text', 'user_name', 'user_last_name', 
+            'user_image', 'pinned_at', 'post_created_at'
+        ]
+        read_only_fields = ['id', 'pinned_at']
+        
+    def get_user_image(self, obj):
+        """Ensure correct URL for user profile image (S3 or default)"""
+        if obj.post.user.profile_picture:
+            storage = S3Boto3Storage()
+            return storage.url(obj.post.user.profile_picture.name)
+        return "https://via.placeholder.com/150"

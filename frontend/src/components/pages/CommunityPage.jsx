@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Pin } from 'lucide-react';
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal } from "react-bootstrap";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
+import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
+import PostPinButton from "../ui/PinPostButton";
 
 const CommunityPage = () => {
   const { communityId } = useParams();
@@ -36,6 +38,9 @@ const CommunityPage = () => {
   const [posts, setPosts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState("");
+
+  //Pinned posts State
+  const [pinnedPosts, setPinnedPosts] = useState([]);
 
   // Whether the current user is actually a member (or leader)
   const [isMember, setIsMember] = useState(false);
@@ -232,6 +237,7 @@ const CommunityPage = () => {
       fetchCommunity();
       fetchAnnouncements();
       fetchCommunityPosts();
+      fetchPinnedPosts();
       if (user) {
         fetchMembership();
         fetchUserCommunityRequests();
@@ -432,6 +438,23 @@ const CommunityPage = () => {
 
 
 
+  // Fetches all pinned posts
+  const fetchPinnedPosts = async () => {
+    try {
+      const response = await api.get(`api/pinnedposts/`, {
+        params: { community_id: communityId }
+      });
+      setPinnedPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching pinned posts:", error);
+    }
+  };
+
+  // Helper func to check if a post is marked as pinned or not
+  const isPostPinned = (postId) => {
+    return pinnedPosts.some(pinnedPost => pinnedPost.post_id === postId);
+  };
+
   if (!community) {
     return (
       <div className="container mt-5">
@@ -573,6 +596,19 @@ const CommunityPage = () => {
       {/* If public or user is a real member (Leader or Member), show announcements & posts */}
       {community.privacy === "public" || (community.privacy === "private" && isMember) ? (
         <>
+
+          {/* Pinned Posts Section - only visible if public or user is a member */}
+          {community.privacy === "public" || (community.privacy === "private" && isMember) ? (
+            <PinnedPostsComponent 
+              pinnedPosts={pinnedPosts}
+              isLeader={isLeader}
+              onUnpin={() => {
+                fetchPinnedPosts();
+                fetchCommunityPosts();
+              }}
+            />
+          ) : null}
+
           {/* Announcements Section */}
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-info text-white">
@@ -661,6 +697,28 @@ const CommunityPage = () => {
                         <p>{post.post_text}</p>
                         <small>{new Date(post.created_at).toLocaleDateString()}</small>
                       </div>
+                      {/* Pinned & Like*/}
+                      <h5>
+                        {post.user_name} {post.user_last_name}
+                        {isPostPinned(post.id) && (
+                          <span className="badge bg-warning ms-2">
+                            <Pin size={12} className="me-1" />
+                            Pinned
+                          </span>
+                        )}
+                      </h5>
+
+                      {isLeader && (
+                        <PostPinButton 
+                          post={post}
+                          communityId={communityId}
+                          isPinned={isPostPinned(post.id)}
+                          onPinStatusChange={() => {
+                            fetchPinnedPosts();
+                            fetchCommunityPosts();
+                          }}
+                        />
+                      )}
                       <button className="btn btn-outline-danger" style={{ marginLeft: "auto" }}>
                         ❤️ {post.likes}
                       </button>
