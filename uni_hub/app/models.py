@@ -171,6 +171,11 @@ class PinnedPost(models.Model):
     pinned_at = models.DateTimeField(auto_now_add=True)
     pinned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pinned_posts")
 
+    order = models.IntegerField(default=0)
+
+    class Meta:                                 
+        ordering = ['community', 'order']        # Default ordering by community then order
+
     def __str__(self):
         return f"Pinned Post {self.post.id} in {self.community.community_name} by {self.pinned_by.email}"
 

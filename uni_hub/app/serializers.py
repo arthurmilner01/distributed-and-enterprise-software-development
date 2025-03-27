@@ -409,12 +409,13 @@ class PinnedPostSerializer(serializers.ModelSerializer):
     user_image = serializers.SerializerMethodField()
     post_created_at = serializers.DateField(source='post.created_at', read_only=True)  
     post_id = serializers.IntegerField(source='post.id', read_only=True)
+    order = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = PinnedPost
         fields = [
             'id', 'post_id', 'post_text', 'user_name', 'user_last_name', 
-            'user_image', 'pinned_at', 'post_created_at'
+            'user_image', 'pinned_at', 'post_created_at', 'order'
         ]
         read_only_fields = ['id', 'pinned_at']
         

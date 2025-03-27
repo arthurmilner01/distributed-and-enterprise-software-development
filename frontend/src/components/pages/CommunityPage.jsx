@@ -606,6 +606,11 @@ const CommunityPage = () => {
                 fetchPinnedPosts();
                 fetchCommunityPosts();
               }}
+              communityId={communityId}
+              onReorder={() => {
+                fetchPinnedPosts();
+                fetchCommunityPosts();
+              }} 
             />
           ) : null}
 

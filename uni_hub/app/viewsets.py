@@ -6,7 +6,7 @@ from .permissions import *
 from .models import *
 from .serializers import *
 from .pagination import *
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Max, F
 from django.db import transaction
 
 
@@ -671,7 +671,7 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
         """
         community_id = self.request.query_params.get('community_id')
         if community_id:
-            return PinnedPost.objects.filter(community_id=community_id).order_by('pinned_at')
+            return PinnedPost.objects.filter(community_id=community_id).order_by('order')
         return PinnedPost.objects.none()
     
     @action(detail=False, methods=["POST"])
@@ -711,7 +711,7 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
             )
             
         # Check if post is already pinned
-        if PinnedPost.objects.filter(post=post).exists():
+        if PinnedPost.objects.filter(post=post, community=community).exists():
             return Response(
                 {"error": "This post is already pinned."}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -725,11 +725,17 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
+        # Calculate the order for the new pinned post
+        max_order_result = PinnedPost.objects.filter(community=community).aggregate(Max('order'))
+        current_max_order = max_order_result.get('order__max') #Extract the maximum order value found. It be 'None' if first post
+        next_order = (current_max_order if current_max_order is not None else -1) + 1  #If there are existing pinned posts (current_max_order is not None),
+
         # Create pinned post
         pinned_post = PinnedPost.objects.create(
             post=post,
             community=community,
-            pinned_by=request.user
+            pinned_by=request.user,
+            order=next_order
         )
         
         serializer = PinnedPostSerializer(pinned_post)
@@ -755,6 +761,8 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
             
+        community = pinned_post.community
+
         # Check if user is community leader
         if pinned_post.community.is_community_owner != request.user:
             return Response(
@@ -762,9 +770,67 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
             
-        # Delete pinned post
+        
+
+         # Re-order remaining posts after deletion
+        deleted_order = pinned_post.order
         pinned_post.delete()
+
+        # Decrement the order of all subsequent posts in the same community
+        # `F('order') - 1` tells the database: For each matching row, set its
+        # order field to its own current order value minus 1.
+        PinnedPost.objects.filter(
+            community=community,
+            order__gt=deleted_order # Only affect posts that came afteR the deleted one
+        ).update(order=F('order') - 1)
+
         return Response(
             {"success": "Post unpinned successfully."}, 
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+    @action(detail=False, methods=['POST'], url_path='reorder')
+    def reorder_pinned_posts(self, request):
+        community_id = request.data.get('community_id')
+        # Expect a list of pinned post IDs (the PinnedPost model ID) in the desired new order.
+        ordered_pinned_post_ids = request.data.get('ordered_pinned_post_ids')
+
+        if not community_id or not isinstance(ordered_pinned_post_ids, list):
+            return Response(
+                {"error": "community_id and a list of ordered_pinned_post_ids are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validation check
+        if community.is_community_owner != request.user:
+            return Response(
+                {"error": "Only the community leader can reorder pinned posts."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Verify that the provided IDs correspond to actual PinnedPost entries for this community
+        current_pinned_posts = PinnedPost.objects.filter(community=community)
+        current_pinned_post_ids = set(current_pinned_posts.values_list('id', flat=True))
+        provided_ids_set = set(ordered_pinned_post_ids)
+
+        if current_pinned_post_ids != provided_ids_set:
+            return Response(
+                {"error": "The provided list of IDs does not match the currently pinned posts for this community."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Update the order based on the provided list
+        for index, pinned_post_id in enumerate(ordered_pinned_post_ids):
+            PinnedPost.objects.filter(id=pinned_post_id, community=community).update(order=index) # Start order from 0
+
+        # Fetch the updated list to return (optional, but good practice)
+        updated_pinned_posts = PinnedPost.objects.filter(community=community).order_by('order')
+        serializer = self.get_serializer(updated_pinned_posts, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
