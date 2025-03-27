@@ -20,8 +20,6 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('user/<int:id>/', GetProfileDetailsView.as_view(), name='get-user-details'),
     path('user/update/<int:user_id>/', UserProfileUpdateView.as_view(), name='user-profile-update'),
-    path("protected/", protected_view, name="protected-view"),
-    path("event/", event_view, name="event-view"),
     path("api/posts/<int:post_id>/comments/", CommentListCreateView.as_view(), name="post-comments"),
     path('api/keywords/suggestions/', KeywordSuggestionsView.as_view(), name='keyword-suggestions'),
     path("api/user-communities/", UserCommunityListView.as_view(), name="user-communities"),

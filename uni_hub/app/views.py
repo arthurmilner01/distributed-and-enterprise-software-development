@@ -164,43 +164,6 @@ class UserProfileUpdateView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-#! TODO: Used for testing remove
-@api_view(['GET', 'POST'])  #Allowed http methods
-@permission_classes([IsAuthenticated])  #Require login
-def protected_view(request):
-    if request.method == 'GET':
-        return Response(
-            {
-                "message": "You have accessed a protected view!",
-                "user": {
-                    "username": request.user.username,
-                    "email": request.user.email
-                }
-            },
-            status=200
-        )
-    elif request.method == 'POST':
-        return Response({"message": "POST request successful!"}, status=200)
-
-#! TODO: Used for testing remove
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated, IsEventManager])
-def event_view(request):
-    if request.method == 'GET':
-        return Response(
-            {
-                "message": "You have accessed an event manager view!",
-                "user": {
-                    "username": request.user.username,
-                    "email": request.user.email
-                }
-            },
-            status=200
-        )
-    elif request.method == 'POST':
-        return Response({"message": "POST request successful, event manager!"}, status=200)
-
 class GlobalPostListCreateView(generics.ListCreateAPIView):
     """
     API endpoint for creating and retrieving posts.

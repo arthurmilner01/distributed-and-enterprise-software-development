@@ -421,12 +421,12 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         return Response(follow_requests_serializer.data, status=status.HTTP_200_OK)
     
     # Leader denies a request to join
-    @action(detail=False, methods=["DELETE"])
+    @action(detail=False, methods=["DELETE"], permission_classes=[IsAuthenticated, IsCommunityLeader])
     def deny_follow_request(self, request):
         # Request ID to deny
         request_id = request.query_params.get("request_id")
 
-        #If user not passed
+        #If request ID not passed
         if not request_id:
             return Response({"error": "Request ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -436,13 +436,6 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         #If request ID not in database
         except UserRequestCommunity.DoesNotExist:
             return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Get community to deny
-        unfollowed_community = join_request.community
-        
-        # Check if the logged-in user is the community owner
-        if unfollowed_community.is_community_owner != request.user:
-            return Response({"error": "You do not have the required permissions to deny this request."}, status=status.HTTP_403_FORBIDDEN)
         
         # Delete join request
         try:
@@ -452,12 +445,12 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
             return Response({"error": "Error deleting the join request."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
     # Leader approves a request to join
-    @action(detail=False, methods=["DELETE"])
+    @action(detail=False, methods=["DELETE"], permission_classes=[IsAuthenticated, IsCommunityLeader])
     def approve_follow_request(self, request):
         # Request ID to deny
         request_id = request.query_params.get("request_id")
 
-        # If user not passed
+        # If request ID not passed
         if not request_id:
             return Response({"error": "Request ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -467,13 +460,6 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         # If request ID not in database
         except UserRequestCommunity.DoesNotExist:
             return Response({"error": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Get community to approve
-        unfollowed_community = join_request.community
-        
-        # Check if the logged-in user is the community owner
-        if unfollowed_community.is_community_owner != request.user:
-            return Response({"error": "You do not have the required permissions to approve this request."}, status=status.HTTP_403_FORBIDDEN)
         
         # Create follow relationship and delete the join request
         try:
