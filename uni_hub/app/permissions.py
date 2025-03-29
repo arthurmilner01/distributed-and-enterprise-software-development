@@ -1,41 +1,79 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 from .models import *
 
 class IsEventManager(BasePermission):
     """
-    Checking user is either event manager or community leader
-    (community leaders can do all event manager functions)
+    Allows:
+    - Read actions (list, retrieve) if authenticated.
+    - Create action if authenticated and user is Leader/EventManager of the target community.
+    - Update/Delete actions if authenticated and user is Leader/EventManager of the event's community.
     """
+    message = 'You do not have permission to perform this action on this event.' # More specific message
+
     def has_permission(self, request, view):
-        # Get community ID primarily from data for POST, fallback to kwargs/params
-        community_id = None
-        if request.method == 'POST':
-            # For create, check the 'community' field in request data, as serializer expects it
-            community_id = request.data.get("community")
-        else:
-             # For other methods (like PUT/PATCH on detail view), check kwargs or query_params
-             community_id = view.kwargs.get("community_id") or view.kwargs.get("pk") or request.query_params.get("community_id")
-             # If targeting a specific event for update/delete, need has_object_permission (see note below)
+        # Allow list view for any authenticated user initially (permissions applied later if needed)
+        # Let has_object_permission handle retrieve access control
+        if view.action == 'list' or request.method in SAFE_METHODS:
+             # You might want stricter list access, but IsAuthenticated is applied anyway
+             return True
 
-        if not community_id:
-            # If still no ID, try getting from query_params as a last resort for GET maybe?
-             community_id = request.query_params.get("community_id")
-             if not community_id:
-                 return False # Cannot check permission without a community ID
+        # For create, check role against the community ID provided in the request data
+        if view.action == 'create':
+            if not request.user.is_authenticated:
+                 return False
 
-        # Convert potential string ID to int for lookup if needed, handle error
-        try:
-            community_id_int = int(community_id)
-        except (ValueError, TypeError):
-             return False # Invalid community ID format
+            community_id = request.data.get("community") # Get community from POST data
+            if not community_id:
+                self.message = "Community ID is required to create an event."
+                return False # Cannot check permission without target community
 
-        # Return true if user role is either "Leader" or "EventManager" for this community
-        return UserCommunity.objects.filter(
+            try:
+                community_id_int = int(community_id)
+            except (ValueError, TypeError):
+                self.message = "Invalid Community ID format."
+                return False
+
+            # Check if user has the required role in the specified community for creation
+            # Replace 'UserCommunity' with your actual Membership/Role model name
+            can_create = UserCommunity.objects.filter(
+                user=request.user,
+                community_id=community_id_int,
+                role__in=["Leader", "EventManager"] # Case-sensitive roles
+            ).exists()
+            if not can_create:
+                 self.message = "You must be a Leader or Event Manager in this community to create events."
+            return can_create
+
+        # Default: For other actions at view level (like accessing the endpoint itself),
+        # just ensure user is authenticated. Object permission check handles the rest.
+        return request.user.is_authenticated
+
+
+    def has_object_permission(self, request, view, obj):
+
+        if request.method in SAFE_METHODS:
+            return True # Assuming IsAuthenticated is also applied
+
+        # --- This is the crucial check for UPDATE, PATCH, DELETE ---
+        if not request.user.is_authenticated:
+            return False
+
+        # Check if the event object has a community linked
+        if not hasattr(obj, 'community') or not obj.community:
+             # Should not happen with a non-nullable ForeignKey, but defensive check
+             self.message = "Event is not linked to a community."
+             return False
+
+        # Check if the authenticated user has the required role in the *event's* community
+        # Replace 'UserCommunity' with your actual Membership/Role model name
+        has_role = UserCommunity.objects.filter(
             user=request.user,
-            community_id=community_id_int, # Use the integer ID for lookup
-            role__in=["Leader", "EventManager"]
+            community=obj.community, # Check against the specific community of the event
+            role__in=["Leader", "EventManager"] # Case-sensitive roles
         ).exists()
-
+        if not has_role:
+            self.message = "You must be a Leader or Event Manager in this community to modify this event."
+        return has_role
 
 # Checking user is community leader
 class IsCommunityLeader(BasePermission):

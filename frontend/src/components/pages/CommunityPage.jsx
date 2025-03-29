@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Pin } from 'lucide-react';
+import { CheckCircle, XCircle, Pin,PlusCircle  } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
@@ -81,6 +81,22 @@ const CommunityPage = () => {
   const [eventLocation, setEventLocation] = useState("");
   const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal
   const [expandedEventId, setExpandedEventId] = useState(null); // Track expanded event
+  // --- State for Editing Events ---
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null); // Store the whole event object being edited
+  const [editEventErrorMessage, setEditEventErrorMessage] = useState(""); // Error specific to edit modal
+  // State for the edit form fields (initialized when modal opens)
+  const [editEventTitle, setEditEventTitle] = useState("");
+  const [editEventDescription, setEditEventDescription] = useState("");
+  const [editEventDate, setEditEventDate] = useState(null);
+  const [editEventType, setEditEventType] = useState("");
+  const [editEventLocation, setEditEventLocation] = useState("");
+  const currentUserMembership = communityMembers.find(member => member.id === user?.id);
+  // Check if their role in this community is 'EventManager' (Case-sensitive!)
+  const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
+
+
+  // --- END State for Editing Events ---
   const fetchCommunityMembers = async () => {
     try {
       const res = await api.get(`/api/community/members/?community_id=${community.id}`);
@@ -557,6 +573,113 @@ const CommunityPage = () => {
       setSuccessMessage("");
     }
   };
+   // Opens the Edit Modal and pre-fills form state
+   const handleEditEventClick = (eventToEdit) => {
+    if (!eventToEdit) return;
+    setEditingEvent(eventToEdit); // Store the event being edited
+
+    // Pre-fill the edit form state
+    setEditEventTitle(eventToEdit.event_name || "");
+    setEditEventDescription(eventToEdit.description || "");
+    // IMPORTANT: Convert the ISO date string back to a Date object for DatePicker
+    setEditEventDate(eventToEdit.date ? new Date(eventToEdit.date) : null);
+    setEditEventType(eventToEdit.event_type || "");
+    setEditEventLocation(eventToEdit.location || "");
+
+    setEditEventErrorMessage(""); // Clear previous errors
+    setIsEditEventModalOpen(true); // Open the modal
+  };
+
+  const handleCloseEditEventModal = () => {
+    setIsEditEventModalOpen(false);
+    setEditingEvent(null); // Clear the event being edited
+    setEditEventErrorMessage(""); // Clear errors
+    // Optionally reset edit form fields (though they get reset on open)
+    // setEditEventTitle(""); ... etc.
+  };
+
+  // Handles the submission of the Edit Event form
+  const handleUpdateEvent = async (e) => {
+    e.preventDefault();
+    setEditEventErrorMessage(""); // Clear previous modal error
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    if (!editingEvent) {
+      setEditEventErrorMessage("Error: No event selected for editing.");
+      return;
+    }
+
+    // Validation for edit form fields
+    if (!editEventTitle.trim() || !editEventDescription.trim() || !editEventDate || !editEventType || !editEventLocation.trim()) {
+        setEditEventErrorMessage("Please fill in all required event details.");
+        return;
+    }
+
+    let formattedTimestamp;
+    try {
+        formattedTimestamp = editEventDate.toISOString();
+    } catch (dateError) {
+        setEditEventErrorMessage("Invalid date/time selected.");
+        return;
+    }
+
+    // Prepare the data payload - only send fields that can be updated
+    const updatedEventData = {
+        event_name: editEventTitle,
+        description: editEventDescription,
+        date: formattedTimestamp,
+        event_type: editEventType,
+        location: editEventLocation,
+        // Include community ID if your PATCH/PUT endpoint requires it
+        // community: parseInt(communityId),
+    };
+
+    try {
+      // Use PATCH for partial updates, PUT if replacing the whole resource
+      await api.patch(`/api/events/${editingEvent.id}/`, updatedEventData);
+      setSuccessMessage("Event updated successfully!");
+      handleCloseEditEventModal(); // Close modal on success
+      fetchEvents(); // Refresh the events list
+    } catch (error) {
+      console.error("Error updating event:", error);
+      let errorMsg = "Failed to update event.";
+       // Consistent error handling
+       if (error.response) {
+            if (error.response.status === 403) { errorMsg = "Permission Denied."; }
+            else if (error.response.data) {
+                const errors = error.response.data;
+                if (errors.date && Array.isArray(errors.date)) { errorMsg = `Update failed: date: ${errors.date.join(' ')}`; }
+                else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
+                else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
+                else { errorMsg = "Please check form details."; }
+                if (!errorMsg.toLowerCase().startsWith('update failed:')) { errorMsg = `Update failed: ${errorMsg}`; }
+            }
+       }
+      setEditEventErrorMessage(errorMsg); // Show error in the edit modal
+      setSuccessMessage("");
+    }
+  };
+
+  // Handles clicking the delete button
+  const handleDeleteEventClick = async (eventId) => {
+    if (!window.confirm("Are you sure you want to delete this event? This cannot be undone.")) {
+        return;
+    }
+
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    try {
+        await api.delete(`/api/events/${eventId}/`);
+        setSuccessMessage("Event deleted successfully!");
+        fetchEvents(); // Refresh the list
+    } catch (error) {
+        console.error("Error deleting event:", error);
+        setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to delete event.");
+    }
+  };
+  // --- END Event Edit/Delete Handlers ---
 
   if (!community) {
     return (
@@ -838,14 +961,22 @@ const CommunityPage = () => {
               )}
             </div>
           </div>
-                    {/* === ADD Community Events Section HERE === */}
-                    <div className="card shadow-sm mb-4">
+                              {/* === Community Events Section  === */}
+          <div className="card shadow-sm mb-4">
             <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
               <h4 className="mb-0 h5">Community Events</h4>
-              {/* Button visible to Leader OR users with EventManager role */}
-              {/* Adjust the condition based on how roles are stored on your user object */}
-              {(isLeader || (user?.roles && user.roles.includes("EventManager"))) && (
-                <Button variant="light" size="sm" onClick={openEventModal}> Create Event </Button>
+              {/* Create Event Button (Visible to Leader OR EventManagers) */}
+              {/* Ensure the condition matches how roles are stored on your user object */}
+              {(isLeader || isCurrentUserEventManager) && (
+                <Button
+                variant="light" // Keep light variant for contrast on green
+                size="sm"
+                onClick={openEventModal}
+                className="d-flex align-items-center" // Use flexbox for icon alignment
+            >
+                <PlusCircle size={16} className="me-1" /> {/* Icon added */}
+                Create Event
+            </Button>
                )}
             </div>
             <div className="card-body">
@@ -853,49 +984,74 @@ const CommunityPage = () => {
                 <ul className="list-group list-group-flush">
                   {events.map((event) => (
                     <li key={event.id} className="list-group-item px-0 py-3">
-
                        <div className="d-flex justify-content-between align-items-center">
+                            {/* Event Name and Date */}
                             <div>
                                 <h5 className="mb-1 h6">{event.event_name}</h5>
                                 <small className="text-muted">
-                                    {/* === UPDATED LINE === */}
-                                    {new Date(event.date).toLocaleString('en-US', { // Use 'en-US' or let browser decide locale
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: 'numeric',    // Show hour
-                                        minute: '2-digit',  // Show minutes (with leading zero)
-                                        hour12: true        // Use AM/PM format
-                                    })}
-                                    {/* === END UPDATED LINE === */}
+                                    {new Date(event.date).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
                                 </small>
                             </div>
-                             {/* Button for toggling details */}
-                             <Button
-                                variant="link"
-                                size="sm"
-                                onClick={() => toggleEventDetails(event.id)}
-                                aria-expanded={expandedEventId === event.id}
-                                aria-controls={`event-details-${event.id}`}
-                                className="p-1 text-secondary"
-                            >
-                                {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                <span className="visually-hidden">Toggle details for {event.event_name}</span>
-                            </Button>
+                             {/* Button Group for Actions */}
+                             <div className="d-flex align-items-center flex-shrink-0">
+                                
+                                {/* Check if Leader OR if specifically EventManager for *this* community */}
+                                {(isLeader || isCurrentUserEventManager) && (
+                                    <>
+                                        <Button
+                                            variant="outline-primary"
+                                            size="sm"
+                                            className="me-2 p-1"
+                                            onClick={() => handleEditEventClick(event)}
+                                            aria-label={`Edit event ${event.event_name}`}
+                                            title="Edit Event"
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            className="me-2 p-1"
+                                            onClick={() => handleDeleteEventClick(event.id)}
+                                            aria-label={`Delete event ${event.event_name}`}
+                                            title="Delete Event"
+                                        >
+                                             Delete
+                                        </Button>
+                                    </>
+                                )}
+                                
+                                {/* Expand/Collapse Button */}
+                                <Button
+                                    variant="link"
+                                    size="sm"
+                                    onClick={() => toggleEventDetails(event.id)}
+                                    aria-expanded={expandedEventId === event.id}
+                                    aria-controls={`event-details-${event.id}`}
+                                    className="p-1 text-secondary" // Subtle style
+                                    title="Toggle Details" // Tooltip
+                                >
+                                    {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                    <span className="visually-hidden">Toggle details</span>
+                                </Button>
+                            </div>
                         </div>
-                        {/* Collapsible section (no changes needed here) */}
-                        <div id={`event-details-${event.id}`} className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}>
+
+                        {/* Collapsible Event Details */}
+                        <div
+                            id={`event-details-${event.id}`}
+                            className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}
+                         >
                             <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
                             <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
                             <p className="mb-0"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
                         </div>
                     </li>
-
                   ))}
                 </ul>
               ) : (
                  // Message when no events exist
-                 <p className="text-muted text-center">There are no upcoming events scheduled.</p>
+                 <p className="text-muted text-center">There are no upcoming events scheduled for this community.</p>
               )}
             </div>
           </div>
@@ -1201,6 +1357,75 @@ const CommunityPage = () => {
         </Form>
       </Modal>
      {/* === END Create Event Modal === */}
+     {/* ===  Edit Event Modal HERE === */}
+     <Modal show={isEditEventModalOpen} onHide={handleCloseEditEventModal} centered>
+        <Modal.Header closeButton>
+             <Modal.Title className="h5">Edit Event</Modal.Title>
+         </Modal.Header>
+         {/* Pass handleUpdateEvent to Form onSubmit */}
+         <Form onSubmit={handleUpdateEvent}>
+            <Modal.Body>
+                {/* Display edit-specific error message */}
+                {editEventErrorMessage && <Alert variant="danger">{editEventErrorMessage}</Alert>}
+
+                {/* Form fields pre-filled from editEvent state */}
+                <Form.Group className="mb-3" controlId="editEventTitle">
+                    <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
+                    <Form.Control type="text" value={editEventTitle} onChange={(e) => setEditEventTitle(e.target.value)} required />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="editEventDescription">
+                    <Form.Label>Description <span className="text-danger">*</span></Form.Label>
+                    <Form.Control as="textarea" value={editEventDescription} onChange={(e) => setEditEventDescription(e.target.value)} rows={3} required />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="editEventDate">
+                    <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
+                    <DatePicker
+                        selected={editEventDate} // Use editEventDate state
+                        onChange={(date) => setEditEventDate(date)} // Update editEventDate state
+                        minDate={new Date()}
+                        showTimeSelect
+                        timeInputLabel="Time:"
+                        dateFormat="MMMM d, yyyy h:mm aa"
+                        timeIntervals={15}
+                        placeholderText="Select event date and time"
+                        className="form-control"
+                        wrapperClassName="d-block"
+                        required
+                        autoComplete="off"
+                    />
+                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="editEventType">
+                    <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
+                    <Form.Select value={editEventType} onChange={(e) => setEditEventType(e.target.value)} required>
+                       <option value="">-- Select Type --</option>
+                       <option value="conference">Conference</option>
+                       <option value="workshop">Workshop</option>
+                       <option value="webinar">Webinar</option>
+                       <option value="social">Social Gathering</option>
+                       <option value="meeting">Meeting</option>
+                       <option value="competition">Competition</option>
+                       <option value="other">Other</option>
+                   </Form.Select>
+               </Form.Group>
+
+               <Form.Group className="mb-3" controlId="editEventLocation">
+                    <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
+                   <Form.Control type="text" value={editEventLocation} onChange={(e) => setEditEventLocation(e.target.value)} required />
+               </Form.Group>
+
+           </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" type="button" onClick={handleCloseEditEventModal}> Cancel </Button>
+                {/* Submit button triggers handleUpdateEvent */}
+                <Button variant="primary" type="submit"> Save Changes </Button>
+           </Modal.Footer>
+       </Form>
+     </Modal>
+     {/* === END Edit Event Modal === */}
       
     </div>
   );
