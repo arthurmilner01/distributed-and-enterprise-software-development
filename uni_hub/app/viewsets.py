@@ -641,8 +641,55 @@ class AchievementViewSet(viewsets.ModelViewSet):
             return Response({"error": "You can only delete your own achievements."}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all().order_by('-date')
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [IsAuthenticated, IsEventManager]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            # Apply permission. Assumes IsEventManager checks correctly (ideally via has_object_permission).
+            permission_classes = [IsAuthenticated, IsEventManager]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        community_id = self.request.query_params.get('community_id')
+        if community_id:
+            qs = qs.filter(community_id=community_id)
+        # FIXED: Removed non-existent 'created_by'
+        return qs.select_related('community')
+
+    def perform_create(self, serializer):
+        
+        serializer.save()
+
+  
+
+    # Kept original community_events action logic, acknowledging potential design issues
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def community_events(self, request, pk=None):
+        community = None
+        try:
+            community = Community.objects.get(id=pk)
+        except (Community.DoesNotExist, ValueError, TypeError):
+             try:
+                 event = self.get_object()
+                 community = event.community
+             except Exception:
+                  return Response({"error": "Could not determine community from provided ID."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not community:
+             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # FIXED: Removed non-existent 'created_by' from select_related
+        events = Event.objects.filter(community=community).select_related('community')
+        serializer = self.get_serializer(events, many=True)
+        return Response(serializer.data)
 class PinnedPostViewSet(viewsets.ModelViewSet):
     """
     Viewset for managing pinned posts in communities.

@@ -425,3 +425,12 @@ class PinnedPostSerializer(serializers.ModelSerializer):
             storage = S3Boto3Storage()
             return storage.url(obj.post.user.profile_picture.name)
         return "https://via.placeholder.com/150"
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = '__all__'
+
+    def validate(self, data):
+        # Optionally, add validation here
+        return data

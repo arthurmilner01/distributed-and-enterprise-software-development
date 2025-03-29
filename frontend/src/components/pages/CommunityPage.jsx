@@ -1,13 +1,19 @@
+
+
 import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Pin } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal } from "react-bootstrap";
+import { Form, Alert } from "react-bootstrap";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
 import PostPinButton from "../ui/PinPostButton";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css"; // Standard Datepicker CSS
 
 const CommunityPage = () => {
   const { communityId } = useParams();
@@ -65,7 +71,16 @@ const CommunityPage = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
 
-
+  //  Event State Variables
+  const [events, setEvents] = useState([]);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventDate, setEventDate] = useState(null); // Use null for Date object state
+  const [eventType, setEventType] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
+  const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal
+  const [expandedEventId, setExpandedEventId] = useState(null); // Track expanded event
   const fetchCommunityMembers = async () => {
     try {
       const res = await api.get(`/api/community/members/?community_id=${community.id}`);
@@ -230,6 +245,17 @@ const CommunityPage = () => {
       setErrorMessage("Failed to fetch users community requests.");
     }
   }
+  const fetchEvents = async () => {
+    try {
+      const response = await api.get(`/api/events/`, { params: { community_id: communityId } });
+      // new Date() correctly parses ISO 8601 strings (like "2025-04-03T10:30:00Z")
+      const sortedEvents = (response.data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setErrorMessage("Failed to load community events.");
+    }
+  };
 
   // Fetch once we have a communityId (and user) e.g. on page load
   useEffect(() => {
@@ -238,6 +264,7 @@ const CommunityPage = () => {
       fetchAnnouncements();
       fetchCommunityPosts();
       fetchPinnedPosts();
+      fetchEvents();
       if (user) {
         fetchMembership();
         fetchUserCommunityRequests();
@@ -453,6 +480,82 @@ const CommunityPage = () => {
   // Helper func to check if a post is marked as pinned or not
   const isPostPinned = (postId) => {
     return pinnedPosts.some(pinnedPost => pinnedPost.post_id === postId);
+  };
+  const openEventModal = () => {
+    setIsEventModalOpen(true);
+    setEventErrorMessage(""); // Clear previous event modal errors
+  };
+
+  const closeEventModal = () => {
+    setIsEventModalOpen(false);
+    // Reset form fields
+    setEventTitle("");
+    setEventDescription("");
+    setEventDate(null);
+    setEventType("");
+    setEventLocation("");
+    setEventErrorMessage(""); // Clear error on close
+  };
+
+  const toggleEventDetails = (eventId) => {
+    setExpandedEventId(prevId => (prevId === eventId ? null : eventId));
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    setEventErrorMessage("");
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    if (!eventTitle.trim() || !eventDescription.trim() || !eventDate || !eventType || !eventLocation.trim()) {
+        setEventErrorMessage("Please fill in all required event details.");
+        return;
+    }
+
+    // --- CHANGE THIS PART BACK ---
+    let formattedTimestamp; // Use a name indicating time is included
+    try {
+        // Use toISOString() to send the full timestamp
+        formattedTimestamp = eventDate.toISOString();
+    } catch (dateError) {
+        console.error("Invalid date/time selected:", eventDate);
+        setEventErrorMessage("Invalid date/time selected. Please choose a date and time.");
+        return;
+    }
+    // --- END CHANGE ---
+
+    try {
+      await api.post("/api/events/", {
+        event_name: eventTitle,
+        description: eventDescription,
+        // --- CHANGE THIS PART BACK: Send the full timestamp ---
+        date: formattedTimestamp,
+        // --- END CHANGE ---
+        event_type: eventType,
+        location: eventLocation,
+        community: parseInt(communityId),
+      });
+      setSuccessMessage("Event created successfully!");
+      closeEventModal();
+      fetchEvents();
+    } catch (error) {
+      console.error("Error creating event:", error);
+      let errorMsg = "Failed to create event.";
+       // Your existing error handling...
+       if (error.response) {
+            if (error.response.status === 403) { errorMsg = "Permission Denied."; }
+            else if (error.response.data) {
+                const errors = error.response.data;
+                if (errors.date && Array.isArray(errors.date)) { errorMsg = `Creation failed: date: ${errors.date.join(' ')}`; } // Handles potential backend date format errors again
+                else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
+                else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
+                else { errorMsg = "Please check form details."; }
+                if (!errorMsg.toLowerCase().startsWith('creation failed:')) { errorMsg = `Creation failed: ${errorMsg}`; }
+            }
+       }
+      setEventErrorMessage(errorMsg);
+      setSuccessMessage("");
+    }
   };
 
   if (!community) {
@@ -735,10 +838,72 @@ const CommunityPage = () => {
               )}
             </div>
           </div>
+                    {/* === ADD Community Events Section HERE === */}
+                    <div className="card shadow-sm mb-4">
+            <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
+              <h4 className="mb-0 h5">Community Events</h4>
+              {/* Button visible to Leader OR users with EventManager role */}
+              {/* Adjust the condition based on how roles are stored on your user object */}
+              {(isLeader || (user?.roles && user.roles.includes("EventManager"))) && (
+                <Button variant="light" size="sm" onClick={openEventModal}> Create Event </Button>
+               )}
+            </div>
+            <div className="card-body">
+              {events.length > 0 ? (
+                <ul className="list-group list-group-flush">
+                  {events.map((event) => (
+                    <li key={event.id} className="list-group-item px-0 py-3">
+
+                       <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 className="mb-1 h6">{event.event_name}</h5>
+                                <small className="text-muted">
+                                    {/* === UPDATED LINE === */}
+                                    {new Date(event.date).toLocaleString('en-US', { // Use 'en-US' or let browser decide locale
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: 'numeric',    // Show hour
+                                        minute: '2-digit',  // Show minutes (with leading zero)
+                                        hour12: true        // Use AM/PM format
+                                    })}
+                                    {/* === END UPDATED LINE === */}
+                                </small>
+                            </div>
+                             {/* Button for toggling details */}
+                             <Button
+                                variant="link"
+                                size="sm"
+                                onClick={() => toggleEventDetails(event.id)}
+                                aria-expanded={expandedEventId === event.id}
+                                aria-controls={`event-details-${event.id}`}
+                                className="p-1 text-secondary"
+                            >
+                                {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                <span className="visually-hidden">Toggle details for {event.event_name}</span>
+                            </Button>
+                        </div>
+                        {/* Collapsible section (no changes needed here) */}
+                        <div id={`event-details-${event.id}`} className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}>
+                            <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
+                            <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
+                            <p className="mb-0"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
+                        </div>
+                    </li>
+
+                  ))}
+                </ul>
+              ) : (
+                 // Message when no events exist
+                 <p className="text-muted text-center">There are no upcoming events scheduled.</p>
+              )}
+            </div>
+          </div>
+          {/* === END Community Events Section === */}
         </>
       ) : (
         <div className="alert alert-warning">
-          <strong>This is a private community.</strong> Announcements and posts are visible only to members.
+          <strong>This is a private community.</strong> Announcements , posts and events are visible only to members.
         </div>
       )}
 
@@ -968,6 +1133,75 @@ const CommunityPage = () => {
           {requestSuccessMessage && <div className="alert alert-success">{requestSuccessMessage}</div>}
         </Modal.Footer>
       </Modal>
+      {/* === ADD Create Event Modal HERE === */}
+      <Modal show={isEventModalOpen} onHide={closeEventModal} centered>
+        <Modal.Header closeButton>
+             <Modal.Title className="h5">Create a New Community Event</Modal.Title>
+         </Modal.Header>
+         {/* Use react-bootstrap Form */}
+         <Form onSubmit={handleCreateEvent}>
+            <Modal.Body>
+                {/* Display event-specific error message */}
+                {eventErrorMessage && <Alert variant="danger">{eventErrorMessage}</Alert>}
+
+                <Form.Group className="mb-3" controlId="eventTitle">
+                    <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
+                    <Form.Control type="text" placeholder="e.g., Annual Tech Meetup" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="eventDescription">
+                    <Form.Label>Description <span className="text-danger">*</span></Form.Label>
+                    <Form.Control as="textarea" placeholder="Provide details about the event..." value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} rows={3} required />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="eventDate">
+                    
+                    <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
+                    <DatePicker
+                        selected={eventDate}
+                        onChange={(date) => setEventDate(date)}
+                        minDate={new Date()} // Still disable past dates
+                        showTimeSelect                // Enable time selection
+                        timeInputLabel="Time:"        // Label for time input
+                        dateFormat="MMMM d, yyyy h:mm aa" // Display format with time (e.g., March 29, 2025 5:30 PM)
+                        timeIntervals={15}           // Optional: Set time intervals (e.g., every 15 mins)
+                        placeholderText="Select event date and time" // Updated placeholder
+                        className="form-control"
+                        wrapperClassName="d-block"
+                        required
+                        autoComplete="off"
+                    />
+                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text> {/* Updated text */}
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="eventType">
+                    <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
+                    <Form.Select value={eventType} onChange={(e) => setEventType(e.target.value)} required>
+                        <option value="">-- Select Type --</option>
+                        <option value="conference">Conference</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="webinar">Webinar</option>
+                        <option value="social">Social Gathering</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="competition">Competition</option>
+                        <option value="other">Other</option>
+                    </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="eventLocation">
+                     <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
+                    <Form.Control type="text" placeholder="e.g., Online (Zoom Link), Main Hall" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} required />
+                </Form.Group>
+
+            </Modal.Body>
+             <Modal.Footer>
+                 <Button variant="secondary" type="button" onClick={closeEventModal}> Close </Button>
+                 <Button variant="primary" type="submit"> Create Event </Button>
+            </Modal.Footer>
+        </Form>
+      </Modal>
+     {/* === END Create Event Modal === */}
+      
     </div>
   );
 };

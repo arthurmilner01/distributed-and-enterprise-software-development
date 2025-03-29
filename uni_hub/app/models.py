@@ -122,7 +122,7 @@ class UserRequestCommunity(models.Model):
 class Event(models.Model):
     event_name = models.CharField(max_length=255)
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="events")
-    date = models.DateField()  
+    date = models.DateTimeField()  
     location = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     event_type = models.CharField(max_length=50, null=True, blank=True)
