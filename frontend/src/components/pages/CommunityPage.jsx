@@ -81,7 +81,7 @@ const CommunityPage = () => {
   const [eventLocation, setEventLocation] = useState("");
   const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal
   const [expandedEventId, setExpandedEventId] = useState(null); // Track expanded event
-  // --- State for Editing Events ---
+  // State for Editing Events
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null); // Store the whole event object being edited
   const [editEventErrorMessage, setEditEventErrorMessage] = useState(""); // Error specific to edit modal
@@ -92,7 +92,7 @@ const CommunityPage = () => {
   const [editEventType, setEditEventType] = useState("");
   const [editEventLocation, setEditEventLocation] = useState("");
   const currentUserMembership = communityMembers.find(member => member.id === user?.id);
-  // Check if their role in this community is 'EventManager' (Case-sensitive!)
+  // Check if their role in this community is 'EventManager'
   const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
 
 
@@ -264,7 +264,7 @@ const CommunityPage = () => {
   const fetchEvents = async () => {
     try {
       const response = await api.get(`/api/events/`, { params: { community_id: communityId } });
-      // new Date() correctly parses ISO 8601 strings (like "2025-04-03T10:30:00Z")
+      // Parses ISO 8601 strings used to sort the events
       const sortedEvents = (response.data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
       setEvents(sortedEvents);
     } catch (error) {
@@ -426,7 +426,7 @@ const CommunityPage = () => {
       window.location.reload();
 
 
-      // Optional: refresh community details if you have this function
+      // Refresh community details if you have this function
       if (typeof fetchCommunityDetails === "function") {
         fetchCommunityDetails();
       }
@@ -528,7 +528,6 @@ const CommunityPage = () => {
         return;
     }
 
-    // --- CHANGE THIS PART BACK ---
     let formattedTimestamp; // Use a name indicating time is included
     try {
         // Use toISOString() to send the full timestamp
@@ -538,15 +537,13 @@ const CommunityPage = () => {
         setEventErrorMessage("Invalid date/time selected. Please choose a date and time.");
         return;
     }
-    // --- END CHANGE ---
 
     try {
       await api.post("/api/events/", {
         event_name: eventTitle,
         description: eventDescription,
-        // --- CHANGE THIS PART BACK: Send the full timestamp ---
+        // Send the full timestamp
         date: formattedTimestamp,
-        // --- END CHANGE ---
         event_type: eventType,
         location: eventLocation,
         community: parseInt(communityId),
@@ -581,7 +578,7 @@ const CommunityPage = () => {
     // Pre-fill the edit form state
     setEditEventTitle(eventToEdit.event_name || "");
     setEditEventDescription(eventToEdit.description || "");
-    // IMPORTANT: Convert the ISO date string back to a Date object for DatePicker
+    // Convert the ISO date string back to a Date object for DatePicker
     setEditEventDate(eventToEdit.date ? new Date(eventToEdit.date) : null);
     setEditEventType(eventToEdit.event_type || "");
     setEditEventLocation(eventToEdit.location || "");
@@ -594,8 +591,6 @@ const CommunityPage = () => {
     setIsEditEventModalOpen(false);
     setEditingEvent(null); // Clear the event being edited
     setEditEventErrorMessage(""); // Clear errors
-    // Optionally reset edit form fields (though they get reset on open)
-    // setEditEventTitle(""); ... etc.
   };
 
   // Handles the submission of the Edit Event form
@@ -1289,7 +1284,7 @@ const CommunityPage = () => {
           {requestSuccessMessage && <div className="alert alert-success">{requestSuccessMessage}</div>}
         </Modal.Footer>
       </Modal>
-      {/* === ADD Create Event Modal HERE === */}
+      {/* Create Event Modal */}
       <Modal show={isEventModalOpen} onHide={closeEventModal} centered>
         <Modal.Header closeButton>
              <Modal.Title className="h5">Create a New Community Event</Modal.Title>
@@ -1320,14 +1315,14 @@ const CommunityPage = () => {
                         showTimeSelect                // Enable time selection
                         timeInputLabel="Time:"        // Label for time input
                         dateFormat="MMMM d, yyyy h:mm aa" // Display format with time (e.g., March 29, 2025 5:30 PM)
-                        timeIntervals={15}           // Optional: Set time intervals (e.g., every 15 mins)
+                        timeIntervals={15}           // Set time interval to every 15 mins
                         placeholderText="Select event date and time" // Updated placeholder
                         className="form-control"
                         wrapperClassName="d-block"
                         required
                         autoComplete="off"
                     />
-                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text> {/* Updated text */}
+                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3" controlId="eventType">
@@ -1356,8 +1351,7 @@ const CommunityPage = () => {
             </Modal.Footer>
         </Form>
       </Modal>
-     {/* === END Create Event Modal === */}
-     {/* ===  Edit Event Modal HERE === */}
+     {/* Edit Event Modal */}
      <Modal show={isEditEventModalOpen} onHide={handleCloseEditEventModal} centered>
         <Modal.Header closeButton>
              <Modal.Title className="h5">Edit Event</Modal.Title>
@@ -1425,7 +1419,6 @@ const CommunityPage = () => {
            </Modal.Footer>
        </Form>
      </Modal>
-     {/* === END Edit Event Modal === */}
       
     </div>
   );

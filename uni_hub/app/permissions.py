@@ -14,7 +14,7 @@ class IsEventManager(BasePermission):
         # Allow list view for any authenticated user initially (permissions applied later if needed)
         # Let has_object_permission handle retrieve access control
         if view.action == 'list' or request.method in SAFE_METHODS:
-             # You might want stricter list access, but IsAuthenticated is applied anyway
+             # Allow if authenticated
              return True
 
         # For create, check role against the community ID provided in the request data
@@ -27,6 +27,7 @@ class IsEventManager(BasePermission):
                 self.message = "Community ID is required to create an event."
                 return False # Cannot check permission without target community
 
+            # Convert to int to prevent type errors
             try:
                 community_id_int = int(community_id)
             except (ValueError, TypeError):
@@ -34,7 +35,6 @@ class IsEventManager(BasePermission):
                 return False
 
             # Check if user has the required role in the specified community for creation
-            # Replace 'UserCommunity' with your actual Membership/Role model name
             can_create = UserCommunity.objects.filter(
                 user=request.user,
                 community_id=community_id_int,
@@ -44,32 +44,29 @@ class IsEventManager(BasePermission):
                  self.message = "You must be a Leader or Event Manager in this community to create events."
             return can_create
 
-        # Default: For other actions at view level (like accessing the endpoint itself),
-        # just ensure user is authenticated. Object permission check handles the rest.
+        # Return IsAuthenticated value as default
         return request.user.is_authenticated
 
 
     def has_object_permission(self, request, view, obj):
 
         if request.method in SAFE_METHODS:
-            return True # Assuming IsAuthenticated is also applied
+            return True # IsAuthenticated is also applied
 
-        # --- This is the crucial check for UPDATE, PATCH, DELETE ---
         if not request.user.is_authenticated:
             return False
 
         # Check if the event object has a community linked
         if not hasattr(obj, 'community') or not obj.community:
-             # Should not happen with a non-nullable ForeignKey, but defensive check
+             # Should not happen with a non-nullable ForeignKey
              self.message = "Event is not linked to a community."
              return False
 
-        # Check if the authenticated user has the required role in the *event's* community
-        # Replace 'UserCommunity' with your actual Membership/Role model name
+        # Check if the authenticated user has the required role in the event's community
         has_role = UserCommunity.objects.filter(
             user=request.user,
             community=obj.community, # Check against the specific community of the event
-            role__in=["Leader", "EventManager"] # Case-sensitive roles
+            role__in=["Leader", "EventManager"] # Allowed roles
         ).exists()
         if not has_role:
             self.message = "You must be a Leader or Event Manager in this community to modify this event."
