@@ -95,8 +95,6 @@ const CommunityPage = () => {
   // Check if their role in this community is 'EventManager'
   const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
 
-
-  // --- END State for Editing Events ---
   const fetchCommunityMembers = async () => {
     try {
       const res = await api.get(`/api/community/members/?community_id=${community.id}`);
@@ -107,10 +105,11 @@ const CommunityPage = () => {
   };
 
   useEffect(() => {
-    if (community?.id) {
+    if (community?.id) { // If community ID is passed
       fetchCommunityMembers();
+      fetchFollowRequests(); // For showing follow request count to leaders
     }
-  }, [community?.id]);
+  }, [community?.id]); // When community ID changes
 
 
 
@@ -762,7 +761,7 @@ const CommunityPage = () => {
               </p>
               {isLeader && (
                 <p className="text-primary" style={{ cursor: "pointer", textDecoration: "none" }} onClick={openFollowRequestsModal}>
-                  Approve/deny join requests
+                  Approve/deny join requests ({followRequests.length})
                 </p>
               )}
               {isLeader && (
