@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
+// Component for user registration
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -13,21 +14,25 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({}); // Store multiple errors
   const [success, setSuccess] = useState(false);
 
+  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccess(false);
 
+    // Check if passwords match
     if (formData.password !== formData.confirm_password) {
       setErrors({ confirm_password: "Passwords do not match" });
       return;
     }
 
     try {
+      // Send registration data
       await axios.post("http://localhost:8000/auth/users/", {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -36,8 +41,9 @@ const RegisterPage = () => {
       });
       setSuccess(true);
     } catch (err) {
+      // Handle validation or network errors
       if (err.response && err.response.data) {
-        setErrors(err.response.data); // Capture all validation errors
+        setErrors(err.response.data);
       } else {
         setErrors({ general: "Registration failed. Please try again." });
       }

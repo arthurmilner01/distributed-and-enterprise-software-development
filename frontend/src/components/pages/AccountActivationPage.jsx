@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// Component for account activation
 const AccountActivationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const AccountActivationPage = () => {
     const activateAccount = async () => {
       if (uid && token) {
         try {
+          // Send activation request
           const response = await axios.post(
             "http://127.0.0.1:8000/auth/users/activation/",
             {
@@ -22,7 +24,7 @@ const AccountActivationPage = () => {
             }
           );
           setMessage("Account successfully activated! Redirecting to login...");
-          //Redirect after 3s
+          // Redirect to login after 3 seconds
           setTimeout(() => navigate("/login"), 3000); 
         } catch (error) {
           setMessage("Activation failed. Invalid or expired link.");

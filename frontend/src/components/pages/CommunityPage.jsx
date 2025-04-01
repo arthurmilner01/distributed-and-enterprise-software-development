@@ -76,7 +76,7 @@ const CommunityPage = () => {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDescription, setEventDescription] = useState("");
-  const [eventDate, setEventDate] = useState(null); // Use null for Date object state
+  const [eventDate, setEventDate] = useState(null); 
   const [eventType, setEventType] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal

@@ -432,5 +432,5 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
-        # Optionally, add validation here
+        
         return data

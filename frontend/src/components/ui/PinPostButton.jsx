@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { Pin } from 'lucide-react';
 import useApi from "../../api";
 
+// Button component to pin or unpin a post
 const PostPinButton = ({ post, communityId, isPinned, onPinStatusChange }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const api = useApi();
 
+  // Handle pinning the post
   const handlePinPost = async () => {
     setLoading(true);
     setError("");
@@ -28,6 +30,7 @@ const PostPinButton = ({ post, communityId, isPinned, onPinStatusChange }) => {
     }
   };
 
+  // Handle unpinning the post
   const handleUnpinPost = async () => {
     setLoading(true);
     setError("");

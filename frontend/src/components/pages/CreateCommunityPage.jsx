@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
+// Component for creating a new community
 const CreateCommunityPage = () => {
   const [communityName, setCommunityName] = useState("");
   const [description, setDescription] = useState("");
@@ -14,12 +15,13 @@ const CreateCommunityPage = () => {
   const navigate = useNavigate();
   const { accessToken } = useAuth();
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     try {
-      // Convert comma-separated string to array
+      // Convert keywords string to array
       const keywordsArray = keywords
         ? keywords.split(",").map((kw) => kw.trim())
         : [];
@@ -29,18 +31,20 @@ const CreateCommunityPage = () => {
         description,
         rules,
         privacy,
-        keywords: keywordsArray, // pass as an array
+        keywords: keywordsArray,
       };
 
       const headers = accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : {};
 
+      // Send POST request to create community
       const response = await axios.post("http://localhost:8000/api/communities/", data, {
         headers,
         withCredentials: true,
       });
 
+      // If successful, show success message and redirect
       if (response.status === 201 || response.status === 200) {
         setSuccess("Community created successfully!");
         setTimeout(() => {
@@ -108,7 +112,7 @@ const CreateCommunityPage = () => {
                   </select>
                 </div>
 
-                {/* NEW: Keywords Input */}
+                {/* Input for keywords */}
                 <div className="mb-3">
                   <label className="form-label">Keywords (comma-separated):</label>
                   <input
