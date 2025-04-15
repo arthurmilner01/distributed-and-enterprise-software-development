@@ -641,6 +641,11 @@ class AchievementViewSet(viewsets.ModelViewSet):
             return Response({"error": "You can only delete your own achievements."}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+import logging
+from datetime import timezone
+
+logger = logging.getLogger(__name__)
+from .zoom_utils import create_zoom_meeting
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by('-date')
     serializer_class = EventSerializer
@@ -656,7 +661,31 @@ class EventViewSet(viewsets.ModelViewSet):
 
     # Save event when creating
     def perform_create(self, serializer):
-        serializer.save()
+        validated = serializer.validated_data
+        event_type = validated.get('event_type')
+        title = validated.get('event_name')
+        start_time = validated.get('date')  
+        location = validated.get('location')
+
+        print(f"[DEBUG] Event type: {event_type}")
+        print(f"[DEBUG] Validated data: {validated}")
+
+        if event_type in ['meeting', 'webinar'] and start_time:
+            start_time_iso = start_time.astimezone(timezone.utc).isoformat()
+            zoom_data = create_zoom_meeting(title, start_time_iso)
+            join_url = zoom_data.get("join_url")
+            if join_url:
+                location = f"{location or 'Online'} | Zoom Link: {join_url}"
+                print(f"        Topic: {zoom_data.get('topic')}")
+                print(f"        Start: {zoom_data.get('start_time')}")
+                print(f"        Duration: {zoom_data.get('duration')} mins")
+            else:
+                print(f"[ZOOM] Failed to create meeting for '{title}'")
+        else:
+            print("[ZOOM] No Zoom meeting created – missing start time or event_type mismatch.")
+
+        serializer.save(location=location)
+
 
     # Custom action to get events for a specific community
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])

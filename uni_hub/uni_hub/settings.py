@@ -120,6 +120,7 @@ DJOSER = {
     },
 }
 
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -216,3 +217,9 @@ AWS_S3_REGION_NAME = "us-east-1"
 AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
 MEDIA_URL = f"{AWS_S3_CUSTOM_DOMAIN}/"
+
+
+ZOOM_CLIENT_ID="LUm0ZZUET1OO4ritLGw7Fg"
+ZOOM_CLIENT_SECRET="FvjFVTfB1piXip5pCfZw1Z4AUaKI5GvA"
+ZOOM_ACCOUNT_ID="itiZJJzzSPe56mfk_AuDhA"
+ZOOM_USER_EMAIL="me"

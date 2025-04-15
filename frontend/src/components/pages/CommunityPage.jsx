@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Pin,PlusCircle  } from 'lucide-react';
+import { CheckCircle, XCircle, Pin, PlusCircle } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams } from "react-router-dom";
 import useApi from "../../api";
@@ -76,7 +76,7 @@ const CommunityPage = () => {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDescription, setEventDescription] = useState("");
-  const [eventDate, setEventDate] = useState(null); 
+  const [eventDate, setEventDate] = useState(null);
   const [eventType, setEventType] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal
@@ -111,7 +111,13 @@ const CommunityPage = () => {
     }
   }, [community?.id]); // When community ID changes
 
-
+  useEffect(() => {
+    if (eventType === 'webinar' || eventType === 'meeting') {
+      setEventLocation("Online (Zoom link will be auto-generated)");
+    } else {
+      setEventLocation("");
+    }
+  }, [eventType]);
 
   // To control modal show/hide
   const openFollowRequestsModal = () => {
@@ -523,18 +529,18 @@ const CommunityPage = () => {
     setErrorMessage("");
 
     if (!eventTitle.trim() || !eventDescription.trim() || !eventDate || !eventType || !eventLocation.trim()) {
-        setEventErrorMessage("Please fill in all required event details.");
-        return;
+      setEventErrorMessage("Please fill in all required event details.");
+      return;
     }
 
     let formattedTimestamp; // Use a name indicating time is included
     try {
-        // Use toISOString() to send the full timestamp
-        formattedTimestamp = eventDate.toISOString();
+      // Use toISOString() to send the full timestamp
+      formattedTimestamp = eventDate.toISOString();
     } catch (dateError) {
-        console.error("Invalid date/time selected:", eventDate);
-        setEventErrorMessage("Invalid date/time selected. Please choose a date and time.");
-        return;
+      console.error("Invalid date/time selected:", eventDate);
+      setEventErrorMessage("Invalid date/time selected. Please choose a date and time.");
+      return;
     }
 
     try {
@@ -553,24 +559,24 @@ const CommunityPage = () => {
     } catch (error) {
       console.error("Error creating event:", error);
       let errorMsg = "Failed to create event.";
-       // Your existing error handling...
-       if (error.response) {
-            if (error.response.status === 403) { errorMsg = "Permission Denied."; }
-            else if (error.response.data) {
-                const errors = error.response.data;
-                if (errors.date && Array.isArray(errors.date)) { errorMsg = `Creation failed: date: ${errors.date.join(' ')}`; } // Handles potential backend date format errors again
-                else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
-                else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
-                else { errorMsg = "Please check form details."; }
-                if (!errorMsg.toLowerCase().startsWith('creation failed:')) { errorMsg = `Creation failed: ${errorMsg}`; }
-            }
-       }
+      // Your existing error handling...
+      if (error.response) {
+        if (error.response.status === 403) { errorMsg = "Permission Denied."; }
+        else if (error.response.data) {
+          const errors = error.response.data;
+          if (errors.date && Array.isArray(errors.date)) { errorMsg = `Creation failed: date: ${errors.date.join(' ')}`; } // Handles potential backend date format errors again
+          else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
+          else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
+          else { errorMsg = "Please check form details."; }
+          if (!errorMsg.toLowerCase().startsWith('creation failed:')) { errorMsg = `Creation failed: ${errorMsg}`; }
+        }
+      }
       setEventErrorMessage(errorMsg);
       setSuccessMessage("");
     }
   };
-   // Opens the Edit Modal and pre-fills form state
-   const handleEditEventClick = (eventToEdit) => {
+  // Opens the Edit Modal and pre-fills form state
+  const handleEditEventClick = (eventToEdit) => {
     if (!eventToEdit) return;
     setEditingEvent(eventToEdit); // Store the event being edited
 
@@ -606,27 +612,27 @@ const CommunityPage = () => {
 
     // Validation for edit form fields
     if (!editEventTitle.trim() || !editEventDescription.trim() || !editEventDate || !editEventType || !editEventLocation.trim()) {
-        setEditEventErrorMessage("Please fill in all required event details.");
-        return;
+      setEditEventErrorMessage("Please fill in all required event details.");
+      return;
     }
 
     let formattedTimestamp;
     try {
-        formattedTimestamp = editEventDate.toISOString();
+      formattedTimestamp = editEventDate.toISOString();
     } catch (dateError) {
-        setEditEventErrorMessage("Invalid date/time selected.");
-        return;
+      setEditEventErrorMessage("Invalid date/time selected.");
+      return;
     }
 
     // Prepare the data payload - only send fields that can be updated
     const updatedEventData = {
-        event_name: editEventTitle,
-        description: editEventDescription,
-        date: formattedTimestamp,
-        event_type: editEventType,
-        location: editEventLocation,
-        // Include community ID if your PATCH/PUT endpoint requires it
-        // community: parseInt(communityId),
+      event_name: editEventTitle,
+      description: editEventDescription,
+      date: formattedTimestamp,
+      event_type: editEventType,
+      location: editEventLocation,
+      // Include community ID if your PATCH/PUT endpoint requires it
+      // community: parseInt(communityId),
     };
 
     try {
@@ -638,18 +644,18 @@ const CommunityPage = () => {
     } catch (error) {
       console.error("Error updating event:", error);
       let errorMsg = "Failed to update event.";
-       // Consistent error handling
-       if (error.response) {
-            if (error.response.status === 403) { errorMsg = "Permission Denied."; }
-            else if (error.response.data) {
-                const errors = error.response.data;
-                if (errors.date && Array.isArray(errors.date)) { errorMsg = `Update failed: date: ${errors.date.join(' ')}`; }
-                else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
-                else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
-                else { errorMsg = "Please check form details."; }
-                if (!errorMsg.toLowerCase().startsWith('update failed:')) { errorMsg = `Update failed: ${errorMsg}`; }
-            }
-       }
+      // Consistent error handling
+      if (error.response) {
+        if (error.response.status === 403) { errorMsg = "Permission Denied."; }
+        else if (error.response.data) {
+          const errors = error.response.data;
+          if (errors.date && Array.isArray(errors.date)) { errorMsg = `Update failed: date: ${errors.date.join(' ')}`; }
+          else if (typeof errors === 'object' && errors !== null) { errorMsg = Object.entries(errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; '); }
+          else if (typeof errors === 'string') { errorMsg = errors.detail || errors.error || errors; }
+          else { errorMsg = "Please check form details."; }
+          if (!errorMsg.toLowerCase().startsWith('update failed:')) { errorMsg = `Update failed: ${errorMsg}`; }
+        }
+      }
       setEditEventErrorMessage(errorMsg); // Show error in the edit modal
       setSuccessMessage("");
     }
@@ -658,19 +664,19 @@ const CommunityPage = () => {
   // Handles clicking the delete button
   const handleDeleteEventClick = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event? This cannot be undone.")) {
-        return;
+      return;
     }
 
     setSuccessMessage("");
     setErrorMessage("");
 
     try {
-        await api.delete(`/api/events/${eventId}/`);
-        setSuccessMessage("Event deleted successfully!");
-        fetchEvents(); // Refresh the list
+      await api.delete(`/api/events/${eventId}/`);
+      setSuccessMessage("Event deleted successfully!");
+      fetchEvents(); // Refresh the list
     } catch (error) {
-        console.error("Error deleting event:", error);
-        setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to delete event.");
+      console.error("Error deleting event:", error);
+      setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to delete event.");
     }
   };
   // --- END Event Edit/Delete Handlers ---
@@ -819,7 +825,7 @@ const CommunityPage = () => {
 
           {/* Pinned Posts Section - only visible if public or user is a member */}
           {community.privacy === "public" || (community.privacy === "private" && isMember) ? (
-            <PinnedPostsComponent 
+            <PinnedPostsComponent
               pinnedPosts={pinnedPosts}
               isLeader={isLeader}
               onUnpin={() => {
@@ -830,7 +836,7 @@ const CommunityPage = () => {
               onReorder={() => {
                 fetchPinnedPosts();
                 fetchCommunityPosts();
-              }} 
+              }}
             />
           ) : null}
 
@@ -934,7 +940,7 @@ const CommunityPage = () => {
                       </h5>
 
                       {isLeader && (
-                        <PostPinButton 
+                        <PostPinButton
                           post={post}
                           communityId={communityId}
                           isPinned={isPostPinned(post.id)}
@@ -955,7 +961,7 @@ const CommunityPage = () => {
               )}
             </div>
           </div>
-                              {/* === Community Events Section  === */}
+          {/* === Community Events Section  === */}
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
               <h4 className="mb-0 h5">Community Events</h4>
@@ -963,89 +969,89 @@ const CommunityPage = () => {
               {/* Ensure the condition matches how roles are stored on your user object */}
               {(isLeader || isCurrentUserEventManager) && (
                 <Button
-                variant="light" // Keep light variant for contrast on green
-                size="sm"
-                onClick={openEventModal}
-                className="d-flex align-items-center" // Use flexbox for icon alignment
-            >
-                <PlusCircle size={16} className="me-1" /> {/* Icon added */}
-                Create Event
-            </Button>
-               )}
+                  variant="light" // Keep light variant for contrast on green
+                  size="sm"
+                  onClick={openEventModal}
+                  className="d-flex align-items-center" // Use flexbox for icon alignment
+                >
+                  <PlusCircle size={16} className="me-1" /> {/* Icon added */}
+                  Create Event
+                </Button>
+              )}
             </div>
             <div className="card-body">
               {events.length > 0 ? (
                 <ul className="list-group list-group-flush">
                   {events.map((event) => (
                     <li key={event.id} className="list-group-item px-0 py-3">
-                       <div className="d-flex justify-content-between align-items-center">
-                            {/* Event Name and Date */}
-                            <div>
-                                <h5 className="mb-1 h6">{event.event_name}</h5>
-                                <small className="text-muted">
-                                    {new Date(event.date).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
-                                </small>
-                            </div>
-                             {/* Button Group for Actions */}
-                             <div className="d-flex align-items-center flex-shrink-0">
-                                
-                                {/* Check if Leader OR if specifically EventManager for *this* community */}
-                                {(isLeader || isCurrentUserEventManager) && (
-                                    <>
-                                        <Button
-                                            variant="outline-primary"
-                                            size="sm"
-                                            className="me-2 p-1"
-                                            onClick={() => handleEditEventClick(event)}
-                                            aria-label={`Edit event ${event.event_name}`}
-                                            title="Edit Event"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            className="me-2 p-1"
-                                            onClick={() => handleDeleteEventClick(event.id)}
-                                            aria-label={`Delete event ${event.event_name}`}
-                                            title="Delete Event"
-                                        >
-                                             Delete
-                                        </Button>
-                                    </>
-                                )}
-                                
-                                {/* Expand/Collapse Button */}
-                                <Button
-                                    variant="link"
-                                    size="sm"
-                                    onClick={() => toggleEventDetails(event.id)}
-                                    aria-expanded={expandedEventId === event.id}
-                                    aria-controls={`event-details-${event.id}`}
-                                    className="p-1 text-secondary" // Subtle style
-                                    title="Toggle Details" // Tooltip
-                                >
-                                    {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                    <span className="visually-hidden">Toggle details</span>
-                                </Button>
-                            </div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        {/* Event Name and Date */}
+                        <div>
+                          <h5 className="mb-1 h6">{event.event_name}</h5>
+                          <small className="text-muted">
+                            {new Date(event.date).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </small>
                         </div>
+                        {/* Button Group for Actions */}
+                        <div className="d-flex align-items-center flex-shrink-0">
 
-                        {/* Collapsible Event Details */}
-                        <div
-                            id={`event-details-${event.id}`}
-                            className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}
-                         >
-                            <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
-                            <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
-                            <p className="mb-0"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
+                          {/* Check if Leader OR if specifically EventManager for *this* community */}
+                          {(isLeader || isCurrentUserEventManager) && (
+                            <>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="me-2 p-1"
+                                onClick={() => handleEditEventClick(event)}
+                                aria-label={`Edit event ${event.event_name}`}
+                                title="Edit Event"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                className="me-2 p-1"
+                                onClick={() => handleDeleteEventClick(event.id)}
+                                aria-label={`Delete event ${event.event_name}`}
+                                title="Delete Event"
+                              >
+                                Delete
+                              </Button>
+                            </>
+                          )}
+
+                          {/* Expand/Collapse Button */}
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => toggleEventDetails(event.id)}
+                            aria-expanded={expandedEventId === event.id}
+                            aria-controls={`event-details-${event.id}`}
+                            className="p-1 text-secondary" // Subtle style
+                            title="Toggle Details" // Tooltip
+                          >
+                            {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                            <span className="visually-hidden">Toggle details</span>
+                          </Button>
                         </div>
+                      </div>
+
+                      {/* Collapsible Event Details */}
+                      <div
+                        id={`event-details-${event.id}`}
+                        className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}
+                      >
+                        <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
+                        <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
+                        <p className="mb-0"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                 // Message when no events exist
-                 <p className="text-muted text-center">There are no upcoming events scheduled for this community.</p>
+                // Message when no events exist
+                <p className="text-muted text-center">There are no upcoming events scheduled for this community.</p>
               )}
             </div>
           </div>
@@ -1286,139 +1292,152 @@ const CommunityPage = () => {
       {/* Create Event Modal */}
       <Modal show={isEventModalOpen} onHide={closeEventModal} centered>
         <Modal.Header closeButton>
-             <Modal.Title className="h5">Create a New Community Event</Modal.Title>
-         </Modal.Header>
-         {/* Use react-bootstrap Form */}
-         <Form onSubmit={handleCreateEvent}>
-            <Modal.Body>
-                {/* Display event-specific error message */}
-                {eventErrorMessage && <Alert variant="danger">{eventErrorMessage}</Alert>}
+          <Modal.Title className="h5">Create a New Community Event</Modal.Title>
+        </Modal.Header>
+        {/* Use react-bootstrap Form */}
+        <Form onSubmit={handleCreateEvent}>
+          <Modal.Body>
+            {/* Display event-specific error message */}
+            {eventErrorMessage && <Alert variant="danger">{eventErrorMessage}</Alert>}
 
-                <Form.Group className="mb-3" controlId="eventTitle">
-                    <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
-                    <Form.Control type="text" placeholder="e.g., Annual Tech Meetup" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="eventTitle">
+              <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
+              <Form.Control type="text" placeholder="e.g., Annual Tech Meetup" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="eventDescription">
-                    <Form.Label>Description <span className="text-danger">*</span></Form.Label>
-                    <Form.Control as="textarea" placeholder="Provide details about the event..." value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} rows={3} required />
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="eventDescription">
+              <Form.Label>Description <span className="text-danger">*</span></Form.Label>
+              <Form.Control as="textarea" placeholder="Provide details about the event..." value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} rows={3} required />
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="eventDate">
-                    
-                    <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
-                    <DatePicker
-                        selected={eventDate}
-                        onChange={(date) => setEventDate(date)}
-                        minDate={new Date()} // Still disable past dates
-                        showTimeSelect                // Enable time selection
-                        timeInputLabel="Time:"        // Label for time input
-                        dateFormat="MMMM d, yyyy h:mm aa" // Display format with time (e.g., March 29, 2025 5:30 PM)
-                        timeIntervals={15}           // Set time interval to every 15 mins
-                        placeholderText="Select event date and time" // Updated placeholder
-                        className="form-control"
-                        wrapperClassName="d-block"
-                        required
-                        autoComplete="off"
-                    />
-                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="eventDate">
 
-                <Form.Group className="mb-3" controlId="eventType">
-                    <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
-                    <Form.Select value={eventType} onChange={(e) => setEventType(e.target.value)} required>
-                        <option value="">-- Select Type --</option>
-                        <option value="conference">Conference</option>
-                        <option value="workshop">Workshop</option>
-                        <option value="webinar">Webinar</option>
-                        <option value="social">Social Gathering</option>
-                        <option value="meeting">Meeting</option>
-                        <option value="competition">Competition</option>
-                        <option value="other">Other</option>
-                    </Form.Select>
-                </Form.Group>
+              <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
+              <DatePicker
+                selected={eventDate}
+                onChange={(date) => setEventDate(date)}
+                minDate={new Date()} // Still disable past dates
+                showTimeSelect                // Enable time selection
+                timeInputLabel="Time:"        // Label for time input
+                dateFormat="MMMM d, yyyy h:mm aa" // Display format with time (e.g., March 29, 2025 5:30 PM)
+                timeIntervals={15}           // Set time interval to every 15 mins
+                placeholderText="Select event date and time" // Updated placeholder
+                className="form-control"
+                wrapperClassName="d-block"
+                required
+                autoComplete="off"
+              />
+              <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="eventLocation">
-                     <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
-                    <Form.Control type="text" placeholder="e.g., Online (Zoom Link), Main Hall" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} required />
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="eventType">
+              <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
+              <Form.Select value={eventType} onChange={(e) => setEventType(e.target.value)} required>
+                <option value="">-- Select Type --</option>
+                <option value="conference">Conference</option>
+                <option value="workshop">Workshop</option>
+                <option value="webinar">Webinar</option>
+                <option value="social">Social Gathering</option>
+                <option value="meeting">Meeting</option>
+                <option value="competition">Competition</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            </Form.Group>
 
-            </Modal.Body>
-             <Modal.Footer>
-                 <Button variant="secondary" type="button" onClick={closeEventModal}> Close </Button>
-                 <Button variant="primary" type="submit"> Create Event </Button>
-            </Modal.Footer>
+            <Form.Group className="mb-3" controlId="eventLocation">
+              <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g., Online (Zoom Link), Main Hall"
+                value={eventLocation}
+                onChange={(e) => setEventLocation(e.target.value)}
+                required
+                disabled={eventType === 'webinar' || eventType === 'meeting'}
+              />
+              {eventType === 'webinar' || eventType === 'meeting' && (
+                <Form.Text className="text-muted">
+                  This event will automatically generate a Zoom meeting link.
+                </Form.Text>
+              )}
+            </Form.Group>
+
+
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" type="button" onClick={closeEventModal}> Close </Button>
+            <Button variant="primary" type="submit"> Create Event </Button>
+          </Modal.Footer>
         </Form>
       </Modal>
-     {/* Edit Event Modal */}
-     <Modal show={isEditEventModalOpen} onHide={handleCloseEditEventModal} centered>
+      {/* Edit Event Modal */}
+      <Modal show={isEditEventModalOpen} onHide={handleCloseEditEventModal} centered>
         <Modal.Header closeButton>
-             <Modal.Title className="h5">Edit Event</Modal.Title>
-         </Modal.Header>
-         {/* Pass handleUpdateEvent to Form onSubmit */}
-         <Form onSubmit={handleUpdateEvent}>
-            <Modal.Body>
-                {/* Display edit-specific error message */}
-                {editEventErrorMessage && <Alert variant="danger">{editEventErrorMessage}</Alert>}
+          <Modal.Title className="h5">Edit Event</Modal.Title>
+        </Modal.Header>
+        {/* Pass handleUpdateEvent to Form onSubmit */}
+        <Form onSubmit={handleUpdateEvent}>
+          <Modal.Body>
+            {/* Display edit-specific error message */}
+            {editEventErrorMessage && <Alert variant="danger">{editEventErrorMessage}</Alert>}
 
-                {/* Form fields pre-filled from editEvent state */}
-                <Form.Group className="mb-3" controlId="editEventTitle">
-                    <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
-                    <Form.Control type="text" value={editEventTitle} onChange={(e) => setEditEventTitle(e.target.value)} required />
-                </Form.Group>
+            {/* Form fields pre-filled from editEvent state */}
+            <Form.Group className="mb-3" controlId="editEventTitle">
+              <Form.Label>Event Title <span className="text-danger">*</span></Form.Label>
+              <Form.Control type="text" value={editEventTitle} onChange={(e) => setEditEventTitle(e.target.value)} required />
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="editEventDescription">
-                    <Form.Label>Description <span className="text-danger">*</span></Form.Label>
-                    <Form.Control as="textarea" value={editEventDescription} onChange={(e) => setEditEventDescription(e.target.value)} rows={3} required />
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="editEventDescription">
+              <Form.Label>Description <span className="text-danger">*</span></Form.Label>
+              <Form.Control as="textarea" value={editEventDescription} onChange={(e) => setEditEventDescription(e.target.value)} rows={3} required />
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="editEventDate">
-                    <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
-                    <DatePicker
-                        selected={editEventDate} // Use editEventDate state
-                        onChange={(date) => setEditEventDate(date)} // Update editEventDate state
-                        minDate={new Date()}
-                        showTimeSelect
-                        timeInputLabel="Time:"
-                        dateFormat="MMMM d, yyyy h:mm aa"
-                        timeIntervals={15}
-                        placeholderText="Select event date and time"
-                        className="form-control"
-                        wrapperClassName="d-block"
-                        required
-                        autoComplete="off"
-                    />
-                     <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="editEventDate">
+              <Form.Label>Date & Time <span className="text-danger">*</span></Form.Label>
+              <DatePicker
+                selected={editEventDate} // Use editEventDate state
+                onChange={(date) => setEditEventDate(date)} // Update editEventDate state
+                minDate={new Date()}
+                showTimeSelect
+                timeInputLabel="Time:"
+                dateFormat="MMMM d, yyyy h:mm aa"
+                timeIntervals={15}
+                placeholderText="Select event date and time"
+                className="form-control"
+                wrapperClassName="d-block"
+                required
+                autoComplete="off"
+              />
+              <Form.Text muted> Only today/future dates and times can be selected. </Form.Text>
+            </Form.Group>
 
-                <Form.Group className="mb-3" controlId="editEventType">
-                    <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
-                    <Form.Select value={editEventType} onChange={(e) => setEditEventType(e.target.value)} required>
-                       <option value="">-- Select Type --</option>
-                       <option value="conference">Conference</option>
-                       <option value="workshop">Workshop</option>
-                       <option value="webinar">Webinar</option>
-                       <option value="social">Social Gathering</option>
-                       <option value="meeting">Meeting</option>
-                       <option value="competition">Competition</option>
-                       <option value="other">Other</option>
-                   </Form.Select>
-               </Form.Group>
+            <Form.Group className="mb-3" controlId="editEventType">
+              <Form.Label>Event Type <span className="text-danger">*</span></Form.Label>
+              <Form.Select value={editEventType} onChange={(e) => setEditEventType(e.target.value)} required>
+                <option value="">-- Select Type --</option>
+                <option value="conference">Conference</option>
+                <option value="workshop">Workshop</option>
+                <option value="webinar">Webinar</option>
+                <option value="social">Social Gathering</option>
+                <option value="meeting">Meeting</option>
+                <option value="competition">Competition</option>
+                <option value="other">Other</option>
+              </Form.Select>
+            </Form.Group>
 
-               <Form.Group className="mb-3" controlId="editEventLocation">
-                    <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
-                   <Form.Control type="text" value={editEventLocation} onChange={(e) => setEditEventLocation(e.target.value)} required />
-               </Form.Group>
+            <Form.Group className="mb-3" controlId="editEventLocation">
+              <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
+              <Form.Control type="text" value={editEventLocation} onChange={(e) => setEditEventLocation(e.target.value)} required />
+            </Form.Group>
 
-           </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" type="button" onClick={handleCloseEditEventModal}> Cancel </Button>
-                {/* Submit button triggers handleUpdateEvent */}
-                <Button variant="primary" type="submit"> Save Changes </Button>
-           </Modal.Footer>
-       </Form>
-     </Modal>
-      
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" type="button" onClick={handleCloseEditEventModal}> Cancel </Button>
+            {/* Submit button triggers handleUpdateEvent */}
+            <Button variant="primary" type="submit"> Save Changes </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
     </div>
   );
 };
