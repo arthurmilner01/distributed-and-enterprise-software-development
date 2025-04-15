@@ -121,10 +121,10 @@ const NavMenu = () => {
             </li>
           )}
           <li>
-            <button onClick={signOut}>
-              <span className="icon"><LogOut size={20} /></span>
-              <span className="title">Sign Out</span>
-            </button>
+              <a onClick={signOut} style={{ cursor: 'pointer' }}>
+                <span className="icon"><LogOut size={20} /></span>
+                <span className="title">Sign Out</span>
+              </a>
           </li>
         </ul>
       </nav>
