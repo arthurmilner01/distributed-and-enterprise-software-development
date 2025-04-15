@@ -5,6 +5,7 @@ import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -80,14 +81,14 @@ const ProfilePage = () => {
   // State for list of user's communities (and roles)
   const [userCommunities, setUserCommunities] = useState([]);
 
-  // Fetch user's communities from the API
+  // Fetch the communities for the current user
   const fetchUserCommunities = async () => {
     try {
-      const response = await api.get(`api/communityfollow/user_communities_list/?user_id=${userId}`);
+      const response = await api.get(`api/communityfollow/user_communities_list`);
       setUserCommunities(response.data);
     } catch (error) {
-      console.error("Error fetching user communities:", error);
-      setErrorMessage("Failed to load user communities.");
+      console.error("Error fetching communities:", error);
+      setErrorMessage("Failed to load your communities.");
     }
   };
 
@@ -683,18 +684,26 @@ const ProfilePage = () => {
           <div className="tab-pane fade show active">
             <div className="card shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">User Communities</h5>
+                <h5 className="card-title mb-4">User Communities</h5>
+                
                 {userCommunities.length > 0 ? (
-                  <ul>
+                  <ul className="list-group list-group-flush">
                     {userCommunities.map((uc) => (
-                      <li key={uc.id}>
-                        {uc.community_name} — <strong>{uc.role}</strong>
+                      <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <Link 
+                          to={`/communities/${uc.community_id}`} 
+                          className="text-decoration-none text-dark fs-5"
+                        >
+                          {uc.community_name}
+                        </Link>
+                        <span className="badge bg-secondary">{uc.role}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
                   <p>No communities found.</p>
                 )}
+                
                 {errorMessage && <p className="text-danger">{errorMessage}</p>}
               </div>
             </div>
