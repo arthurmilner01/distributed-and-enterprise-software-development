@@ -8,7 +8,8 @@ import {
   Calendar,
   Bell,
   LogOut,
-  Settings
+  Settings,
+  Compass
 } from 'lucide-react';
 import '../../assets/styles/NavMenu.css';
 import { useAuth } from "../../context/AuthContext";
@@ -82,11 +83,7 @@ const NavMenu = () => {
               <span className="title">Profile</span>
             </Link>
           </li>
-
-
-          
-         
-          
+ 
           <li>
             <Link to="/communities">
               <span className="icon"><Users size={20} /></span>
@@ -98,6 +95,13 @@ const NavMenu = () => {
             <Link to="/events">
               <span className="icon"><Calendar size={20} /></span>
               <span className="title">Events</span>
+            </Link>
+          </li>
+
+          <li>
+            <Link to="/discover">
+              <span className="icon"><Compass size={20} /></span>
+              <span className="title">Discover</span>
             </Link>
           </li>
          

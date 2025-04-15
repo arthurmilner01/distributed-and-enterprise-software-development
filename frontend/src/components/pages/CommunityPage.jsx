@@ -1159,7 +1159,7 @@ const CommunityPage = () => {
           </div>
         </div>
       )}
-      <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)}>
+      <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Transfer Ownership</Modal.Title>
         </Modal.Header>
@@ -1190,7 +1190,7 @@ const CommunityPage = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
+      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Assign Role</Modal.Title>
         </Modal.Header>
@@ -1243,7 +1243,7 @@ const CommunityPage = () => {
 
 
 
-      <Modal show={requestModalShowHide} onHide={closeFollowRequestsModal}>
+      <Modal show={requestModalShowHide} onHide={closeFollowRequestsModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Follow Requests</Modal.Title>
         </Modal.Header>

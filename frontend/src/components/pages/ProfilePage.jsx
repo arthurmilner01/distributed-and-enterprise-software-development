@@ -780,7 +780,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Modal which allows the viewing of followers */}
-      <Modal show={showFollowersModal} onHide={handleCloseFollowers}>
+      <Modal show={showFollowersModal} onHide={handleCloseFollowers} centered>
       <Modal.Header closeButton>
         <Modal.Title>Followers</Modal.Title>
       </Modal.Header>
@@ -819,7 +819,7 @@ const ProfilePage = () => {
       </Modal>
 
       {/* Modal which allows the viewing of following */}
-      <Modal show={showFollowingModal} onHide={handleCloseFollowing}>
+      <Modal show={showFollowingModal} onHide={handleCloseFollowing} centered>
       <Modal.Header closeButton>
         <Modal.Title>Following</Modal.Title>
       </Modal.Header>
