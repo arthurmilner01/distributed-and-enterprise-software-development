@@ -290,7 +290,7 @@ const DashboardPage = () => {
             className={`nav-link ${currentTab === "user-posts" ? "active bg-info" : "text-dark"}`}
             onClick={() => setCurrentTab("user-posts")}
           >
-            Users
+            Following
           </button>
         </li>
         <li className="nav-item" role="presentation">
@@ -579,46 +579,134 @@ const DashboardPage = () => {
 
         {currentTab === "community-posts" && (
         <div className="tab-pane fade show active">
-          {/* Community Posts Section */}
-          <div>
-            <div className="card shadow-sm mb-4">
-              <div className="card-body">
-                {filteredCommunityPosts && filteredCommunityPosts.length > 0 ? (
-                  <ul className="list-group">
-                    {filteredCommunityPosts.map((communityPost) => (
-                      <li key={communityPost.id} className="list-group-item d-flex align-items-start">
-                        <img
-                          src={communityPost.user_image || default_profile_picture}
-                          alt="User Avatar"
-                          style={{
-                            width: "50px",
-                            height: "50px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                            marginRight: "15px",
-                            border: "2px solid #ddd",
-                          }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <h5>
-                            {communityPost.user_name} {communityPost.user_last_name}
-                          </h5>
-                          <p>{communityPost.post_text}</p>
-                          <small>{new Date(communityPost.created_at).toLocaleDateString()}</small>
-                        </div>
-                        <button className="btn btn-outline-danger" style={{ marginLeft: "auto" }}>
-                          ❤️ {communityPost.likes}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No community posts yet.</p>
+        {/* User Posts Section */}
+        <div>
+          {filteredCommunityPosts.length === 0 ? (
+            <p>No posts in the user posts feed yet.</p>
+          ) : (
+            filteredCommunityPosts.map((filteredCommunityPost) => (
+              <div
+                key={filteredCommunityPost.id}
+                className="post mb-4"
+                style={{
+                  background: "#fff",
+                  padding: "15px",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                }}
+              >
+                <div className="d-flex align-items-center mb-3">
+                  <div>
+                    <div style={{ fontWeight: "bold" }}>
+                      <h5>{filteredCommunityPost.community}</h5>
+                      <p className="text-muted fst-italic">by {filteredCommunityPost.user_name} {filteredCommunityPost.user_last_name}</p>
+                    </div>
+                    <div style={{ color: "#777", fontSize: "12px" }}>
+                      {new Date(filteredCommunityPost.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                <p>{filteredCommunityPost.post_text}</p>
+
+                {filteredCommunityPost.image_url && (
+                  <img
+                    src={filteredCommunityPost.image_url}
+                    alt="Post"
+                    style={{
+                      maxWidth: "100%",
+                      borderRadius: "8px",
+                      marginTop: "10px",
+                      marginBottom: "10px",
+                    }}
+                  />
                 )}
+
+                {/* Like Button and Count */}
+                <div className="d-flex align-items-center mb-3">
+                  <button
+                    className="btn btn-sm me-2"
+                    style={{
+                      backgroundColor: filteredCommunityPost.liked_by_user ? "#e0f7fa" : "#f1f1f1",
+                      color: filteredCommunityPost.liked_by_user ? "#007BFF" : "#555",
+                      border: "none",
+                      borderRadius: "20px",
+                      fontWeight: 500,
+                    }}
+                    onClick={() => handleLikeToggle(filteredCommunityPost.id)}
+                  >
+                    👍 {filteredCommunityPost.liked_by_user ? "Liked" : "Like"}
+                  </button>
+                  <span style={{ color: "#555", fontSize: "14px" }}>
+                    {filteredCommunityPost.like_count} {filteredCommunityPost.like_count === 1 ? "Like" : "Likes"}
+                  </span>
+                </div>
+
+                {/* Comments Section */}
+                <div className="comment-section">
+                  <h6>Comments</h6>
+                  {filteredCommunityPost.comments?.length > 0 ? (
+                    <ul className="list-unstyled">
+                      {filteredCommunityPost.comments.slice(0, 3).map((comment) => (
+                        <li
+                          key={comment.id}
+                          className="d-flex align-items-start mb-2"
+                          style={{ background: "#f0f2f5", padding: "8px", borderRadius: "12px" }}
+                        >
+                          <img
+                            src={comment.user_image || default_profile_picture}
+                            alt="User Avatar"
+                            style={{
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "50%",
+                              marginRight: "10px",
+                              marginTop: "3px",
+                            }}
+                          />
+                          <div>
+                            <strong>{comment.user_name} {comment.user_last_name}</strong>: {comment.comment_text}
+                            <br />
+                            <small style={{ color: "#777" }}>
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </small>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted">No comments yet.</p>
+                  )}
+                </div>
+
+                {/* Add Comment */}
+                <form
+                  onSubmit={(e) => handleCommentSubmit(e, filteredCommunityPost.id)}
+                  className="d-flex mt-2"
+                >
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Write a comment..."
+                    value={newComment[filteredCommunityPost.id] || ""}
+                    onChange={(e) =>
+                      setNewComment({ ...newComment, [filteredCommunityPost.id]: e.target.value })
+                    }
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary ms-2"
+                    style={{ borderRadius: "20px" }}
+                  >
+                    Submit
+                  </button>
+                </form>
               </div>
-            </div>
-          </div>
+            ))
+          )}
         </div>
+      </div>
         )}
 
       </div>
