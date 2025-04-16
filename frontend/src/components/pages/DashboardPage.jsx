@@ -3,9 +3,11 @@ import { useAuth } from "../../context/AuthContext";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
   const { user, accessToken, loading } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   // Stores all posts under the global community
   const [userPosts, setUserPosts] = useState([]);
@@ -195,6 +197,7 @@ const DashboardPage = () => {
       )
       .then(() => {
         fetchPosts();
+        fetchCommunityPosts();
         setNewComment({ ...newComment, [postId]: "" });
       })
       .catch((error) => {
@@ -298,7 +301,7 @@ const DashboardPage = () => {
             className={`nav-link ${currentTab === "community-posts" ? "active bg-info" : "text-dark"}`}
             onClick={() => setCurrentTab("community-posts")}
           >
-            Communities
+           Your Communities
           </button>
         </li>
       </ul>
@@ -446,7 +449,7 @@ const DashboardPage = () => {
           {/* User Posts Section */}
           <div>
             {userPosts.length === 0 ? (
-              <p>No posts in the user posts feed yet.</p>
+              <p>No posts in the user posts feed yet. Try following some users!</p>
             ) : (
               userPosts.map((userPost) => (
                 <div
@@ -582,7 +585,7 @@ const DashboardPage = () => {
         {/* User Posts Section */}
         <div>
           {filteredCommunityPosts.length === 0 ? (
-            <p>No posts in the user posts feed yet.</p>
+            <p>No posts in the community posts feed yet. Try joining a community!</p>
           ) : (
             filteredCommunityPosts.map((filteredCommunityPost) => (
               <div
@@ -598,7 +601,13 @@ const DashboardPage = () => {
                 <div className="d-flex align-items-center mb-3">
                   <div>
                     <div style={{ fontWeight: "bold" }}>
-                      <h5>{filteredCommunityPost.community}</h5>
+                      <span
+                          className="text-primary"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => navigate(`/communities/${filteredCommunityPost.community}`)}
+                      >
+                          COMMUNITY NAME HERE
+                      </span>
                       <p className="text-muted fst-italic">by {filteredCommunityPost.user_name} {filteredCommunityPost.user_last_name}</p>
                     </div>
                     <div style={{ color: "#777", fontSize: "12px" }}>
