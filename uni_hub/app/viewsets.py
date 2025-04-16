@@ -369,27 +369,6 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
 
         return Response(community_data.data, status=status.HTTP_200_OK)
     
-    #For filtering only to communities user has not request/joined
-    @action(detail=False, methods=["GET"])
-    def relevant_communities(self, request):
-        user = request.user  # Get the logged-in user
-
-        # Get list of communities the user is already following
-        followed_communities = UserCommunity.objects.filter(user=user).values_list('community', flat=True)
-
-        # Get list of communities the user has requested to join
-        requested_communities = UserRequestCommunity.objects.filter(user=user).values_list('community', flat=True)
-
-        # Get all communities excluding those the user is following or has requested to join
-        relevant_communities = Community.objects.exclude(id__in=followed_communities).exclude(id__in=requested_communities)
-
-        # Filter by only communities with an owner
-        relevant_communities = relevant_communities.filter(is_community_owner__isnull=False)
-
-        # Serialize the data and return it
-        serializer = UserCommunityFollowerSerializer(relevant_communities, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
     @action(detail=False, methods=["GET"])
     def follow_requests_for_community(self, request):
         # Get the community_id from query params

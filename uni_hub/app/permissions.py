@@ -2,13 +2,8 @@ from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_MET
 from .models import *
 
 class IsEventManager(BasePermission):
-    """
-    Allows:
-    - Read actions (list, retrieve) if authenticated.
-    - Create action if authenticated and user is Leader/EventManager of the target community.
-    - Update/Delete actions if authenticated and user is Leader/EventManager of the event's community.
-    """
-    message = 'You do not have permission to perform this action on this event.' # More specific message
+    # Allows read actions for normal users and create/update/delete for Leader/Event Manager
+    message = 'You do not have permission to perform this action on this event.' # Specific error message
 
     def has_permission(self, request, view):
         # Allow list view for any authenticated user initially (permissions applied later if needed)

@@ -107,7 +107,9 @@ const CommunityPage = () => {
   useEffect(() => {
     if (community?.id) { // If community ID is passed
       fetchCommunityMembers();
-      fetchFollowRequests(); // For showing follow request count to leaders
+      if (isLeader){
+        fetchFollowRequests(); // For showing follow request count to leaders
+      }
     }
   }, [community?.id]); // When community ID changes
 
