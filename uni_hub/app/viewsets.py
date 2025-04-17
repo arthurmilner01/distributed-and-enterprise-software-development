@@ -863,3 +863,60 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(updated_pinned_posts, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class UserSearchViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Filter users based on search query, university, and apply ordering.
+        Exclude the requesting user from the results.
+        """
+        request_user = self.request.user
+        #Start with all active users, excluding the current user
+        queryset = User.objects.filter(is_active=True).exclude(id=request_user.id).select_related('university')
+
+        search_query = self.request.query_params.get('search', None)
+        university_id = self.request.query_params.get('university', None)
+        ordering = self.request.query_params.get('ordering', 'last_name')
+
+        #Text search (first name, last name, bio)
+        if search_query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(bio__icontains=search_query)
+            )
+
+        #University filter
+        if university_id:
+            queryset = queryset.filter(university__id=university_id)
+
+        #Sort ordering
+        valid_ordering_fields = {
+            'last_name': 'last_name',
+            '-last_name': '-last_name',
+            'first_name': 'first_name',
+            '-first_name': '-first_name',
+            'date_joined': 'date_joined',
+            '-date_joined': '-date_joined',
+        }
+        order_field = valid_ordering_fields.get(ordering, 'last_name') 
+        queryset = queryset.order_by(order_field)
+
+        return queryset
+
+    def get_serializer_context(self):
+        """
+        Pass the request context to the serializer.
+        Needed for checking the 'is_following' status.
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+

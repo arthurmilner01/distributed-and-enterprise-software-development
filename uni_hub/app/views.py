@@ -281,7 +281,15 @@ class KeywordSuggestionsView(APIView):
         ).distinct().values_list('keyword', flat=True)[:10] #Limit 10 suggestions 
         
         return Response(list(keywords), status=status.HTTP_200_OK)
-    
+
+class UniversityListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        universities = University.objects.all().order_by('university_name')
+        data = [{'id': u.id, 'name': u.university_name} for u in universities]
+        return Response(data)
+
 class ProfileBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -18,6 +18,7 @@ import CommunityPage from "./components/pages/CommunityPage";
 import DiscoverPage from "./components/pages/DiscoverPage"; 
 import DiscoverCommunitiesPage from "./components/pages/DiscoverCommunitiesPage"; 
 import NotificationsTest from "./components/pages/NotificationsTest";
+import DiscoverUsersPage from "./components/pages/DiscoverUsersPage"; 
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
               <Route path="notifications" element={<NotificationsTest />} />
               <Route path="discover" element={<DiscoverPage />} />
               <Route path="discover/communities" element={<DiscoverCommunitiesPage />} />
+              <Route path="discover/users" element={<DiscoverUsersPage />} />
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>
                 <Route

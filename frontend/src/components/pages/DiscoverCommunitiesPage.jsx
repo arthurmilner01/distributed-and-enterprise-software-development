@@ -13,11 +13,11 @@ const DiscoverCommunitiesPage = () => {
     const { isAuthenticated, user } = useAuth();
     const api = useApi();
     
-    // User community membership state
+    //User community membership state
     const [userCommunities, setUserCommunities] = useState([]);
     const [userRequestCommunities, setUserRequestCommunities] = useState([]);
     
-    // Search state
+    //Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedKeywords, setSelectedKeywords] = useState([]);
     const [keywordOptions, setKeywordOptions] = useState([]);
@@ -30,12 +30,12 @@ const DiscoverCommunitiesPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
-    // Pagination state
+    //Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
-    // Fetch user's joined and requested communities to check membership status
+    //Fetch users joined and requested communities to check membership status
     const fetchUserMembershipData = async () => {
         try {
             const [membershipsResponse, requestsResponse] = await Promise.all([
@@ -231,12 +231,18 @@ const DiscoverCommunitiesPage = () => {
             <h2 className="mb-3">Discover Communities</h2>
             
             {/* Alerts */}
-            {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-            {successMessage && <div className="alert alert-success">{successMessage}</div>}
+            {errorMessage && <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                {errorMessage}
+                <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
+             </div>}
+            {successMessage && <div className="alert alert-success alert-dismissible fade show" role="alert">
+                {successMessage}
+                 <button type="button" className="btn-close" onClick={() => setSuccessMessage("")} aria-label="Close"></button>
+             </div>}
 
             {/* Search Panel */}
             <div className="card shadow-sm mb-4">
-                <div className="card-header bg-primary text-white">
+                <div className="card-header bg-info text-white">
                     <h4 className="mb-0">Search Communities</h4>
                 </div>
                 <div className="card-body">
@@ -405,7 +411,7 @@ const DiscoverCommunitiesPage = () => {
                                                 <div className="card-footer bg-white">
                                                     <div className="d-flex gap-2">
                                                         <button 
-                                                            className="btn btn-primary flex-grow-1"
+                                                            className="btn btn-info text-white flex-grow-1"
                                                             onClick={() => handleViewCommunity(community.id)}
                                                         >
                                                             View Community

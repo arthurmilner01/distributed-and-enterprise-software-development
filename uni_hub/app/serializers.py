@@ -434,3 +434,21 @@ class EventSerializer(serializers.ModelSerializer):
     def validate(self, data):
         
         return data
+
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    university = UniversitySerializer(read_only=True)
+    profile_picture_url = serializers.CharField(source='get_profile_picture_url', read_only=True)
+    is_following = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'first_name', 'last_name', 'bio',
+            'profile_picture_url', 'university', 'is_following'
+        ]
+        read_only_fields = fields 
+
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
