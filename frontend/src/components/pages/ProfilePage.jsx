@@ -5,7 +5,7 @@ import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -806,9 +806,13 @@ const ProfilePage = () => {
                   className="rounded-circle me-2"
                   style={{ width: "50px", height: "50px", margin:"10px" }}
                 />
-                {follower.first_name || "Unknown"} {follower.last_name || "Unknown"}
-                {follower.id !== user.id && 
-                  (follower.is_following ? (
+                <Link to={`/profile/${follower.id}`} className="text-decoration-none" onClick={handleCloseFollowers}>
+                  {follower.first_name || "Unknown"} {follower.last_name || "Unknown"}
+                </Link>
+                {follower.id === user.id ? (
+                  <span className="badge bg-secondary">Current User</span>
+                ) : (
+                  follower.is_following ? (
                     <button className="btn btn-danger" onClick={() => handleModalUnfollow(follower.id)}>
                       <UserCheck size={20} /> Unfollow
                     </button>
@@ -844,9 +848,13 @@ const ProfilePage = () => {
                   className="rounded-circle"
                   style={{ width: "50px", height: "50px", margin:"10px" }}
                 />
-                {following.first_name || "Unknown"} {following.last_name || "Unknown"}
-                {following.id !== user.id && 
-                  (following.is_following ? (
+                <Link to={`/profile/${following.id}`} className="text-decoration-none" onClick={handleCloseFollowing}>
+                  {following.first_name || "Unknown"} {following.last_name || "Unknown"}
+                </Link>
+                {following.id === user.id ? (
+                  <span className="badge bg-secondary">Current User</span>
+                ) : (
+                  following.is_following ? (
                     <button className="btn btn-danger" onClick={() => handleModalUnfollow(following.id)}>
                       <UserCheck size={20} /> Unfollow
                     </button>

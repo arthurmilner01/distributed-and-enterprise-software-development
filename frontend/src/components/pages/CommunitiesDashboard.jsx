@@ -92,7 +92,7 @@ const CommunitiesDashboard = () => {
 
   // Navigate to discover community page
   const navigateDiscover = () => {
-    navigate("/discover/communitites");
+    navigate("/discover/communities");
   };
 
   return (

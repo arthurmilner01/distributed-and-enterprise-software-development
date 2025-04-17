@@ -8,6 +8,7 @@ import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal } from "react-bootstrap";
 import { Form, Alert } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
@@ -1261,8 +1262,10 @@ const CommunityPage = () => {
                     style={{ width: "50px", height: "50px", margin: "10px" }}
                   />
                   <div>
-                    <strong>{request.user_details.first_name} </strong>
-                    <strong>{request.user_details.last_name}</strong>
+                    <Link to={`/profile/${request.user_details.id}`} className="text-decoration-none" onClick={closeFollowRequestsModal}>
+                      <strong>{request.user_details.first_name} </strong>
+                      <strong>{request.user_details.last_name}</strong>
+                    </Link>
                   </div>
                   <div>
                     <Button
