@@ -692,7 +692,7 @@ const ProfilePage = () => {
                       <li key={uc.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <Link 
                           to={`/communities/${uc.community_id}`} 
-                          className="text-decoration-none text-dark fs-5"
+                          className="text-dark fs-5"
                         >
                           {uc.community_name}
                         </Link>

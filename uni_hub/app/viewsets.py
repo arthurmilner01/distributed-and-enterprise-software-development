@@ -225,6 +225,13 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
         # If community ID not in database
         except Community.DoesNotExist:
             return Response({"error": "Community not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # If trying to leave global community
+        if not unfollowed_community.is_community_owner:
+            return Response(
+                {"error": "You cannot leave the global community."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Get row to delete
         unfollow = UserCommunity.objects.filter(user=request.user, community=unfollowed_community).first()
@@ -342,7 +349,11 @@ class CommunityFollowViewSet(viewsets.ModelViewSet):
             return Response({"error": "Missing user credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Return list of communities in response
-        user_communities = UserCommunity.objects.filter(user_id=user.id).select_related('community')
+        user_communities = UserCommunity.objects.filter(
+            user_id=user.id
+            ).exclude(
+            community__is_community_owner__isnull=True  # Filter out global community
+            ).select_related('community')
         serializer = UserCommunitySerializer(user_communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)   
         
