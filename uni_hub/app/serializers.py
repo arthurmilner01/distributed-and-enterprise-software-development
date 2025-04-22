@@ -139,6 +139,7 @@ class PostSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    community_name = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()  # Fetch latest 5 comments for each post
 
     class Meta:
@@ -150,6 +151,7 @@ class PostSerializer(serializers.ModelSerializer):
             "user_last_name",
             "user_image",
             "community",
+            "community_name",
             "post_text",
             "image",             
             "image_url",       
@@ -201,6 +203,9 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Post must have text or an image.")
 
         return data
+    
+    def get_community_name(self, obj):
+        return obj.community.community_name if obj.community else None
 
 # Serializer for creating a following relationship
 class FollowSerializer(serializers.ModelSerializer):

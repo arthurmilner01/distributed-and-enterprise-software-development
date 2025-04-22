@@ -301,7 +301,7 @@ const DashboardPage = () => {
             className={`nav-link ${currentTab === "community-posts" ? "active bg-info" : "text-dark"}`}
             onClick={() => setCurrentTab("community-posts")}
           >
-           Your Communities
+           Community
           </button>
         </li>
       </ul>
@@ -334,7 +334,13 @@ const DashboardPage = () => {
                     />
                     <div>
                       <div style={{ fontWeight: "bold" }}>
-                        {post.user_name} {post.user_last_name}
+                        <span
+                            className="text-primary"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => navigate(`/profile/${post.user}`)}
+                        >
+                          {post.user_name} {post.user_last_name}
+                        </span>
                       </div>
                       <div style={{ color: "#777", fontSize: "12px" }}>
                         {new Date(post.created_at).toLocaleDateString()}
@@ -399,8 +405,17 @@ const DashboardPage = () => {
                                 marginTop: "3px",
                               }}
                             />
-                            <div>
-                              <strong>{comment.user_name} {comment.user_last_name}</strong>: {comment.comment_text}
+                              <div>
+                              <span
+                              className="text-primary"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => navigate(`/profile/${comment.user}`)}
+                              >
+                                <strong>
+                                  {comment.user_name} {comment.user_last_name}
+                                </strong>
+                              </span>
+                              : {comment.comment_text}
                               <br />
                               <small style={{ color: "#777" }}>
                                 {new Date(comment.created_at).toLocaleDateString()}
@@ -470,7 +485,13 @@ const DashboardPage = () => {
                     />
                     <div>
                       <div style={{ fontWeight: "bold" }}>
-                        {userPost.user_name} {userPost.user_last_name}
+                        <span
+                            className="text-primary"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => navigate(`/profile/${userPost.user}`)}
+                        >
+                          {userPost.user_name} {userPost.user_last_name}
+                        </span>
                       </div>
                       <div style={{ color: "#777", fontSize: "12px" }}>
                         {new Date(userPost.created_at).toLocaleDateString()}
@@ -536,7 +557,16 @@ const DashboardPage = () => {
                               }}
                             />
                             <div>
-                              <strong>{comment.user_name} {comment.user_last_name}</strong>: {comment.comment_text}
+                              <span
+                              className="text-primary"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => navigate(`/profile/${comment.user}`)}
+                              >
+                                <strong>
+                                  {comment.user_name} {comment.user_last_name}
+                                </strong>
+                              </span>
+                              : {comment.comment_text}
                               <br />
                               <small style={{ color: "#777" }}>
                                 {new Date(comment.created_at).toLocaleDateString()}
@@ -600,15 +630,28 @@ const DashboardPage = () => {
               >
                 <div className="d-flex align-items-center mb-3">
                   <div>
-                    <div style={{ fontWeight: "bold" }}>
+                    <div style={{ 
+                      fontWeight: "bold"
+                    }}>
                       <span
                           className="text-primary"
-                          style={{ cursor: "pointer" }}
+                          style={{ 
+                            cursor: "pointer",
+                            fontSize: "1.4em"
+                          }}
                           onClick={() => navigate(`/communities/${filteredCommunityPost.community}`)}
                       >
-                          COMMUNITY NAME HERE
+                          {filteredCommunityPost.community_name}
                       </span>
-                      <p className="text-muted fst-italic">by {filteredCommunityPost.user_name} {filteredCommunityPost.user_last_name}</p>
+                      <p className="text-muted fst-italic">by {" "}
+                        <span 
+                        className="text-muted fst-italic cursor-pointer text-decoration-underline"
+                        style={{ cursor: 'pointer' }} 
+                        onClick={() => navigate(`/profile/${filteredCommunityPost.user}`)}
+                        >
+                          {filteredCommunityPost.user_name} {filteredCommunityPost.user_last_name}
+                        </span>
+                      </p>
                     </div>
                     <div style={{ color: "#777", fontSize: "12px" }}>
                       {new Date(filteredCommunityPost.created_at).toLocaleDateString()}
@@ -674,7 +717,16 @@ const DashboardPage = () => {
                             }}
                           />
                           <div>
-                            <strong>{comment.user_name} {comment.user_last_name}</strong>: {comment.comment_text}
+                          <span
+                            className="text-primary"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => navigate(`/profile/${comment.user}`)}
+                          >
+                            <strong>
+                              {comment.user_name} {comment.user_last_name}
+                            </strong>
+                          </span>
+                            : {comment.comment_text}
                             <br />
                             <small style={{ color: "#777" }}>
                               {new Date(comment.created_at).toLocaleDateString()}
