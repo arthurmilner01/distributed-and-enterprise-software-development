@@ -4,6 +4,8 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { ThumbsUp } from "lucide-react";
+
 
 const DashboardPage = () => {
   const { user, accessToken, loading } = useAuth();
@@ -136,36 +138,35 @@ const DashboardPage = () => {
 
   const handlePostSubmit = async (event) => {
     event.preventDefault();
-
+  
     // Prevent submission if both text and image are missing
     if (!newPost.trim() && !newPostImage) {
       setErrorMessage("Please add text or an image before posting.");
       return;
     }
-
+  
     const formData = new FormData();
     formData.append("post_text", newPost);
     if (newPostImage) {
       formData.append("image", newPostImage);
     }
-
-    axios
-      .post("http://localhost:8000/api/posts/", formData, {
+  
+    try {
+      const response = await api.post("api/posts/", formData, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "multipart/form-data"
         }
-      })
-      .then((response) => {
-        setPosts([response.data, ...posts]);
-        setNewPost("");
-        setNewPostImage(null);
-        setIsModalOpen(false);
-      })
-      .catch((error) => {
-        console.error("Failed to create post:", error);
       });
+  
+      setPosts([response.data, ...posts]);
+      setNewPost("");
+      setNewPostImage(null);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+    }
   };
+  
 
   // Handles submitting likes on a specific post
   const handleLikeToggle = async (postId) => {
@@ -181,28 +182,32 @@ const DashboardPage = () => {
           : post
       );
       setPosts(updatedPosts);
+      fetchCommunityPosts();
     } catch (error) {
       console.error("Error toggling like:", error);
     }
   };
 
-  const handleCommentSubmit = async (event, postId) => {
+   // To save a posted comment
+   const handleCommentSubmit = async (event, postId) => {
     event.preventDefault();
     if (!newComment[postId] || newComment[postId].trim() === "") return;
-    axios
-      .post(
-        `http://localhost:8000/api/posts/${postId}/comments/`,
-        { comment_text: newComment[postId], post: postId },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      )
-      .then(() => {
-        fetchPosts();
-        fetchCommunityPosts();
-        setNewComment({ ...newComment, [postId]: "" });
-      })
-      .catch((error) => {
-        console.error("Failed to create comment:", error);
-      });
+  
+    try {
+      const response = await api.post(
+        `api/posts/${postId}/comments/`,
+        {
+          comment_text: newComment[postId],
+          post: postId,
+        }
+      );
+      console.log("Comment created:", response.data);
+      fetchPosts();
+      fetchCommunityPosts();
+      setNewComment({ ...newComment, [postId]: "" });
+    } catch (error) {
+      console.error("Failed to create comment:", error);
+    }
   };
 
   if (loading) return <p>Loading user data...</p>;
@@ -376,7 +381,7 @@ const DashboardPage = () => {
                       }}
                       onClick={() => handleLikeToggle(post.id)}
                     >
-                      👍 {post.liked_by_user ? "Liked" : "Like"}
+                      <ThumbsUp size={20} /> {post.liked_by_user ? "Liked" : "Like"}
                     </button>
                     <span style={{ color: "#555", fontSize: "14px" }}>
                       {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
@@ -527,7 +532,7 @@ const DashboardPage = () => {
                       }}
                       onClick={() => handleLikeToggle(userPost.id)}
                     >
-                      👍 {userPost.liked_by_user ? "Liked" : "Like"}
+                      <ThumbsUp size={20} /> {userPost.liked_by_user ? "Liked" : "Like"}
                     </button>
                     <span style={{ color: "#555", fontSize: "14px" }}>
                       {userPost.like_count} {userPost.like_count === 1 ? "Like" : "Likes"}
@@ -687,7 +692,7 @@ const DashboardPage = () => {
                     }}
                     onClick={() => handleLikeToggle(filteredCommunityPost.id)}
                   >
-                    👍 {filteredCommunityPost.liked_by_user ? "Liked" : "Like"}
+                    <ThumbsUp size={20} /> {filteredCommunityPost.liked_by_user ? "Liked" : "Like"}
                   </button>
                   <span style={{ color: "#555", fontSize: "14px" }}>
                     {filteredCommunityPost.like_count} {filteredCommunityPost.like_count === 1 ? "Like" : "Likes"}

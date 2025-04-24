@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
-import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star, Trash } from "lucide-react";
+import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star, Trash, ThumbsUp } from "lucide-react";
 import { Modal, Button } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
@@ -91,6 +91,25 @@ const ProfilePage = () => {
       setNewComment({ ...newComment, [postId]: "" });
     } catch (error) {
       console.error("Failed to create comment:", error);
+    }
+  };
+
+  // Handles submitting likes on a specific post
+  const handleLikeToggle = async (postId) => {
+    try {
+      const response = await api.post(`/api/posts/${postId}/toggle-like/`);
+      const updatedPosts = userPosts.map((post) =>
+        post.id === postId
+          ? {
+            ...post,
+            liked_by_user: response.data.liked,
+            like_count: response.data.like_count,
+          }
+          : post
+      );
+      setUserPosts(updatedPosts);
+    } catch (error) {
+      console.error("Error toggling like:", error);
     }
   };
 
@@ -716,7 +735,7 @@ const ProfilePage = () => {
                               {/* Like Button and Count */}
                               <div className="d-flex align-items-center mb-3">
                                 <button
-                                  className="btn btn-sm me-2"
+                                  className="btn btn-md me-2"
                                   style={{
                                     backgroundColor: post.liked_by_user ? "#e0f7fa" : "#f1f1f1",
                                     color: post.liked_by_user ? "#007BFF" : "#555",
@@ -726,7 +745,7 @@ const ProfilePage = () => {
                                   }}
                                   onClick={() => handleLikeToggle(post.id)}
                                 >
-                                  👍 {post.liked_by_user ? "Liked" : "Like"}
+                                  <ThumbsUp size={20} /> {post.liked_by_user ? "Liked" : "Like"}
                                 </button>
                                 <span style={{ color: "#555", fontSize: "14px" }}>
                                   {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
