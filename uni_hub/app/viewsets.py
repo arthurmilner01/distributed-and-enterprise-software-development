@@ -582,7 +582,6 @@ class CommunityViewSet(viewsets.ModelViewSet):
         COMMUNITY_ROLES = (
             ("Leader", "Leader"),
             ("EventManager", "Event Manager"),
-            ("Moderator", "Moderator"),
             ("Member", "Member"),
             )
         if community.is_community_owner != request.user:

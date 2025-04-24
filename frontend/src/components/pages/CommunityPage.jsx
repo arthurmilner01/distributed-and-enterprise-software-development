@@ -1227,7 +1227,6 @@ const CommunityPage = () => {
             >
               <option value="">-- Select Role --</option>
               <option value="Member">Member</option>
-              <option value="Moderator">Moderator</option>
               <option value="EventManager">Event Manager</option>
             </select>
           </div>

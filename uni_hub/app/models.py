@@ -96,7 +96,6 @@ class UserCommunity(models.Model):
     COMMUNITY_ROLES = (
     ("Leader", "Leader"),
     ("EventManager", "Event Manager"),
-    ("Moderator", "Moderator"),
     ("Member", "Member"),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_communities")
