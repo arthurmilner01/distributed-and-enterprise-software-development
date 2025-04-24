@@ -60,14 +60,37 @@ const ProfilePage = () => {
 
   // List of user's posts
   const [userPosts, setUserPosts] = useState([]);
+  // For posting a comment
+  const [newComment, setNewComment] = useState({});
 
   // Fetch the posts of the viewed user
   const fetchUserPosts = async () => {
     try {
-      const response = await api.get(`api/posts/?user=${userId}`);
+      const response = await api.get(`api/posts/?user_id=${userId}`);
       setUserPosts(response.data);
     } catch (error) {
       console.error("Error fetching user posts:", error);
+    }
+  };
+
+  // To save a posted comment
+  const handleCommentSubmit = async (event, postId) => {
+    event.preventDefault();
+    if (!newComment[postId] || newComment[postId].trim() === "") return;
+  
+    try {
+      const response = await api.post(
+        `api/posts/${postId}/comments/`,
+        {
+          comment_text: newComment[postId],
+          post: postId,
+        }
+      );
+      console.log("Comment created:", response.data);
+      fetchUserPosts();
+      setNewComment({ ...newComment, [postId]: "" });
+    } catch (error) {
+      console.error("Failed to create comment:", error);
     }
   };
 
@@ -637,43 +660,152 @@ const ProfilePage = () => {
         <div className="card shadow-sm">
           <div className="card-body">
             <h5 className="card-title">User Posts</h5>
-            {userPosts.length > 0 ? (
-              <ul className="list-group">
-                {/* Limit to last  5 posts */}
-                {userPosts.slice(0, 5).map((post) => (
-                  <li key={post.id} className="list-group-item d-flex align-items-start">
-                    {/* Profile Image */}
-                    <img
-                      src={post.user_image || default_profile_picture}
-                      alt="User Avatar"
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        marginRight: "15px",
-                        border: "2px solid #ddd",
-                      }}
-                    />
-                    {/* Post Content */}
-                    <div style={{ flex: 1 }}>
-                      <h5>{post.user_name} {post.user_last_name}</h5>
-                      <p>{post.post_text}</p>
-                      <small>{new Date(post.created_at).toLocaleDateString()}</small>
-                    </div>
-                    {/* Likes Button */}
-                    <button
-                      className="btn btn-outline-danger"
-                      style={{ marginLeft: "auto" }}
-                    >
-                      ❤️ {post.likes}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No posts yet.</p>
-            )}
+            {/* Posts Section */}
+                      <div>
+                        {userPosts.length === 0 ? (
+                          <p>User hasn't created any posts.</p>
+                        ) : (
+                          userPosts.map((post) => (
+                            <div
+                              key={post.id}
+                              className="post mb-4"
+                              style={{
+                                background: "#fff",
+                                padding: "15px",
+                                borderRadius: "8px",
+                                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                              }}
+                            >
+                              <div className="d-flex align-items-center mb-3">
+                                <img
+                                  src={post.user_image || default_profile_picture}
+                                  alt="User Avatar"
+                                  style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px" }}
+                                />
+                                <div>
+                                  <div style={{ fontWeight: "bold" }}>
+                                    <span
+                                        className="text-primary"
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => navigate(`/profile/${post.user}`)}
+                                    >
+                                      {post.user_name} {post.user_last_name}
+                                    </span>
+                                  </div>
+                                  <div style={{ color: "#777", fontSize: "12px" }}>
+                                    {new Date(post.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+            
+                              <p>{post.post_text}</p>
+            
+                              {post.image_url && (
+                                <img
+                                  src={post.image_url}
+                                  alt="Post"
+                                  style={{
+                                    maxWidth: "100%",
+                                    borderRadius: "8px",
+                                    marginTop: "10px",
+                                    marginBottom: "10px",
+                                  }}
+                                />
+                              )}
+            
+                              {/* Like Button and Count */}
+                              <div className="d-flex align-items-center mb-3">
+                                <button
+                                  className="btn btn-sm me-2"
+                                  style={{
+                                    backgroundColor: post.liked_by_user ? "#e0f7fa" : "#f1f1f1",
+                                    color: post.liked_by_user ? "#007BFF" : "#555",
+                                    border: "none",
+                                    borderRadius: "20px",
+                                    fontWeight: 500,
+                                  }}
+                                  onClick={() => handleLikeToggle(post.id)}
+                                >
+                                  👍 {post.liked_by_user ? "Liked" : "Like"}
+                                </button>
+                                <span style={{ color: "#555", fontSize: "14px" }}>
+                                  {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
+                                </span>
+                              </div>
+            
+                              {/* Comments Section */}
+                              <div className="comment-section">
+                                <h6>Comments</h6>
+                                {post.comments?.length > 0 ? (
+                                  <ul className="list-unstyled">
+                                    {post.comments.slice(0, 3).map((comment) => (
+                                      <li
+                                        key={comment.id}
+                                        className="d-flex align-items-start mb-2"
+                                        style={{ background: "#f0f2f5", padding: "8px", borderRadius: "12px" }}
+                                      >
+                                        <img
+                                          src={comment.user_image || default_profile_picture}
+                                          alt="User Avatar"
+                                          style={{
+                                            width: "30px",
+                                            height: "30px",
+                                            borderRadius: "50%",
+                                            marginRight: "10px",
+                                            marginTop: "3px",
+                                          }}
+                                        />
+                                          <div>
+                                          <span
+                                          className="text-primary"
+                                          style={{ cursor: "pointer" }}
+                                          onClick={() => navigate(`/profile/${comment.user}`)}
+                                          >
+                                            <strong>
+                                              {comment.user_name} {comment.user_last_name}
+                                            </strong>
+                                          </span>
+                                          : {comment.comment_text}
+                                          <br />
+                                          <small style={{ color: "#777" }}>
+                                            {new Date(comment.created_at).toLocaleDateString()}
+                                          </small>
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-muted">No comments yet.</p>
+                                )}
+                              </div>
+            
+                              {/* Add Comment */}
+                              <form
+                                onSubmit={(e) => handleCommentSubmit(e, post.id)}
+                                className="d-flex mt-2"
+                              >
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Write a comment..."
+                                  value={newComment[post.id] || ""}
+                                  onChange={(e) =>
+                                    setNewComment({ ...newComment, [post.id]: e.target.value })
+                                  }
+                                  required
+                                />
+                                <button
+                                  type="submit"
+                                  className="btn btn-primary ms-2"
+                                  style={{ borderRadius: "20px" }}
+                                >
+                                  Submit
+                                </button>
+                              </form>
+                            </div>
+                          ))
+                        )}
+                      </div>
           </div>
         </div>
       </div>
