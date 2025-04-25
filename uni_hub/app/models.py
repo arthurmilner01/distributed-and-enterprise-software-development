@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your models here.
 class University(models.Model):
@@ -28,6 +29,15 @@ class CustomUserManager(BaseUserManager):
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'A')
+        extra_fields.setdefault('is_active', 1)
+
+        try:
+            university = University.objects.get(university_domain="@admin.com")
+        except ObjectDoesNotExist:
+            university = None
+
+        extra_fields.setdefault('university', university)
 
         return self.create_user(email, password, **extra_fields)
 
