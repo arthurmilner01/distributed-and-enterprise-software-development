@@ -27,7 +27,7 @@ from django.core.files.base import ContentFile
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.base import ContentFile
 from django.db.models import Q
-
+from .recommendations import get_community_recommendations_by_joined_keywords 
 # Custom /auth/customjwt/create to store the refresh token as a cookie
 # Using customized Djoser TokenObtainPairView
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -426,3 +426,18 @@ def toggle_like(request, post_id):
         "liked": liked,
         "like_count": like_count
     }, status=status.HTTP_200_OK)
+    
+class RecommendedCommunitiesView(generics.ListAPIView):
+    """
+    API endpoint to get community recommendations for the logged-in user
+    based on keywords of communities they have already joined.
+    """
+    serializer_class = CommunitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        limit = int(self.request.query_params.get('limit', 5)) # Default to 5 recommendations
+        # Call the specific recommendation logic
+        # This function now returns a QuerySet, so ListAPIView handles it directly
+        return get_community_recommendations_by_joined_keywords(user, limit=limit)

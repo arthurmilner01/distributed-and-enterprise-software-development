@@ -1,34 +1,44 @@
 import { useAuth } from "../../context/AuthContext";
-import { useState, useEffect } from "react"; 
-import { Lock, UserPlus, Search } from "lucide-react";
-import useApi from "../../api"; 
+import { useState, useEffect } from "react";
+// Import necessary icons from lucide-react
+import { Lock, UserPlus, Search } from "lucide-react"; // REMOVED Alert as BsAlert
+import useApi from "../../api";
 import { useNavigate } from "react-router-dom";
 import { PaginationComponent } from "../widgets/PaginationComponent";
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
+// Import Alert component from react-bootstrap if you intend to use it for displaying errors/messages
+import { Alert } from 'react-bootstrap'; // ADDED this line if you use <Alert> component
 
+// --- Other imports if needed ---
 const DiscoverCommunitiesPage = () => {
     const navigate = useNavigate();
     const { isAuthenticated, user } = useAuth();
     const api = useApi();
-    
+
     //User community membership state
     const [userCommunities, setUserCommunities] = useState([]);
     const [userRequestCommunities, setUserRequestCommunities] = useState([]);
-    
+
     //Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedKeywords, setSelectedKeywords] = useState([]);
     const [keywordOptions, setKeywordOptions] = useState([]);
     const [privacyFilter, setPrivacyFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("-id");
-    
+
     //Results and UI state
     const [communities, setCommunities] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+
+    // ---> ADDED: Recommendation State <---
+    const [recommendedCommunities, setRecommendedCommunities] = useState([]);
+    const [isRecLoading, setIsRecLoading] = useState(false); // Separate loading for recommendations
+    const [recError, setRecError] = useState(''); // Separate error for recommendations
+    // ---> END ADDED: Recommendation State <---
 
     //Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -37,191 +47,217 @@ const DiscoverCommunitiesPage = () => {
 
     //Fetch users joined and requested communities to check membership status
     const fetchUserMembershipData = async () => {
+        // Added safety check
+        if (!isAuthenticated) {
+             setUserCommunities([]);
+             setUserRequestCommunities([]);
+             return;
+        }
         try {
+            // Original Promise.all kept
             const [membershipsResponse, requestsResponse] = await Promise.all([
                 api.get(`api/communityfollow/followers/`),
                 api.get(`api/communityfollow/follow_requests/`)
             ]);
             setUserCommunities(membershipsResponse.data);
-            setUserRequestCommunities(requestsResponse.data);
+            // Ensure requests are mapped correctly based on API response structure
+            // This assumes the response is an array of objects where the community ID is request.community
+            setUserRequestCommunities(requestsResponse.data.map(req => ({ id: req.community })) || []);
         } catch (error) {
             console.error("Error fetching user community data:", error);
+            // Original had no error setting here, keeping it that way
+        }
+    };
+    const fetchRecommendations = async () => {
+        if (!isAuthenticated || !user || isRecLoading) return; // Check conditions
+
+        setIsRecLoading(true);
+        setRecError('');
+        try {
+            const response = await api.get('/api/recommendations/communities/', { params: { limit: 3 } });
+            setRecommendedCommunities(response.data || []);
+        } catch (err) {
+            console.error("Error fetching recommendations:", err);
+            setRecError('Could not load recommendations at this time.');
+            setRecommendedCommunities([]);
+        } finally {
+            setIsRecLoading(false);
         }
     };
 
-    //On first render
+    //On first render (Original Hook)
     useEffect(() => {
-        fetchUserMembershipData();
-        performSearch();
-    }, []);
+        // Fetch membership data only if authenticated
+        if (isAuthenticated) {
+            fetchUserMembershipData();
+        }
+        performSearch(selectedKeywords, 1); // Fetch initial search results on page 1
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]); // Fetch membership when auth status changes, run initial search once
 
-    //Update search when filter values change
+
+    //Update search when filter values change (Original Hook - modified dependencies slightly)
     useEffect(() => {
-        performSearch();
-    }, [privacyFilter, sortOrder, currentPage]);
+        // Don't run initial search again if currentPage is still 0 or 1 from initial load/reset
+         if (currentPage > 0) { // Or check if it's not the very first render using a ref if needed
+             performSearch(selectedKeywords, currentPage);
+         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [privacyFilter, sortOrder, currentPage]); // Run search when these change
+    useEffect(() => {
+        fetchRecommendations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]); // Keep dependency minimal
 
-    //Check if user is a member of a community
+
+    //Check if user is a member of a community (Original Function)
     const isMemberOf = (communityId) => {
-        return userCommunities.some(c => c.id === communityId);
+        // Added safety check for array
+        return Array.isArray(userCommunities) && userCommunities.some(c => c.id === communityId);
     };
 
-    //Check if user has requested to join a community
+    //Check if user has requested to join a community (Original Function - corrected check based on fetch)
     const hasRequestedToJoin = (communityId) => {
-        return userRequestCommunities.some(c => c.id === communityId);
+        // Check the ID from the mapped structure in fetchUserMembershipData
+        return Array.isArray(userRequestCommunities) && userRequestCommunities.some(c => c.id === communityId);
     };
 
-    //Get membership status for a community
+
+    //Get membership status for a community (Original Function)
     const getMembershipStatus = (communityId) => {
         if (isMemberOf(communityId)) return "member";
         if (hasRequestedToJoin(communityId)) return "requested";
         return "none";
     };
-    
-    // Handle search form submission
+
+    // Handle search form submission (Original Function - ensure page 1 search)
     const handleSearch = (e) => {
         if (e) e.preventDefault();
-        //Reset to first page when performing a new search
-        setCurrentPage(1);
-        performSearch();
+        setCurrentPage(1); // Reset to first page
+        performSearch(selectedKeywords, 1); // Pass current keywords and page 1 explicitly
     };
 
-    // Handle pagination change
+    // Handle pagination change (Original Function)
     const handlePageChange = (newPage) => {
-        setCurrentPage(newPage);
-        //performSearch will be triggered by the useEffect
+        setCurrentPage(newPage); // State change triggers the search useEffect
     };
 
 
+    // Fetch Keyword Suggestions (Original Function)
     const fetchKeywordSuggestions = async (inputValue) => {
-        if (!inputValue) return;
-        
+        if (!inputValue || inputValue.length < 2) { // Added length check
+            setKeywordOptions([]);
+            return;
+        }
         try {
             const response = await api.get(`/api/keywords/suggestions/?query=${encodeURIComponent(inputValue)}`);
-            setKeywordOptions(response.data || []);
+             // Assuming response.data = [{id: 1, keyword: 'React'}, ...]
+             // Typeahead needs options as strings or objects with a label key
+            const options = (response.data || []).map(item => item.keyword);
+            setKeywordOptions(options);
         } catch (error) {
             console.error("Error fetching keyword suggestions:", error);
+             setKeywordOptions([]);
         }
     };
 
 
-    //Perform the search API call
-    const performSearch = async (optionalKeywords = null) => {
+    //Perform the search API call (Original Function - adapted slightly)
+    const performSearch = async (keywords = selectedKeywords, page = currentPage) => { // Accept keywords and page as args
         setIsLoading(true);
         setErrorMessage("");
-        
+
         try {
             let params = new URLSearchParams();
-            
-            if (searchQuery) {
-                params.append("search", searchQuery);
-            }
-            
-            //Use optionalKeywords if provided, otherwise use the state.
-            //Used because adding keyword dynamically (setting state) doesnt update the state variable in time (although it should work!)
-            //Quick fix for that
-            const keywordsToUse = optionalKeywords !== null ? optionalKeywords : selectedKeywords; 
-            
-            if (keywordsToUse.length > 0) {
-                params.append("keywords", keywordsToUse.join(","));
-            }
-            
-            if (privacyFilter !== "all") {
-                params.append("privacy", privacyFilter);
-            }
-            
+            if (searchQuery) params.append("search", searchQuery);
+            // Use the keywords passed into the function
+            if (keywords && keywords.length > 0) params.append("keywords", keywords.join(","));
+            if (privacyFilter !== "all") params.append("privacy", privacyFilter);
             params.append("ordering", sortOrder);
-            
-            // Add pagination parameter
-            params.append("page", currentPage.toString());
-            
+            params.append("page", page.toString()); // Use the page passed into the function
+
             const response = await api.get(`/api/communities/?${params.toString()}`);
-            
-            // Handle paginated response
+
             setCommunities(response.data.results || []);
             setTotalItems(response.data.count || 0);
             setTotalPages(response.data.total_pages || 1);
-            
-            //If current page doesn't exist anymore, go to the last page
-            if (response.data.total_pages && currentPage > response.data.total_pages) {
-                setCurrentPage(response.data.total_pages);
+
+             // Handle page correction if current page becomes invalid
+             if (response.data.total_pages && page > response.data.total_pages) {
+                const lastPage = response.data.total_pages > 0 ? response.data.total_pages : 1;
+                // Only update state if it's different, preventing potential loop if already on correct page
+                if (currentPage !== lastPage) {
+                    setCurrentPage(lastPage);
+                }
             }
+             // If called specifically with page 1 (e.g., new search), ensure state reflects it
+             else if (page === 1 && currentPage !== 1) {
+                 setCurrentPage(1);
+             }
+
+
         } catch (error) {
             console.error("Error searching communities:", error);
             setErrorMessage("Failed to search communities. Please try again.");
             setCommunities([]);
+            setTotalItems(0);
+            setTotalPages(1);
         } finally {
             setIsLoading(false);
         }
     };
 
 
+    // Removed addKeyword and handleKeywordKeyDown as Typeahead handles this
 
-
-    //Add a keyword to the selected keywords
-    const addKeyword = (e) => {
-        e.preventDefault();
-        if (currentKeyword.trim() && !selectedKeywords.includes(currentKeyword.trim())) {
-            const newKeywords = [...selectedKeywords, currentKeyword.trim()];
-            setSelectedKeywords(newKeywords);
-            setCurrentKeyword("");
-            
-            //Reset to page 1 when adding a new keyword
-            setCurrentPage(1);
-            performSearch(newKeywords);
-        }
+    // Handler for Typeahead selection change
+    const handleKeywordSelectionChange = (selected) => {
+        setSelectedKeywords(selected); // Update state
+        setCurrentPage(1); // Reset page
+        performSearch(selected, 1); // Trigger search with new keywords and page 1
     };
 
-    //On "Enter" add keyword
-    const handleKeywordKeyDown = (e) => {
-        if (e.key === 'Enter' && currentKeyword.trim()) {
-            e.preventDefault();
-            addKeyword(e);
-        }
+
+    //Remove a keyword from the selected keywords (Original Function - adapted)
+    const removeKeyword = (keywordToRemove) => {
+        const newKeywords = selectedKeywords.filter(k => k !== keywordToRemove);
+        // Use the main handler to update state and trigger search
+        handleKeywordSelectionChange(newKeywords);
     };
 
-    //Remove a keyword from the selected keywords
-    const removeKeyword = (keyword) => {
-        const newKeywords = selectedKeywords.filter(k => k !== keyword);
-        setSelectedKeywords(newKeywords);
-        
-        //Reset to page 1 when removing a keyword
-        setCurrentPage(1);
-        performSearch(newKeywords);
-    };
-
-    //Join a community
+    //Join a community (Original Function)
     const handleJoinCommunity = async (communityId) => {
+         // Added auth check
+         if (!isAuthenticated) { navigate('/login'); return; }
         try {
-            const response = await api.post(`api/communityfollow/follow/`, { community_id: communityId });
+            await api.post(`api/communityfollow/follow/`, { community_id: communityId });
             setSuccessMessage("Successfully joined the community.");
             setErrorMessage("");
-            
-            //Refresh user community data
-            await fetchUserMembershipData();
+            await fetchUserMembershipData(); // Refresh status
         } catch (error) {
             console.error("Error joining community:", error);
-            setErrorMessage("Failed to join community. Please try again.");
+            setErrorMessage(error.response?.data?.error || "Failed to join community. Please try again.");
             setSuccessMessage("");
         }
     };
 
-    //Request to join a private community
+    //Request to join a private community (Original Function)
     const handleRequestToJoin = async (communityId) => {
+         // Added auth check
+         if (!isAuthenticated) { navigate('/login'); return; }
         try {
-            const response = await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
+            await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
             setSuccessMessage("Request to join the community sent.");
             setErrorMessage("");
-            
-            //Refresh user community data
-            await fetchUserMembershipData();
+            await fetchUserMembershipData(); // Refresh status
         } catch (error) {
             console.error("Error requesting to join community:", error);
-            setErrorMessage("Failed to request to join the community. Please try again.");
+            setErrorMessage(error.response?.data?.error || "Failed to request to join. Please try again.");
             setSuccessMessage("");
         }
     };
 
-    //Navigate to a community page
+    //Navigate to a community page (Original Function)
     const handleViewCommunity = (communityId) => {
         navigate(`/communities/${communityId}`);
     };
@@ -229,8 +265,8 @@ const DiscoverCommunitiesPage = () => {
     return (
         <div className="container mt-4 mb-5">
             <h2 className="mb-3">Discover Communities</h2>
-            
-            {/* Alerts */}
+
+            {/* Alerts (Original Structure) */}
             {errorMessage && <div className="alert alert-danger alert-dismissible fade show" role="alert">
                 {errorMessage}
                 <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
@@ -240,7 +276,7 @@ const DiscoverCommunitiesPage = () => {
                  <button type="button" className="btn-close" onClick={() => setSuccessMessage("")} aria-label="Close"></button>
              </div>}
 
-            {/* Search Panel */}
+            {/* Search Panel (Original Structure) */}
             <div className="card shadow-sm mb-4">
                 <div className="card-header bg-info text-white">
                     <h4 className="mb-0">Search Communities</h4>
@@ -267,10 +303,7 @@ const DiscoverCommunitiesPage = () => {
                                 <select
                                     className="form-select"
                                     value={privacyFilter}
-                                    onChange={(e) => {
-                                        setPrivacyFilter(e.target.value);
-                                        setCurrentPage(1); //Reset to page 1 when changing filters
-                                    }}
+                                    onChange={(e) => { setPrivacyFilter(e.target.value); }} // Let useEffect handle search trigger
                                     aria-label="Filter by privacy"
                                 >
                                     <option value="all">All Communities</option>
@@ -279,7 +312,7 @@ const DiscoverCommunitiesPage = () => {
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div className="row mb-3">
                             <div className="col-md-8">
                                 <div className="input-group">
@@ -287,17 +320,12 @@ const DiscoverCommunitiesPage = () => {
                                         id="keyword-typeahead"
                                         multiple
                                         onInputChange={fetchKeywordSuggestions}
-                                        onChange={(selected) => {
-                                            setSelectedKeywords(selected);
-                                            setCurrentPage(1);
-                                            performSearch(selected);
-                                        }}
+                                        onChange={handleKeywordSelectionChange} // Use specific handler
                                         options={keywordOptions}
                                         selected={selectedKeywords}
                                         placeholder="Add keyword filter..."
-                                        allowNew={false}
+                                        allowNew={false} // Keep original
                                     />
-
                                 </div>
                                 <small className="text-muted">Type a keyword and select one from the dropdown</small>
                             </div>
@@ -305,10 +333,7 @@ const DiscoverCommunitiesPage = () => {
                                 <select
                                     className="form-select"
                                     value={sortOrder}
-                                    onChange={(e) => {
-                                        setSortOrder(e.target.value);
-                                        setCurrentPage(1); //Reset to page 1 when changing sort order
-                                    }}
+                                    onChange={(e) => { setSortOrder(e.target.value); }} // Let useEffect handle search trigger
                                     aria-label="Sort results"
                                 >
                                     <option value="-id">Newest First</option>
@@ -320,8 +345,8 @@ const DiscoverCommunitiesPage = () => {
                                 </select>
                             </div>
                         </div>
-                        
-                        {/* Display selected keywords as tags */}
+
+                        {/* Display selected keywords as tags (Original Structure) */}
                         {selectedKeywords.length > 0 && (
                             <div className="mb-3">
                                 <label className="form-label">Active Keyword Filters:</label>
@@ -332,7 +357,7 @@ const DiscoverCommunitiesPage = () => {
                                             <button
                                                 type="button"
                                                 className="btn-close btn-close-white ms-2"
-                                                onClick={() => removeKeyword(keyword)}
+                                                onClick={() => removeKeyword(keyword)} // Original handler name
                                                 aria-label={`Remove ${keyword} filter`}
                                                 style={{ fontSize: '0.5rem' }}
                                             ></button>
@@ -343,9 +368,116 @@ const DiscoverCommunitiesPage = () => {
                         )}
                     </form>
                 </div>
+             {/* --- End Search Panel Card Div --- */}
             </div>
 
-            {/* Results */}
+
+            {/* ============================================================ */}
+            {/* === ADDED Recommendations Section === */}
+            {/* ============================================================ */}
+            {isAuthenticated && ( // Only show section if logged in
+                 <div className="mb-4"> {/* Margin below recommendations */}
+                     {/* Show heading only if not loading AND (there are items OR there was an error) */}
+                     {!isRecLoading && (recommendedCommunities.length > 0 || recError) && (
+                         <h4 className="mb-3">Recommended For You</h4>
+                     )}
+
+                     {/* Loading Indicator */}
+                     {isRecLoading && (
+                        <div className="text-center my-4"><div className="spinner-border spinner-border-sm text-primary" role="status"><span className="visually-hidden">Loading Recommendations...</span></div></div>
+                     )}
+
+                     {/* Error Message - Using standard div, replace with Alert if you prefer */}
+                     {!isRecLoading && recError && <div className="alert alert-warning py-2">{recError}</div>}
+
+                     {/* Recommendations Grid */}
+                     {!isRecLoading && !recError && recommendedCommunities.length > 0 && (
+                         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {/* Grid layout */}
+                             {recommendedCommunities.map(community => {
+                                  // Logic to determine status for this specific card
+                                  const membershipStatus = getMembershipStatus(community.id);
+                                  // Get keywords (handle if field name is different, e.g., 'keywords' vs 'keyword_list')
+                                  const keywords = community.keywords || community.keyword_list || [];
+
+                                  return (
+                                     <div key={`rec-${community.id}`} className="col"> {/* Unique key */}
+                                         {/* Reusing same card structure as below for consistency */}
+                                         <div className="card h-100 shadow-sm">
+                                             <div className="card-header d-flex justify-content-between align-items-center">
+                                                 <h5 className="mb-0 text-truncate" title={community.community_name}>
+                                                     {community.community_name}
+                                                 </h5>
+                                                 <span className={`badge ${community.privacy === 'public' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                                                     {community.privacy}
+                                                     {community.privacy === "private" && (<Lock size={14} className="ms-1" />)}
+                                                 </span>
+                                             </div>
+                                             <div className="card-body">
+                                                 <p className="card-text">
+                                                     {community.description && community.description.length > 100
+                                                         ? `${community.description.substring(0, 100)}...`
+                                                         : community.description || "No description provided."}
+                                                 </p>
+                                                 <p className="card-text">
+                                                     <small className="text-muted">
+                                                         <strong>Members:</strong> {community.member_count || 0}
+                                                     </small>
+                                                 </p>
+                                                 {keywords.length > 0 && (
+                                                     <div className="mb-2">
+                                                         <strong>Keywords:</strong>
+                                                         <div className="d-flex flex-wrap gap-1 mt-1">
+                                                             {keywords.map((keyword, index) => (
+                                                                 <span key={index} className="badge bg-secondary">{keyword}</span>
+                                                             ))}
+                                                         </div>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                             <div className="card-footer bg-white">
+                                                  {/* Reusing button logic from your existing results */}
+                                                 <div className="d-flex gap-2">
+                                                     <button
+                                                         className="btn btn-info text-white flex-grow-1"
+                                                         onClick={() => handleViewCommunity(community.id)}
+                                                     >
+                                                         View Community
+                                                     </button>
+                                                     {membershipStatus === "none" && (
+                                                         community.privacy === "private" ? (
+                                                             <button
+                                                                 className="btn btn-outline-info"
+                                                                 onClick={() => handleRequestToJoin(community.id)}
+                                                             >
+                                                                 Request <Lock size={14} className="ms-1" />
+                                                             </button>
+                                                         ) : (
+                                                             <button
+                                                                 className="btn btn-outline-success"
+                                                                 onClick={() => handleJoinCommunity(community.id)}
+                                                             >
+                                                                 Join <UserPlus size={14} className="ms-1" />
+                                                             </button>
+                                                         )
+                                                     )}
+                                                     {membershipStatus === "requested" && ( <button className="btn btn-outline-secondary" disabled> Requested </button> )}
+                                                     {membershipStatus === "member" && ( <button className="btn btn-outline-success" disabled> Member </button> )}
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                  );
+                             })}
+                         </div>
+                     )}
+                 </div>
+            )}
+            {/* ============================================================ */}
+            {/* === END Recommendations Section === */}
+            {/* ============================================================ */}
+
+
+            {/* Results Card (Original Structure) */}
             <div className="card shadow-sm">
                 <div className="card-header bg-light">
                     <div className="d-flex justify-content-between align-items-center">
@@ -364,12 +496,15 @@ const DiscoverCommunitiesPage = () => {
                         </div>
                     ) : communities.length > 0 ? (
                         <>
-                            <div className="row">
+                            <div className="row"> {/* Original row structure */}
                                 {communities.map((community) => {
                                     const membershipStatus = getMembershipStatus(community.id);
-                                    
+                                    // Ensure keyword access matches serializer output
+                                    const keywords = community.keywords || community.keyword_list || [];
+
                                     return (
                                         <div key={community.id} className="col-md-6 col-lg-4 mb-4">
+                                            {/* Original Card Structure */}
                                             <div className="card h-100 shadow-sm">
                                                 <div className="card-header d-flex justify-content-between align-items-center">
                                                     <h5 className="mb-0 text-truncate" title={community.community_name}>
@@ -388,18 +523,18 @@ const DiscoverCommunitiesPage = () => {
                                                             ? `${community.description.substring(0, 100)}...`
                                                             : community.description || "No description provided."}
                                                     </p>
-                                                    
+
                                                     <p className="card-text">
                                                         <small className="text-muted">
                                                             <strong>Members:</strong> {community.member_count || 0}
                                                         </small>
                                                     </p>
-                                                    
-                                                    {community.keyword_list && community.keyword_list.length > 0 && (
+
+                                                    {keywords.length > 0 && ( // Use the keywords variable
                                                         <div className="mb-2">
                                                             <strong>Keywords:</strong>
                                                             <div className="d-flex flex-wrap gap-1 mt-1">
-                                                                {community.keyword_list.map((keyword, index) => (
+                                                                {keywords.map((keyword, index) => ( // Map over keywords
                                                                     <span key={index} className="badge bg-secondary">
                                                                         {keyword}
                                                                     </span>
@@ -410,24 +545,24 @@ const DiscoverCommunitiesPage = () => {
                                                 </div>
                                                 <div className="card-footer bg-white">
                                                     <div className="d-flex gap-2">
-                                                        <button 
+                                                        <button
                                                             className="btn btn-info text-white flex-grow-1"
                                                             onClick={() => handleViewCommunity(community.id)}
                                                         >
                                                             View Community
                                                         </button>
-                                                        
-                                                        {/* Show different buttons based on membership status */}
+
+                                                        {/* Original Buttons */}
                                                         {membershipStatus === "none" && (
                                                             community.privacy === "private" ? (
-                                                                <button 
+                                                                <button
                                                                     className="btn btn-outline-info"
                                                                     onClick={() => handleRequestToJoin(community.id)}
                                                                 >
                                                                     Request <Lock size={14} className="ms-1" />
                                                                 </button>
                                                             ) : (
-                                                                <button 
+                                                                <button
                                                                     className="btn btn-outline-success"
                                                                     onClick={() => handleJoinCommunity(community.id)}
                                                                 >
@@ -435,19 +570,19 @@ const DiscoverCommunitiesPage = () => {
                                                                 </button>
                                                             )
                                                         )}
-                                                        
+
                                                         {membershipStatus === "requested" && (
-                                                            <button 
-                                                                className="btn btn-outline-secondary" 
+                                                            <button
+                                                                className="btn btn-outline-secondary"
                                                                 disabled
                                                             >
                                                                 Requested
                                                             </button>
                                                         )}
-                                                        
+
                                                         {membershipStatus === "member" && (
-                                                            <button 
-                                                                className="btn btn-outline-success" 
+                                                            <button
+                                                                className="btn btn-outline-success"
                                                                 disabled
                                                             >
                                                                 Member
@@ -460,17 +595,20 @@ const DiscoverCommunitiesPage = () => {
                                     );
                                 })}
                             </div>
-                            
-                            {/*Pagination Component*/}
-                            <div className="d-flex justify-content-center mt-4">
-                                <PaginationComponent 
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    handlePageChange={handlePageChange}
-                                />
-                            </div>
+
+                            {/*Pagination Component (Original placement) */}
+                            {totalPages > 1 && ( // Only show if more than one page
+                                <div className="d-flex justify-content-center mt-4">
+                                    <PaginationComponent
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        handlePageChange={handlePageChange}
+                                    />
+                                </div>
+                            )}
                         </>
                     ) : (
+                        // No results message (Original Structure)
                         <div className="text-center p-5">
                             <p>No communities found matching your search criteria.</p>
                             <p>Try adjusting your search terms or filters.</p>

@@ -13,6 +13,7 @@ router.register(r'achievements', AchievementViewSet, basename='achievements')
 router.register(r'pinnedposts', PinnedPostViewSet, basename='pinnedposts')
 router.register(r'events', EventViewSet, basename='events')
 router.register(r'users', UserSearchViewSet, basename='user-search')
+
 urlpatterns = [
     path("auth/jwt/create/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
     path("auth/jwt/refresh", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
@@ -30,6 +31,7 @@ urlpatterns = [
     path('api/universities/list/', UniversityListView.as_view(), name='university-list'),
 
     path('api/events/<int:community_id>/', EventViewSet.as_view({'post': 'create'}), name='create-event'),
+    path('api/recommendations/communities/', RecommendedCommunitiesView.as_view(), name='recommended-communities'),
 
 
 ]
