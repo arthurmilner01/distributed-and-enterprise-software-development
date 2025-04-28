@@ -11,7 +11,7 @@
         <div className="d-flex flex-column align-items-center justify-content-start" style={{ minHeight: "80vh", paddingTop: "25vh" }}>
             <h1 className="mb-4">Discover</h1>
             <div className="container">
-                <hr class="border border-primary border-2 text-info" />
+                <hr className="border border-primary border-2 text-info" />
                 <div className="row text-center mb-3">
                     <div className="col">
                     <User size={100} />

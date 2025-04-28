@@ -51,6 +51,8 @@ class User(AbstractUser):
     postcode = models.CharField(max_length=50, null=False, default='BS16 1ZX')
     bio = models.CharField(max_length=200, null=True, blank=True)
     interests = models.CharField(max_length=200, null=True, blank=True)
+    academic_program = models.CharField(max_length=200, null=True, blank=True)
+    academic_year = models.CharField(max_length=200, null=True, blank=True)
     role = models.CharField(max_length=1, default='S') #S for student, E for event manager, C for community leader
     profile_picture = models.ImageField(upload_to="profile_pics/", max_length = 200, null=True, blank=True)
     university = models.ForeignKey(University, on_delete=models.CASCADE)

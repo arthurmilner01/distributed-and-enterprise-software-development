@@ -90,9 +90,18 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "email", "first_name", "last_name",
-            "bio", "interests", "role", "profile_picture",
-            "profile_picture_url", "university"
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "interests",
+            "role",
+            "profile_picture",
+            "profile_picture_url",
+            "university",
+            "academic_program",
+            "academic_year"
         ]
 
     def get_profile_picture_url(self, obj):
@@ -114,7 +123,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests']
+        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests', 'academic_program', 'academic_year']
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -129,6 +138,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.bio = validated_data.get('bio', instance.bio)
         instance.interests = validated_data.get('interests', instance.interests)
+        instance.academic_program = validated_data.get('academic_program', instance.academic_program)
+        instance.academic_year = validated_data.get('academic_year', instance.academic_year)
         instance.save()
         return instance
 

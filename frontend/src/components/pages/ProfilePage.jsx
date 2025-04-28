@@ -1,7 +1,7 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react"; 
 import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star, Trash, ThumbsUp } from "lucide-react";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Form } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
 import { useParams } from "react-router-dom";
@@ -34,10 +34,19 @@ const ProfilePage = () => {
   const [showFollowersModal, setShowFollowersModal] = useState(false); // Show/hide follower modal
   const [showFollowingModal, setShowFollowingModal] = useState(false); // Show/hide following modal
 
-  const handleShowFollowers = () => setShowFollowersModal(true); // Hide modal
-  const handleCloseFollowers = () => setShowFollowersModal(false); // Show modal
+  const [showAcademicModal, setShowAcademicModal] = useState(false); // Show/hide following modal
+
+  const handleShowFollowers = () => setShowFollowersModal(true); // Show modal
+  const handleCloseFollowers = () => setShowFollowersModal(false); // Close modal
   const handleShowFollowing = () => setShowFollowingModal(true); // Show modal
-  const handleCloseFollowing = () => setShowFollowingModal(false); // Hide modal
+  const handleCloseFollowing = () => setShowFollowingModal(false); // Close modal
+
+  const handleShowAcademic = () => setShowAcademicModal(true); //Show modal
+  const handleCloseAcademic = () => setShowAcademicModal(false); // Hide modal
+
+  const [academicProgram, setAcademicProgram] = useState(""); // Store academicProgram updates
+  const [academicYear, setAcademicYear] = useState(""); // Store academic year updates
+  const [academicError, setAcademicError] = useState(""); //Store errors regarding updating academic details
 
   // Stores list user's achievements
   const [userAchievements, setUserAchievements] = useState([]);
@@ -308,6 +317,13 @@ const ProfilePage = () => {
     }
   }, [userId, isConfirmed]); // Runs when user Id or is confirmed changes
 
+  useEffect(() => {
+    if (fetchedUser) {
+      setAcademicProgram(fetchedUser.academic_program || ""); // Default to empty if null
+      setAcademicYear(fetchedUser.academic_year || ""); // Default to empty if null
+    }
+  }, [fetchedUser])
+
   // Fetch communities when "communities" tab is active
   useEffect(() => {
     if (currentTab === "communities") {
@@ -476,6 +492,41 @@ const ProfilePage = () => {
     }
   };
 
+  const handleSaveAcademicDetails = async () => {
+    await handleUpdateAcademicDetails(userId, academicProgram, academicYear);
+  };
+
+  const handleUpdateAcademicDetails = async (userId, academicProgram, academicYear) => {
+    try 
+    {
+      const formData = new FormData();
+      formData.append('academic_program', academicProgram);
+      formData.append('academic_year', academicYear);
+
+      const response = await api.patch(`user/update/${userId}/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      console.log("Academic details updated successfully", response.data);
+      setSuccessMessage("Academic details updated successfully.");
+      setAcademicProgram("");
+      setAcademicYear("");
+      setAcademicError("");
+
+      const response1 = await api.get(`user/${userId}/`);
+      setFetchedUser(response1.data);
+      
+      handleCloseAcademic();
+    } 
+    catch (error) 
+    {
+      console.error("Error adding academic details:", error);
+      setAcademicError("Error adding academic details. Please try again.");
+      setSuccessMessage("");
+    }
+  }
 
   return (
     <div className="container mt-5">
@@ -564,6 +615,12 @@ const ProfilePage = () => {
               </div>
             </div>
             <p className="text-muted">{fetchedUser.university.university_name || "Unknown"}</p>
+            <p className="text-muted">{fetchedUser.academic_program || "Program not given"} - {fetchedUser.academic_year || "N/A"}</p>
+            {isOwner && (
+              <p className="text-primary" style={{ cursor: "pointer", textDecoration: "underline"}} onClick={handleShowAcademic}>
+                Add academic details...
+              </p>
+            )}
             <div className="d-flex gap-1">
               <p className="text-muted">Followers: </p>
               <p className="text-primary" style={{ cursor: "pointer", textDecoration: "underline"}} onClick={handleShowFollowers}>
@@ -1022,6 +1079,56 @@ const ProfilePage = () => {
           <p>Not following any users.</p>
         )}
       </Modal.Body>
+      </Modal>
+
+      
+      <Modal show={showAcademicModal} onHide={handleCloseAcademic} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Academic Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {academicError && (
+            <div className="alert alert-danger">{academicError}</div>
+          )}
+          <Form>
+            <Form.Group className="mb-3" controlId="academicProgram">
+              <Form.Label>Academic Program</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter academic program"
+                value={academicProgram}
+                onChange={(e) => setAcademicProgram(e.target.value)}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="academicYear">
+              <Form.Label>Academic Year</Form.Label>
+              <Form.Select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+              >
+                <option value="">Select year</option> {/* Default empty option */}
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseAcademic}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveAcademicDetails}>
+            Save Details
+          </Button>
+        </Modal.Footer>
       </Modal>
 
     </div>
