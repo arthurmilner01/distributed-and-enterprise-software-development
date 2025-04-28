@@ -27,7 +27,7 @@ from django.core.files.base import ContentFile
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.base import ContentFile
 from django.db.models import Q
-from .recommendations import get_community_recommendations_by_joined_keywords 
+from .recommendations import *
 # Custom /auth/customjwt/create to store the refresh token as a cookie
 # Using customized Djoser TokenObtainPairView
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -441,3 +441,39 @@ class RecommendedCommunitiesView(generics.ListAPIView):
         # Call the specific recommendation logic
         # This function now returns a QuerySet, so ListAPIView handles it directly
         return get_community_recommendations_by_joined_keywords(user, limit=limit)
+
+class RecommendedUsersView(APIView): # Changed from ListAPIView
+    """
+    API endpoint to get user recommendations based on mutuals and interests.
+    Returns data in format: {"mutuals": [...], "interest_based": [...]}
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        limit = int(request.query_params.get('limit', 6)) # Combined limit
+        mutual_limit = limit // 2 + (limit % 2) # Give slightly more to mutuals potentially
+        interest_limit = limit // 2
+
+        # Get mutual recommendations (returns QuerySet or list)
+        mutual_recs_qs = get_user_recommendations_mutuals(user, limit=mutual_limit)
+
+        # --- Get interest-based recommendations (Placeholder - implement this logic) ---
+        # interest_recs_qs = get_user_recommendations_interest(user, limit=interest_limit, exclude_ids=set(mutual_recs_qs.values_list('id', flat=True))) # Example: Exclude mutuals
+        interest_recs_qs = User.objects.none() # Replace with actual call when ready
+        # --- End Placeholder ---
+
+
+        # Serialize the results
+        # Pass context to ensure is_following works correctly in serializer
+        context = {'request': request}
+        mutual_serializer = UserSearchSerializer(mutual_recs_qs, many=True, context=context)
+        interest_serializer = UserSearchSerializer(interest_recs_qs, many=True, context=context)
+
+        # Construct the response dictionary
+        response_data = {
+            "mutuals": mutual_serializer.data,
+            "interest_based": interest_serializer.data
+        }
+
+        return Response(response_data)

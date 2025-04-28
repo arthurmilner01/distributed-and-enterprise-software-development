@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('api/events/<int:community_id>/', EventViewSet.as_view({'post': 'create'}), name='create-event'),
     path('api/recommendations/communities/', RecommendedCommunitiesView.as_view(), name='recommended-communities'),
+     path('api/recommendations/users/', RecommendedUsersView.as_view(), name='recommended-users'),
 
 
 ]
