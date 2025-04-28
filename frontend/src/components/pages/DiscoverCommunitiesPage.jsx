@@ -1,15 +1,13 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react";
 // Import necessary icons from lucide-react
-import { Lock, UserPlus, Search } from "lucide-react"; // REMOVED Alert as BsAlert
+import { Lock, UserPlus, Search } from "lucide-react";
 import useApi from "../../api";
 import { useNavigate } from "react-router-dom";
 import { PaginationComponent } from "../widgets/PaginationComponent";
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
-
-// Import Alert component from react-bootstrap if you intend to use it for displaying errors/messages
-import { Alert } from 'react-bootstrap'; // ADDED this line if you use <Alert> component
+import { Alert } from 'react-bootstrap'; 
 
 // --- Other imports if needed ---
 const DiscoverCommunitiesPage = () => {
@@ -34,11 +32,10 @@ const DiscoverCommunitiesPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
-    // ---> ADDED: Recommendation State <---
+    // --->Recommendation State <---
     const [recommendedCommunities, setRecommendedCommunities] = useState([]);
     const [isRecLoading, setIsRecLoading] = useState(false); // Separate loading for recommendations
     const [recError, setRecError] = useState(''); // Separate error for recommendations
-    // ---> END ADDED: Recommendation State <---
 
     //Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -98,8 +95,7 @@ const DiscoverCommunitiesPage = () => {
 
     //Update search when filter values change (Original Hook - modified dependencies slightly)
     useEffect(() => {
-        // Don't run initial search again if currentPage is still 0 or 1 from initial load/reset
-         if (currentPage > 0) { // Or check if it's not the very first render using a ref if needed
+         if (currentPage > 0) { 
              performSearch(selectedKeywords, currentPage);
          }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,22 +141,17 @@ const DiscoverCommunitiesPage = () => {
 
     // Fetch Keyword Suggestions (Original Function)
     const fetchKeywordSuggestions = async (inputValue) => {
-        if (!inputValue || inputValue.length < 2) { // Added length check
-            setKeywordOptions([]);
-            return;
-        }
+        if (!inputValue) return; // Keep this guard
+
         try {
             const response = await api.get(`/api/keywords/suggestions/?query=${encodeURIComponent(inputValue)}`);
-             // Assuming response.data = [{id: 1, keyword: 'React'}, ...]
-             // Typeahead needs options as strings or objects with a label key
-            const options = (response.data || []).map(item => item.keyword);
-            setKeywordOptions(options);
+            
+            setKeywordOptions(response.data || []); // Assume API returns array of objects {id: x, keyword: 'y'}
         } catch (error) {
             console.error("Error fetching keyword suggestions:", error);
-             setKeywordOptions([]);
+             setKeywordOptions([]); // Clear on error
         }
     };
-
 
     //Perform the search API call (Original Function - adapted slightly)
     const performSearch = async (keywords = selectedKeywords, page = currentPage) => { // Accept keywords and page as args
@@ -208,22 +199,26 @@ const DiscoverCommunitiesPage = () => {
     };
 
 
-    // Removed addKeyword and handleKeywordKeyDown as Typeahead handles this
-
+    
     // Handler for Typeahead selection change
     const handleKeywordSelectionChange = (selected) => {
-        setSelectedKeywords(selected); // Update state
-        setCurrentPage(1); // Reset page
-        performSearch(selected, 1); // Trigger search with new keywords and page 1
+        
+        const selectedKeywordStrings = selected.map(option =>
+            typeof option === 'string' ? option : option.keyword 
+        );
+        setSelectedKeywords(selectedKeywordStrings); 
+        setCurrentPage(1);
+        performSearch(selectedKeywordStrings, 1); 
     };
-
 
     //Remove a keyword from the selected keywords (Original Function - adapted)
     const removeKeyword = (keywordToRemove) => {
         const newKeywords = selectedKeywords.filter(k => k !== keywordToRemove);
-        // Use the main handler to update state and trigger search
-        handleKeywordSelectionChange(newKeywords);
+        setSelectedKeywords(newKeywords);
+        setCurrentPage(1);
+        performSearch(newKeywords, 1);
     };
+
 
     //Join a community (Original Function)
     const handleJoinCommunity = async (communityId) => {
@@ -266,7 +261,7 @@ const DiscoverCommunitiesPage = () => {
         <div className="container mt-4 mb-5">
             <h2 className="mb-3">Discover Communities</h2>
 
-            {/* Alerts (Original Structure) */}
+            {/* Alerts*/}
             {errorMessage && <div className="alert alert-danger alert-dismissible fade show" role="alert">
                 {errorMessage}
                 <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
@@ -276,7 +271,7 @@ const DiscoverCommunitiesPage = () => {
                  <button type="button" className="btn-close" onClick={() => setSuccessMessage("")} aria-label="Close"></button>
              </div>}
 
-            {/* Search Panel (Original Structure) */}
+            {/* Search Panel  */}
             <div className="card shadow-sm mb-4">
                 <div className="card-header bg-info text-white">
                     <h4 className="mb-0">Search Communities</h4>
@@ -372,9 +367,8 @@ const DiscoverCommunitiesPage = () => {
             </div>
 
 
-            {/* ============================================================ */}
-            {/* === ADDED Recommendations Section === */}
-            {/* ============================================================ */}
+            {/* ===  Recommendations Section === */}
+          
             {isAuthenticated && ( // Only show section if logged in
                  <div className="mb-4"> {/* Margin below recommendations */}
                      {/* Show heading only if not loading AND (there are items OR there was an error) */}
@@ -472,9 +466,7 @@ const DiscoverCommunitiesPage = () => {
                      )}
                  </div>
             )}
-            {/* ============================================================ */}
             {/* === END Recommendations Section === */}
-            {/* ============================================================ */}
 
 
             {/* Results Card (Original Structure) */}
