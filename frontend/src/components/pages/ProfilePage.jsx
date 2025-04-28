@@ -141,8 +141,8 @@ const ProfilePage = () => {
       setUserAchievements(response.data);
       console.log(response);
     } catch (error) {
-      console.error("Error fetching followers:", error);
-      setErrorMessage("Failed to load followers.");
+      console.error("Error fetching achievements:", error);
+      setErrorMessage("Failed to load achievements.");
     }
   }
 

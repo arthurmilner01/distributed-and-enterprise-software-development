@@ -100,10 +100,9 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 # For updating name, bio, interests and profile picture
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    profile_picture_url = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'profile_picture_url', 'interests']
+        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests']
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -245,7 +244,7 @@ class UserFollowerSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()  # Return follower's ID
     first_name = serializers.CharField()  # Return followers first name
     last_name = serializers.CharField()  # Return followers last name
-    profile_picture = serializers.ImageField() # Return followers profile picture
+    profile_picture = serializers.SerializerMethodField() # Return followers profile picture
     is_following = serializers.SerializerMethodField()  # Checks if logged-in user is following
 
     class Meta:
@@ -259,11 +258,22 @@ class UserFollowerSerializer(serializers.ModelSerializer):
             return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
         return False
     
+    def get_profile_picture(self, obj):
+        if obj.profile_picture and hasattr(obj.profile_picture, "name"):
+            storage = S3Boto3Storage()
+            url = storage.url(obj.profile_picture.name)
+            if url.startswith("/"):
+                return "https:" + url
+            elif not url.startswith("http"):
+                return "https://" + url
+            return url
+        return ""
+    
 class UserFollowingSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()  # Return follower's ID
     first_name = serializers.CharField()  # Return followers first name
     last_name = serializers.CharField()  # Return followers last name
-    profile_picture = serializers.ImageField() # Return followers profile picture
+    profile_picture = serializers.SerializerMethodField() # Return followers profile picture
     is_following = serializers.SerializerMethodField()  # Checks if logged-in user is following
 
     class Meta:
@@ -275,6 +285,17 @@ class UserFollowingSerializer(serializers.ModelSerializer):
         if request.user:
             return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
         return False
+    
+    def get_profile_picture(self, obj):
+        if obj.profile_picture and hasattr(obj.profile_picture, "name"):
+            storage = S3Boto3Storage()
+            url = storage.url(obj.profile_picture.name)
+            if url.startswith("/"):
+                return "https:" + url
+            elif not url.startswith("http"):
+                return "https://" + url
+            return url
+        return ""
 
 User = get_user_model()
 class CommunitySerializer(serializers.ModelSerializer):
