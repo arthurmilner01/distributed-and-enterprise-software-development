@@ -7,6 +7,9 @@ const RegisterPage = () => {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
+    dob: "",
+    address: "",
+    postcode: "",
     email: "",
     password: "",
     confirm_password: "",
@@ -36,6 +39,9 @@ const RegisterPage = () => {
       await axios.post("http://localhost:8000/auth/users/", {
         first_name: formData.first_name,
         last_name: formData.last_name,
+        dob: formData.dob,
+        address: formData.address,
+        postcode: formData.postcode,
         email: formData.email,
         password: formData.password,
       });
@@ -96,6 +102,51 @@ const RegisterPage = () => {
                   />
                   {errors.last_name && (
                     <small className="text-danger">{errors.last_name}</small>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.dob && (
+                    <small className="text-danger">{errors.dob}</small>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Address</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.address && (
+                    <small className="text-danger">{errors.address}</small>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Postcode</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="postcode"
+                    value={formData.postcode}
+                    onChange={handleChange}
+                    required
+                  />
+                  {errors.postcode && (
+                    <small className="text-danger">{errors.postcode}</small>
                   )}
                 </div>
 

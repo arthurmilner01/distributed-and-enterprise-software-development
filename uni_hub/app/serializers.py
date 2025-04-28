@@ -4,6 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
 from .models import Community, Keyword, UserCommunity
 from django.contrib.auth import get_user_model
+from datetime import date
 
 class UniversitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,17 +17,28 @@ storage = S3Boto3Storage()
 class CustomUserCreateSerializer(UserCreateSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
+    dob = serializers.DateField(required=True)
+    address = serializers.CharField(required=True)
+    postcode = serializers.CharField(required=True)
     university = UniversitySerializer(read_only=True)
     class Meta(UserCreateSerializer.Meta):
         model = User
-        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'university']
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'dob', 'address', 'postcode', 'university']
         extra_kwargs = {'password': {'write_only':True}}
-    
+
     def create(self, validated_data):
         email = validated_data.get("email","")
         email_domain = email.split("@")[-1]
         # Sets user's university based on the domain of the email used to sign-up
         university = University.objects.filter(university_domain=email_domain).first()
+
+        # Check user is over 16 years old
+        today = date.today()
+        inputAge = validated_data.get("dob", "")
+        age = today.year - inputAge.year - ((today.month, today.day) < (inputAge.month, inputAge.day))
+
+        if age < 16:
+            raise serializers.ValidationError({"dob": "You must be at least 16 years old to register."})
 
         # If no university found
         if not university:
@@ -92,7 +104,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             elif not url.startswith("http"):
                 return "https://" + url
             return url
-        return "https://via.placeholder.com/150"
+        return ""
 
 
 

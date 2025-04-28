@@ -45,7 +45,10 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractUser):
     is_active = models.BooleanField(default=False)  #Require activation for new user
     email = models.EmailField(unique=True)  #Unique email
-    username = None  
+    username = None
+    dob = models.DateField(max_length=100, null=False, default='2000-01-01')
+    address = models.CharField(max_length=200, null=False, default='Test Address')
+    postcode = models.CharField(max_length=50, null=False, default='BS16 1ZX')
     bio = models.CharField(max_length=200, null=True, blank=True)
     interests = models.CharField(max_length=200, null=True, blank=True)
     role = models.CharField(max_length=1, default='S') #S for student, E for event manager, C for community leader
@@ -60,7 +63,7 @@ class User(AbstractUser):
         """Return the full S3 URL for the profile picture or a default image."""
         if self.profile_picture:
             return self.profile_picture.url
-        return settings.MEDIA_URL + "default_profile_picture.jpg"
+        return ""
     
 
 #Keyword
