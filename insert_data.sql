@@ -1,4 +1,4 @@
--- Active: 1740148092384@@127.0.0.1@3006@uni_hub_db
+-- Active: 1740148092384@@127.0.0.1@3006
 
 INSERT INTO app_university(university_name, university_domain, university_logo)
 VALUES 

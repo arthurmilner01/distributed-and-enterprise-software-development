@@ -5,6 +5,7 @@ from .models import *
 from .models import Community, Keyword, UserCommunity
 from django.contrib.auth import get_user_model
 from datetime import date
+import re
 
 class UniversitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -189,6 +190,7 @@ class PostSerializer(serializers.ModelSerializer):
             "comments",
         ]
         read_only_fields = ["id", "user", "created_at", "comments"]
+
     def get_image_url(self, obj):
         if isinstance(obj, dict):
         # If obj is a dictionary
@@ -202,25 +204,42 @@ class PostSerializer(serializers.ModelSerializer):
             return storage.url(image.name)
 
         return ""
-
+    
     def create(self, validated_data):
+        # Extracts hashtags from a post, only get unique hashtags ignoring repeats
+        def extract_hashtags(text):
+            return set(re.findall(r"#(\w+)", text))
+        
         validated_data.pop("user", None)
         user = self.context["request"].user
 
         # If a community is already in validated_data, use it
         if "community" in validated_data and validated_data["community"] is not None:
             post = Post.objects.create(user=user, **validated_data)
-            return post
+        else:
+            # Otherwise, assign to Global Community
+            try:
+                global_community = Community.objects.get(community_name="Global Community (News Feed)")
+                validated_data["community"] = global_community
+            except Community.DoesNotExist:
+                raise serializers.ValidationError("Global Community (News Feed) does not exist.")
 
-        # Otherwise, assign to Global Community
-        try:
-            global_community = Community.objects.get(community_name="Global Community (News Feed)")
-            validated_data["community"] = global_community
-        except Community.DoesNotExist:
-            raise serializers.ValidationError("Global Community (News Feed) does not exist.")
+            post = Post.objects.create(user=user, **validated_data)
 
-        post = Post.objects.create(user=user, **validated_data)
+        # Get the post's text
+        text = validated_data.get("post_text", "")
+        # Extract hashtags from the post
+        hashtags = extract_hashtags(text)
+        # For each hashtag create a relationship in hashtag table
+        for tag in hashtags:
+            # Use lowercase version of hashtag to force format of hashtag on backend
+            # Create if not already in database
+            hashtag_obj, created = Hashtag.objects.get_or_create(name=tag.lower())
+            # Adds the hashtag to the many to many relationship on the post
+            post.hashtags.add(hashtag_obj)
+
         return post
+    
     
     def get_user_image(self, obj):
         """Ensure correct URL for user profile image (S3 or default)"""

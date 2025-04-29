@@ -147,6 +147,12 @@ class Event(models.Model):
 from storages.backends.s3boto3 import S3Boto3Storage
 s3_storage = S3Boto3Storage()
 
+class Hashtag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     post_text = models.TextField(null=True, blank=True)
@@ -155,6 +161,7 @@ class Post(models.Model):
         Community, on_delete=models.CASCADE, related_name="posts", null=True, blank=True  # Allow global posts
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    hashtags = models.ManyToManyField(Hashtag, related_name='posts', blank=True)
 
     def __str__(self):
         return f"Post {self.id} by {self.user.email} {'in ' + self.community.community_name if self.community else ' (Global)'}"
