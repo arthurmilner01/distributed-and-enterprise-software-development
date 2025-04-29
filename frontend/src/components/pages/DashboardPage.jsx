@@ -4,7 +4,7 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ThumbsUp } from "lucide-react";
+import { ThumbsUp, Trash } from "lucide-react";
 
 
 const DashboardPage = () => {
@@ -15,6 +15,7 @@ const DashboardPage = () => {
   const [userPosts, setUserPosts] = useState([]);
   // Stores community posts to be filtered by user's joined communities
   const [communityPosts, setCommunityPosts] = useState([]);
+  const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [newPost, setNewPost] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,9 +26,6 @@ const DashboardPage = () => {
   const [newPostVideo, setNewPostVideo] = useState(null);
   // Default tab explore posts, state used to set tab
   const [currentTab, setCurrentTab] = useState("explore-posts");
-
-
-
 
   const fetchPosts = async () => {
     try {
@@ -210,6 +208,25 @@ const DashboardPage = () => {
       return word;
     });
   }
+
+  const handleDeletePost = async (postId) => {
+    try {
+      // Send DELETE request
+      const response = await api.delete(`/api/posts/${postId}/`);
+  
+      // Update the state to reflect the deleted post
+      fetchPosts();
+      fetchCommunityPosts();
+      fetchUserPosts();
+      setSuccessMessage("Post successfully deleted.");
+      setErrorMessage("");
+    } catch (error) {
+      // Handle error if deletion fails
+      console.error("Error deleting post:", error);
+      setErrorMessage("Failed to delete the post, does the post belong to you?.");
+      setSuccessMessage("");
+    }
+  };
   
 
   if (loading) return <p>Loading user data...</p>;
@@ -220,6 +237,9 @@ const DashboardPage = () => {
 
       {errorMessage && (
         <div className="alert alert-danger mt-3">{errorMessage}</div>
+      )}
+      {successMessage && (
+        <div className="alert alert-success mt-3">{successMessage}</div>
       )}
 
       {/* Create Post Section */}
@@ -388,6 +408,20 @@ const DashboardPage = () => {
                     <span style={{ color: "#555", fontSize: "14px" }}>
                       {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
                     </span>
+                    {post.user === user.id && (
+                                  <div>
+                                    <button
+                                      className="btn btn-danger ms-5"
+                                      style={{
+                                        borderRadius: "25px",
+                                        border: "none"
+                                      }}
+                                      onClick={() => handleDeletePost(post.id)}
+                                    >
+                                      <Trash size={20} />
+                                    </button>
+                                  </div>
+                    )}
                   </div>
 
                   {/* Comments Section */}

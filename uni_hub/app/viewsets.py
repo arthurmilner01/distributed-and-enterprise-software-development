@@ -157,7 +157,7 @@ class PostViewSet(viewsets.ModelViewSet):
         # Fetch posts from those communities
         posts = Post.objects.filter(community_id__in=community_ids).exclude(
         community__community_name="Global Community (News Feed)"
-    ).order_by("-created_at")
+    ).exclude(user=request.user).order_by("-created_at")
 
         # Serialize and return the posts
         serializer = self.get_serializer(posts, many=True)
