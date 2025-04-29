@@ -506,7 +506,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  <p>{userPost.post_text}</p>
+                  <p>{renderPostText(userPost.post_text)}</p>
 
                   {userPost.image_url && (
                     <img
@@ -666,7 +666,7 @@ const DashboardPage = () => {
                   </div>
                 </div>
 
-                <p>{communityPost.post_text}</p>
+                <p>{renderPostText(communityPost.post_text)}</p>
 
                 {communityPost.image_url && (
                   <img

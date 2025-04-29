@@ -4,10 +4,11 @@ import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, St
 import { Modal, Button, Form } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import useApi from "../../api"; 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
   const isOwner = user.id === parseInt(userId); // Is user viewing their own profile
@@ -546,6 +547,28 @@ const ProfilePage = () => {
     }
   }
 
+  // Using regular expression to make hashtags links
+  function renderPostText(text) {
+    // If a hashtag is used before the word make it a clickable link
+    // Browses to filtered posts which contain that hashtag
+    return text.split(/(\s+)/).map((word, index) => {
+      if (word.startsWith("#")) {
+        const tag = word.slice(1);
+        return (
+          <span
+            key={index}
+            className="text-info"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/hashtag/${tag}`)}
+          >
+            {word}
+          </span>
+        );
+      }
+      return word;
+    });
+  }
+
   return (
     <div className="container mt-5">
       <div className="row">
@@ -792,7 +815,7 @@ const ProfilePage = () => {
                                 </div>
                               </div>
             
-                              <p>{post.post_text}</p>
+                              <p>{renderPostText(post.post_text)}</p>
             
                               {post.image_url && (
                                 <img
