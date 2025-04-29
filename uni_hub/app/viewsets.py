@@ -106,6 +106,36 @@ class PostViewSet(viewsets.ModelViewSet):
             "liked": liked,
             "like_count": like_count
         }, status=status.HTTP_200_OK)
+    
+    # Returns posts by the user's followed profiles
+    @action(detail=False, methods=["get"], url_path="following")
+    def following(self, request):
+        user = request.user
+        following = Follow.objects.filter(following_user=user).select_related("followed_user")
+        following_users = [f.followed_user for f in following]
+
+
+        posts = Post.objects.filter(user__in=following_users).order_by("-created_at")
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # Returns posts by the user's joined communities
+    @action(detail=False, methods=["get"], url_path="communities")
+    def communities(self, request):
+        # Get the communities the logged-in user is a part of
+        user_communities = UserCommunity.objects.filter(user=request.user)
+
+        # Get the community IDs from the user's communities
+        community_ids = [uc.community.id for uc in user_communities]
+
+        # Fetch posts from those communities
+        posts = Post.objects.filter(community_id__in=community_ids).exclude(
+        community__community_name="Global Community (News Feed)"
+    ).order_by("-created_at")
+
+        # Serialize and return the posts
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # View set for following/unfollowing users and returning list of followed/following users
 class FollowViewSet(viewsets.ModelViewSet):

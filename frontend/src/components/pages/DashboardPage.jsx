@@ -8,7 +8,7 @@ import { ThumbsUp } from "lucide-react";
 
 
 const DashboardPage = () => {
-  const { user, accessToken, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   // Stores all posts under the global community
@@ -25,12 +25,6 @@ const DashboardPage = () => {
   const [newPostVideo, setNewPostVideo] = useState(null);
   // Default tab explore posts, state used to set tab
   const [currentTab, setCurrentTab] = useState("explore-posts");
-  // Stores user's following for filtering posts
-  const [userFollowing, setUserFollowing] = useState([]);
-  // Stores user's communities for filtering posts
-  const [userCommunities, setUserCommunities] = useState([]);
-  // Stores filtered community posts
-  const [filteredCommunityPosts, setFilteredCommunityPosts] = useState([]);
 
 
 
@@ -48,49 +42,49 @@ const DashboardPage = () => {
     }
   };
 
-  // Fetch all community posts
+  // Get posts from user's joined communities
   const fetchCommunityPosts = async () => {
-    // "all" param returns all community posts except global community
     try {
-      const response = await api.get("api/posts/", {
-        params: { community: "all" },
-      });      
-      setCommunityPosts(response.data);
-      console.log("Community Posts:", communityPosts);
+      // Get posts from user's following
+      const response = await api.get("api/posts/communities");
+      
+      const data = response.data.results ? response.data.results : response.data;
+      
+      // Update user posts with response data
+      setCommunityPosts(Array.isArray(data) ? data : []);
+      console.log("Community Posts:", data);
     } catch (error) {
-      console.error("Error fetching community posts:", error);
-      setErrorMessage("Failed to fetch community posts.");
-      setPosts([]);
+      // Handle any errors that may occur during the API call
+      console.error("Error fetching user posts:", error);
+      setErrorMessage("Failed to load followed user posts.");
+      
+      // Reset the posts in case of an error
+      setUserPosts([]);
     }
   };
 
-  // Get list of user's following, used to filter posts
-  const fetchFollowingList = async () => {
+  // Get posts from user's followed profiles
+  const fetchUserPosts = async () => {
     try {
-      const response = await api.get(`api/follow/following`);
-      // Return only the user IDs
-      const followingUserIds = response.data.map(user => user.id);
-      setUserFollowing(followingUserIds);
-      console.log("Following IDs:", userFollowing);
+      // Get posts from user's following
+      const response = await api.get("api/posts/following");
+      
+      const data = response.data.results ? response.data.results : response.data;
+      
+      // Update user posts with response data
+      setUserPosts(Array.isArray(data) ? data : []);
+      console.log("User Posts:", data);
     } catch (error) {
-      console.error("Error fetching following list:", error);
+      // Handle any errors that may occur during the API call
+      console.error("Error fetching user posts:", error);
+      setErrorMessage("Failed to load followed user posts.");
+      
+      // Reset the posts in case of an error
+      setUserPosts([]);
     }
   };
 
-  // Get list of user's communities, used to filter community posts
-  const fetchCommunityList = async () => {
-    try {
-      const response = await api.get(`api/communityfollow/user_communities_list`);
-      // Return only the community IDs
-      const followingCommunityIDs = response.data.map(community => community.community_id);
-      setUserCommunities(followingCommunityIDs);
-      console.log("Community Following IDs:", followingCommunityIDs);
 
-    } catch (error) {
-      console.error("Error fetching communities:", error);
-      setErrorMessage("Failed to load your communities.");
-    }
-  };
 
   // Update global posts when the "explore-posts" tab is set to active
   useEffect(() => {
@@ -99,41 +93,24 @@ const DashboardPage = () => {
     }
   }, [currentTab]);
 
+  // Update user following posts when the "user-posts" tab is set to active
+  useEffect(() => {
+    if (currentTab === "user-posts") {
+      fetchUserPosts();
+    }
+  }, [currentTab]);
+
+  // Fetch community posts on community-posts tab
   useEffect(() => {
     if (currentTab === "community-posts") {
       fetchCommunityPosts();
     }
   }, [currentTab]);
 
-  // Update user following posts when the "user-posts" tab is set to active
-  // And when posts changes
-  useEffect(() => {
-    if (currentTab === "user-posts") {
-      if (posts.length > 0 && userFollowing.length > 0) {
-        // Filter by following IDs
-        const filteredPosts = posts.filter((post) => userFollowing.includes(post.user));
-        setUserPosts(filteredPosts);
-        console.log("User Posts:", userPosts);
-      }
-    }
-  }, [currentTab, posts, userFollowing]);
-
-  // Fetch community posts on community-posts tab
-  useEffect(() => {
-    if (currentTab === "community-posts") {
-      if (communityPosts.length > 0 && userCommunities.length > 0) {
-        // Filter by community IDs
-        const filteredPosts = communityPosts.filter((communityPost) => userCommunities.includes(communityPost.community));
-        setFilteredCommunityPosts(filteredPosts);
-      }
-    }
-  }, [currentTab, communityPosts, userCommunities]);
-
   useEffect(() => {
     fetchPosts();
+    fetchUserPosts();
     fetchCommunityPosts();
-    fetchFollowingList();
-    fetchCommunityList();
   }, []);
 
   const handlePostSubmit = async (event) => {
@@ -181,8 +158,9 @@ const DashboardPage = () => {
           }
           : post
       );
-      setPosts(updatedPosts);
+      fetchPosts();
       fetchCommunityPosts();
+      fetchUserPosts();
     } catch (error) {
       console.error("Error toggling like:", error);
     }
@@ -204,6 +182,7 @@ const DashboardPage = () => {
       console.log("Comment created:", response.data);
       fetchPosts();
       fetchCommunityPosts();
+      fetchUserPosts();
       setNewComment({ ...newComment, [postId]: "" });
     } catch (error) {
       console.error("Failed to create comment:", error);
@@ -393,7 +372,7 @@ const DashboardPage = () => {
                     <h6>Comments</h6>
                     {post.comments?.length > 0 ? (
                       <ul className="list-unstyled">
-                        {post.comments.slice(0, 3).map((comment) => (
+                        {post.comments.slice(0, 5).map((comment) => (
                           <li
                             key={comment.id}
                             className="d-flex align-items-start mb-2"
@@ -544,7 +523,7 @@ const DashboardPage = () => {
                     <h6>Comments</h6>
                     {userPost.comments?.length > 0 ? (
                       <ul className="list-unstyled">
-                        {userPost.comments.slice(0, 3).map((comment) => (
+                        {userPost.comments.slice(0, 5).map((comment) => (
                           <li
                             key={comment.id}
                             className="d-flex align-items-start mb-2"
@@ -619,12 +598,12 @@ const DashboardPage = () => {
         <div className="tab-pane fade show active">
         {/* User Posts Section */}
         <div>
-          {filteredCommunityPosts.length === 0 ? (
+          {communityPosts.length === 0 ? (
             <p>No posts in the community posts feed yet. Try joining a community!</p>
           ) : (
-            filteredCommunityPosts.map((filteredCommunityPost) => (
+            communityPosts.map((communityPost) => (
               <div
-                key={filteredCommunityPost.id}
+                key={communityPost.id}
                 className="post mb-4"
                 style={{
                   background: "#fff",
@@ -644,31 +623,31 @@ const DashboardPage = () => {
                             cursor: "pointer",
                             fontSize: "1.4em"
                           }}
-                          onClick={() => navigate(`/communities/${filteredCommunityPost.community}`)}
+                          onClick={() => navigate(`/communities/${communityPost.community}`)}
                       >
-                          {filteredCommunityPost.community_name}
+                          {communityPost.community_name}
                       </span>
                       <p className="text-muted fst-italic">by {" "}
                         <span 
                         className="text-muted fst-italic cursor-pointer text-decoration-underline"
                         style={{ cursor: 'pointer' }} 
-                        onClick={() => navigate(`/profile/${filteredCommunityPost.user}`)}
+                        onClick={() => navigate(`/profile/${communityPost.user}`)}
                         >
-                          {filteredCommunityPost.user_name} {filteredCommunityPost.user_last_name}
+                          {communityPost.user_name} {communityPost.user_last_name}
                         </span>
                       </p>
                     </div>
                     <div style={{ color: "#777", fontSize: "12px" }}>
-                      {new Date(filteredCommunityPost.created_at).toLocaleDateString()}
+                      {new Date(communityPost.created_at).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
 
-                <p>{filteredCommunityPost.post_text}</p>
+                <p>{communityPost.post_text}</p>
 
-                {filteredCommunityPost.image_url && (
+                {communityPost.image_url && (
                   <img
-                    src={filteredCommunityPost.image_url}
+                    src={communityPost.image_url}
                     alt="Post"
                     style={{
                       maxWidth: "100%",
@@ -684,27 +663,27 @@ const DashboardPage = () => {
                   <button
                     className="btn btn-sm me-2"
                     style={{
-                      backgroundColor: filteredCommunityPost.liked_by_user ? "#e0f7fa" : "#f1f1f1",
-                      color: filteredCommunityPost.liked_by_user ? "#007BFF" : "#555",
+                      backgroundColor: communityPost.liked_by_user ? "#e0f7fa" : "#f1f1f1",
+                      color: communityPost.liked_by_user ? "#007BFF" : "#555",
                       border: "none",
                       borderRadius: "20px",
                       fontWeight: 500,
                     }}
-                    onClick={() => handleLikeToggle(filteredCommunityPost.id)}
+                    onClick={() => handleLikeToggle(communityPost.id)}
                   >
-                    <ThumbsUp size={20} /> {filteredCommunityPost.liked_by_user ? "Liked" : "Like"}
+                    <ThumbsUp size={20} /> {communityPost.liked_by_user ? "Liked" : "Like"}
                   </button>
                   <span style={{ color: "#555", fontSize: "14px" }}>
-                    {filteredCommunityPost.like_count} {filteredCommunityPost.like_count === 1 ? "Like" : "Likes"}
+                    {communityPost.like_count} {communityPost.like_count === 1 ? "Like" : "Likes"}
                   </span>
                 </div>
 
                 {/* Comments Section */}
                 <div className="comment-section">
                   <h6>Comments</h6>
-                  {filteredCommunityPost.comments?.length > 0 ? (
+                  {communityPost.comments?.length > 0 ? (
                     <ul className="list-unstyled">
-                      {filteredCommunityPost.comments.slice(0, 3).map((comment) => (
+                      {communityPost.comments.slice(0, 5).map((comment) => (
                         <li
                           key={comment.id}
                           className="d-flex align-items-start mb-2"
@@ -747,16 +726,16 @@ const DashboardPage = () => {
 
                 {/* Add Comment */}
                 <form
-                  onSubmit={(e) => handleCommentSubmit(e, filteredCommunityPost.id)}
+                  onSubmit={(e) => handleCommentSubmit(e, communityPost.id)}
                   className="d-flex mt-2"
                 >
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Write a comment..."
-                    value={newComment[filteredCommunityPost.id] || ""}
+                    value={newComment[communityPost.id] || ""}
                     onChange={(e) =>
-                      setNewComment({ ...newComment, [filteredCommunityPost.id]: e.target.value })
+                      setNewComment({ ...newComment, [communityPost.id]: e.target.value })
                     }
                     required
                   />
