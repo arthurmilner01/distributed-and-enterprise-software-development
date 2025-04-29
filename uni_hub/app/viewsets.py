@@ -9,6 +9,103 @@ from .pagination import *
 from django.db.models import Q, Count, Max, F
 from django.db import transaction
 
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from .models import Post, Community
+from .serializers import PostSerializer
+
+# Viewset for posting related functions, including creating global posts,
+# community posts, comments, likes, and filtering returned posts for the home page
+class PostViewSet(viewsets.ModelViewSet):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # Default get returns global posts
+    def get_queryset(self):
+        queryset = Post.objects.all().order_by("-created_at")
+        request = self.request
+        community_id = request.query_params.get("community")
+        user_id = request.query_params.get("user_id")
+        community_id_kwarg = self.kwargs.get("community_id")
+
+
+        # If all show global posts
+        if community_id == "all":
+            return queryset.exclude(community__community_name="Global Community (News Feed)")
+        
+        # If community id passed filter by that communities posts
+        if community_id:
+            return queryset.filter(community_id=community_id)
+        
+        # If community id passed filter by that communities posts
+        if community_id_kwarg:
+            return queryset.filter(community_id=community_id_kwarg)
+        
+        # If user id passed filter by that user's posts
+        if user_id:
+            return queryset.filter(user_id=user_id, community__community_name="Global Community (News Feed)")
+
+        return queryset.filter(community__community_name="Global Community (News Feed)")
+
+    # Creates either global or community post
+    def perform_create(self, serializer):
+        request = self.request
+        community_id = self.kwargs.get("community_id") or request.data.get("community")
+
+        if community_id:
+            try:
+                community = Community.objects.get(id=community_id)
+            except Community.DoesNotExist:
+                return Response({"error": "Community not found."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                community = Community.objects.get(community_name="Global Community (News Feed)")
+            except Community.DoesNotExist:
+                return Response({"error": "Global Community does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=request.user, community=community)
+
+    #GET will list comments, POST will create a comment
+    @action(detail=True, methods=["get", "post"], url_path="comments")
+    def comments(self, request, pk=None):
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == "GET":
+            comments = Comment.objects.filter(post=post).order_by("created_at")
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+
+        if request.method == "POST":
+            serializer = CommentSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user, post=post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+    # Liked/unlikes a post
+    @action(detail=True, methods=["post"], url_path="toggle-like")
+    def toggle_like(self, request, pk=None):
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        like, created = PostLike.objects.get_or_create(user=request.user, post=post)
+
+        if not created:
+            like.delete()
+            liked = False
+        else:
+            liked = True
+
+        like_count = PostLike.objects.filter(post=post).count()
+
+        return Response({
+            "liked": liked,
+            "like_count": like_count
+        }, status=status.HTTP_200_OK)
 
 # View set for following/unfollowing users and returning list of followed/following users
 class FollowViewSet(viewsets.ModelViewSet):

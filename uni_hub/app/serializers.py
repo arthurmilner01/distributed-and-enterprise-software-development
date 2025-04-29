@@ -50,6 +50,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         return user
 
 class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
     user_name = serializers.CharField(source='user.first_name', read_only=True)
     user_last_name = serializers.CharField(source='user.last_name', read_only=True)
     user_image = serializers.SerializerMethodField() 
@@ -60,10 +61,16 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_user_image(self, obj):
         """Ensure correct URL for user profile image (S3 or default)"""
-        if obj.user.profile_picture:
+        if isinstance(obj, dict):
+            user = obj.get('user', None)  # Get user if dict passed
+        else:
+            user = obj.user  # Access directly if it's a model
+
+        if user and user.profile_picture:
             storage = S3Boto3Storage()
-            return storage.url(obj.user.profile_picture.name)
-        return "https://via.placeholder.com/150"
+            return storage.url(user.profile_picture.name)
+        
+        return ""
 
 
 # Add custom claims to the token
@@ -162,7 +169,7 @@ class PostSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     community_name = serializers.SerializerMethodField()
-    comments = serializers.SerializerMethodField()  # Fetch latest 5 comments for each post
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
@@ -183,14 +190,18 @@ class PostSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "user", "created_at", "comments"]
     def get_image_url(self, obj):
-        if obj.image:
+        if isinstance(obj, dict):
+        # If obj is a dictionary
+            image = obj.get('image', None)
+        else:
+            # If obj is a model instance
+            image = getattr(obj, 'image', None)
+        
+        if image:
             storage = S3Boto3Storage()
-            return storage.url(obj.image.name)
-        return None
-    def get_comments(self, obj):
-        """Fetch the latest 5 comments for each post."""
-        latest_comments = obj.comments.order_by("-created_at")[:5]  
-        return CommentSerializer(latest_comments, many=True).data  
+            return storage.url(image.name)
+
+        return ""
 
     def create(self, validated_data):
         validated_data.pop("user", None)
@@ -210,12 +221,19 @@ class PostSerializer(serializers.ModelSerializer):
 
         post = Post.objects.create(user=user, **validated_data)
         return post
+    
     def get_user_image(self, obj):
         """Ensure correct URL for user profile image (S3 or default)"""
-        if obj.user.profile_picture:
+        if isinstance(obj, dict):
+            user = obj.get('user', None)  # Get user if dict passed
+        else:
+            user = obj.user  # Access directly if it's a model
+
+        if user and user.profile_picture:
             storage = S3Boto3Storage()
-            return storage.url(obj.user.profile_picture.name)
-        return "https://via.placeholder.com/150"
+            return storage.url(user.profile_picture.name)
+        
+        return ""
 
     def validate(self, data):
         post_text = data.get('post_text', '').strip()
@@ -227,7 +245,12 @@ class PostSerializer(serializers.ModelSerializer):
         return data
     
     def get_community_name(self, obj):
-        return obj.community.community_name if obj.community else None
+        if isinstance(obj, dict):
+            community = obj.get('community', None)  # Access the community if it's a dict
+        else:
+            community = obj.community  # Directly access if it's a model
+        
+        return community.community_name if community else None
 
 # Serializer for creating a following relationship
 class FollowSerializer(serializers.ModelSerializer):

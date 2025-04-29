@@ -1,4 +1,4 @@
--- Active: 1741358681362@@127.0.0.1@3006@uni_hub_db
+-- Active: 1740148092384@@127.0.0.1@3006@uni_hub_db
 
 INSERT INTO app_university(university_name, university_domain, university_logo)
 VALUES 
@@ -7,7 +7,8 @@ VALUES
 ('Imperial College London', 'imperial.ac.uk', ''),
 ('University College London', 'ucl.ac.uk', ''),
 ('University of the West of England', 'uwe.ac.uk', ''),
-('Gmail', 'gmail.com', ''),
-('test1', 'test.com', ''),
-('test2', 'test.test', ''),
 ('admin', '@admin.com', '');
+
+INSERT INTO app_community(community_name, description, rules, privacy, is_community_owner_id)
+VALUES
+("Global Community (News Feed)", "This is the global community.", "", "public", NULL);

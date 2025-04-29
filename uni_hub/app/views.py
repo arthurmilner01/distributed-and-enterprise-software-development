@@ -164,101 +164,6 @@ class UserProfileUpdateView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class GlobalPostListCreateView(generics.ListCreateAPIView):
-    """
-    API endpoint for creating and retrieving posts.
-    """
-    pagination_class = None
-
-    serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """
-        Fetch posts based on `community` query parameter.
-        """
-        queryset = Post.objects.all().order_by("-created_at")
-        community_id = self.request.query_params.get("community")  # Get query param
-        user_id = self.request.query_params.get("user_id")  # Get query param
-
-        # If requesting to fetch all community posts except global community
-        if community_id == "all":
-            return queryset.exclude(community__community_name="Global Community (News Feed)")
-
-        if community_id:
-            return queryset.filter(community_id=community_id)
-        
-        if user_id:
-            return queryset.filter(user_id=user_id, community__community_name="Global Community (News Feed)")
-
-        # Default to Global Community posts
-        return queryset.filter(community__community_name="Global Community (News Feed)")
-
-    def perform_create(self, serializer):
-        community_id = self.request.data.get("community")
-        if community_id:
-            try:
-                community = Community.objects.get(id=community_id)
-            except Community.DoesNotExist:
-                community = Community.objects.get(community_name="Global Community (News Feed)")
-        else:
-            # Assign to Global Community if no ID is provided
-            try:
-                community = Community.objects.get(community_name="Global Community (News Feed)")
-            except Community.DoesNotExist:
-                return Response({"error": "Global Community does not exist."}, status=400)
-
-        serializer.save(user=self.request.user, community=community)
-
-class CommunityPostListCreateView(generics.ListCreateAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        # Fetch posts only for a specific community
-        community_id = self.kwargs.get("community_id")
-        print(f"Fetching posts for Community ID: {community_id}")  # Debugging
-        return Post.objects.filter(community_id=community_id).order_by("-created_at")
-
-
-    def perform_create(self, serializer):
-        """Save a new post inside the given community."""
-        community_id = self.kwargs.get("community_id")
-        community = Community.objects.get(id=community_id)
-        serializer.save(user=self.request.user, community=community)
-
-class CommentSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source="user.first_name", read_only=True)
-    user_last_name = serializers.CharField(source="user.last_name", read_only=True)
-
-    class Meta:
-        model = Comment
-        fields = ["id", "user", "user_name", "user_last_name", "post", "comment_text", "created_at"]
-        read_only_fields = ["id", "user", "created_at"]
-
-class CommentListCreateView(generics.ListCreateAPIView):
-    serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """Fetch comments for a specific post."""
-        post_id = self.kwargs.get("post_id")
-        return Comment.objects.filter(post_id=post_id).order_by("created_at")
-
-    def perform_create(self, serializer):
-        # Ensure the authenticated user is set for the comment
-        post_id = self.kwargs.get("post_id")
-
-        if not post_id:
-            raise serializers.ValidationError({"post_id": "This field is required."})
-
-        try:
-            post = Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            raise serializers.ValidationError({"post_id": "Invalid post ID."})
-
-        serializer.save(user=self.request.user, post=post)
-
 class UserCommunityListView(generics.ListAPIView):
     serializer_class = UserCommunitySerializer
     permission_classes = [IsAuthenticated]
@@ -403,29 +308,6 @@ def get_community_members(request):
     ]
 
     return Response(users)
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def toggle_like(request, post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    like, created = PostLike.objects.get_or_create(user=request.user, post=post)
-
-    if not created:
-        like.delete()
-        liked = False
-    else:
-        liked = True
-
-    like_count = PostLike.objects.filter(post=post).count()
-
-    return Response({
-        "liked": liked,
-        "like_count": like_count
-    }, status=status.HTTP_200_OK)
     
 class RecommendedCommunitiesView(generics.ListAPIView):
     """
