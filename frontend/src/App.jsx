@@ -19,6 +19,7 @@ import DiscoverPage from "./components/pages/DiscoverPage";
 import DiscoverCommunitiesPage from "./components/pages/DiscoverCommunitiesPage"; 
 import NotificationsTest from "./components/pages/NotificationsTest";
 import DiscoverUsersPage from "./components/pages/DiscoverUsersPage"; 
+import HashtagPage from "./components/pages/HashtagPage";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
               <Route path="discover" element={<DiscoverPage />} />
               <Route path="discover/communities" element={<DiscoverCommunitiesPage />} />
               <Route path="discover/users" element={<DiscoverUsersPage />} />
+              <Route path="/hashtag/:hashtagText" element={<HashtagPage />} />
               {/*Role-Based Routes (Only allow specific roles)*/}
               <Route element={<RoleBasedRoute allowedRoles={["C"]} />}>
                 <Route

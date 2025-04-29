@@ -162,6 +162,18 @@ class PostViewSet(viewsets.ModelViewSet):
         # Serialize and return the posts
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["get"], url_path="hashtag")
+    def by_hashtag(self, request):
+        hashtag_name = request.query_params.get("hashtag")
+
+        if not hashtag_name:
+            return Response({"error": "Hashtag is required to filter posts by hashtag."}, status=status.HTTP_400_BAD_REQUEST)
+
+        posts = Post.objects.filter(hashtags__name__iexact=hashtag_name).order_by("-created_at")
+
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # View set for following/unfollowing users and returning list of followed/following users
 class FollowViewSet(viewsets.ModelViewSet):

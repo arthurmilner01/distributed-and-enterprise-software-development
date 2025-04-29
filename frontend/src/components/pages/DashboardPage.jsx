@@ -189,6 +189,29 @@ const DashboardPage = () => {
     }
   };
 
+  // Using regular expression to make hashtags links
+  function renderPostText(text) {
+    // If a hashtag is used before the word make it a clickable link
+    // Browses to filtered posts which contain that hashtag
+    return text.split(/(\s+)/).map((word, index) => {
+      if (word.startsWith("#")) {
+        const tag = word.slice(1);
+        return (
+          <span
+            key={index}
+            className="text-info"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/hashtag/${tag}`)}
+          >
+            {word}
+          </span>
+        );
+      }
+      return word;
+    });
+  }
+  
+
   if (loading) return <p>Loading user data...</p>;
 
   return (
@@ -332,7 +355,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  <p>{post.post_text}</p>
+                  <p>{renderPostText(post.post_text)}</p>
 
                   {post.image_url && (
                     <img
