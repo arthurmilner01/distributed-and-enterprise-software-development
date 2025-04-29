@@ -479,7 +479,7 @@ class PinnedPostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='post.user.first_name', read_only=True)
     user_last_name = serializers.CharField(source='post.user.last_name', read_only=True)
     user_image = serializers.SerializerMethodField()
-    post_created_at = serializers.DateField(source='post.created_at', read_only=True)  
+    post_created_at = serializers.DateTimeField(source='post.created_at', read_only=True)  
     post_id = serializers.IntegerField(source='post.id', read_only=True)
     order = serializers.IntegerField(read_only=True)
 

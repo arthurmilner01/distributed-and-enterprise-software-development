@@ -148,7 +148,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 s3_storage = S3Boto3Storage()
 
 class Post(models.Model):
-    created_at = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     post_text = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to='post_images/', storage=s3_storage, null=True, blank=True)
     community = models.ForeignKey(
