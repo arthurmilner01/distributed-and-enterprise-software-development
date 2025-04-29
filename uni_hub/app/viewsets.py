@@ -696,6 +696,36 @@ class CommunityViewSet(viewsets.ModelViewSet):
         #Pass the request to the serializer to access request.user in create()
         return {"request": self.request}
     
+    def destroy(self, request, *args, **kwargs):
+        community = self.get_object()
+
+        # Only the community owner can delete their own community
+        if community.is_community_owner != request.user:
+            return Response({"error": "Only the community leader can delete the community."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # Ensures full deletion or no deletion
+            with transaction.atomic():
+                # Delete community posts and their related likes/comments
+                posts = community.posts.all()
+                for post in posts:
+                    post.post_likes.all().delete()
+                    post.comments.all().delete()
+                    post.delete()
+
+                # Delete memberships
+                UserCommunity.objects.filter(community=community).delete()
+
+                # Delete the community
+                community.delete()
+
+            return Response({"success": "Community and all related data deleted successfully."},
+                            status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": "An error occurred while deleting the community."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=["POST"], url_path="transfer-ownership")
     def transfer_ownership(self, request, pk=None):
         community = self.get_object()

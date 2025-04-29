@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Pin, PlusCircle } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal } from "react-bootstrap";
@@ -20,6 +20,7 @@ const CommunityPage = () => {
   const { communityId } = useParams();
   const { user, accessToken } = useAuth();
   const api = useApi();
+  const navigate = useNavigate();
 
   // Community details
   const [community, setCommunity] = useState(null);
@@ -278,6 +279,21 @@ const CommunityPage = () => {
     } catch (error) {
       console.error("Error fetching events:", error);
       setErrorMessage("Failed to load community events.");
+    }
+  };
+
+
+  const handleDeleteCommunity = async (communityId) => {
+    try {
+      const response = await api.delete(`/api/communities/${communityId}/`);
+      setSuccessMessage("Community has been deleted, redirecting to communities dashboard...")
+      setErrorMessage("")
+      setTimeout(() => {
+        navigate("/communities");
+      }, 2000);
+    } catch (error) {
+      console.error("Error deleting community:", error.response?.data || error.message);
+      setErrorMessage(`Error deleting community: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -682,7 +698,6 @@ const CommunityPage = () => {
       setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to delete event.");
     }
   };
-  // --- END Event Edit/Delete Handlers ---
 
   if (!community) {
     return (
@@ -814,8 +829,17 @@ const CommunityPage = () => {
                 </Button>
               )}
 
-
-
+              {isLeader && (
+                <Button variant="danger" 
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this community? This action cannot be undone.")) {
+                    handleDeleteCommunity(communityId);
+                  }
+                }}
+                className="mx-2">
+                  Delete Community
+                </Button>
+              )}
 
             </>
           )}
