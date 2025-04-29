@@ -65,6 +65,32 @@ class PostViewSet(viewsets.ModelViewSet):
 
         serializer.save(user=request.user, community=community)
 
+    # Overriding destroy to also remove likes and comments when a post is deleted
+    def destroy(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+
+            if post.user != request.user:
+                return Response({"error": "You cannot delete a post that isn't your own."}, status=status.HTTP_403_FORBIDDEN)
+            
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            # Delete related likes
+            post.post_likes.all().delete()
+            # Delete related comments
+            post.comments.all().delete()
+            # Now delete the post itself
+            post.delete()
+            # Return success
+            return Response({"success": "Post and related comments/likes have been deleted."}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            # Rollback the transaction if any error occurs
+            # Prevents likes and comments being deleted but not the post
+            transaction.set_rollback(True)
+            return Response({"error": "Error deleting post and related data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     #GET will list comments, POST will create a comment
     @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, pk=None):

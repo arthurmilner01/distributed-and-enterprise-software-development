@@ -122,6 +122,24 @@ const ProfilePage = () => {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    try {
+      // Send DELETE request
+      const response = await api.delete(`/api/posts/${postId}/`);
+  
+      // Update the state to reflect the deleted post
+      fetchUserPosts();
+      setSuccessMessage("Post successfully deleted.");
+      setErrorMessage("");
+    } catch (error) {
+      // Handle error if deletion fails
+      console.error("Error deleting post:", error);
+      setErrorMessage("Failed to delete the post, does the post belong to you?.");
+      setSuccessMessage("");
+    }
+  };
+  
+
   // Fetch posts when the "Posts" tab is active
   useEffect(() => {
     if (currentTab === "posts" && userId) {
@@ -807,6 +825,20 @@ const ProfilePage = () => {
                                 <span style={{ color: "#555", fontSize: "14px" }}>
                                   {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
                                 </span>
+                                {isOwner && (
+                                  <div>
+                                    <button
+                                      className="btn btn-danger ms-5"
+                                      style={{
+                                        borderRadius: "25px",
+                                        border: "none"
+                                      }}
+                                      onClick={() => handleDeletePost(post.id)}
+                                    >
+                                      <Trash size={20} />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
             
                               {/* Comments Section */}
