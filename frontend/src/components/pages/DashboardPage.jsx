@@ -222,6 +222,7 @@ const DashboardPage = () => {
       const response = await api.delete(`/api/posts/${postId}/`);
   
       // Update the state to reflect the deleted post
+      setCurrentPage(1); // Just in-case post is last on a page
       fetchPosts(currentPage);
       fetchCommunityPosts(currentPage);
       fetchUserPosts(currentPage);
