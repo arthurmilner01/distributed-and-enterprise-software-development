@@ -278,6 +278,11 @@ const DashboardPage = () => {
           selected={hashtagSelected}
           minLength={1}
           allowNew={false}
+          renderMenuItemChildren={(option) => (
+            <div>
+              #{option.name}
+            </div>
+          )}
         />
      </div>
      <hr className="m-3"></hr>
