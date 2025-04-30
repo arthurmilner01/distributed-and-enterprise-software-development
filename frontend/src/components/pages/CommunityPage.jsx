@@ -231,7 +231,8 @@ const CommunityPage = () => {
       const response = await api.get("api/posts/", {
         params: { community: communityId },
       });
-      setPosts(response.data);
+      const data = response.data.results ? response.data.results : response.data;
+      setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching community posts:", error);
     }

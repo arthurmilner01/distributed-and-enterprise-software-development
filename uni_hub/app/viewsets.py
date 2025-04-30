@@ -19,6 +19,7 @@ from .serializers import PostSerializer
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     # Default get returns global posts
     def get_queryset(self):
@@ -142,8 +143,10 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
         posts = Post.objects.filter(user__in=following_users).order_by("-created_at")
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = StandardResultsSetPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        serializer = self.get_serializer(paginated_posts, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
     # Returns posts by the user's joined communities
     @action(detail=False, methods=["get"], url_path="communities")
@@ -159,9 +162,13 @@ class PostViewSet(viewsets.ModelViewSet):
         community__community_name="Global Community (News Feed)"
     ).exclude(user=request.user).order_by("-created_at")
 
-        # Serialize and return the posts
-        serializer = self.get_serializer(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Serialize, paginate, and return the posts
+        paginator = StandardResultsSetPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        # Serialize the paginated posts
+        serializer = self.get_serializer(paginated_posts, many=True)
+        # Return the paginated response
+        return paginator.get_paginated_response(serializer.data)
     
     @action(detail=False, methods=["get"], url_path="hashtag")
     def by_hashtag(self, request):

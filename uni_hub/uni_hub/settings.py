@@ -84,7 +84,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': None,  # Explicitly disable pagination
-    'PAGE_SIZE': None,  # This is optional, but ensures no page size is used
+    'PAGE_SIZE': None,
 }
 
 

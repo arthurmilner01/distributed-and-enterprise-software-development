@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import useApi from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import Post from "../widgets/Post";
 import CommunityPost from "../widgets/CommunityPost";
+import PaginationComponent from "../widgets/PaginationComponent";
 
 
 const DashboardPage = () => {
@@ -32,13 +33,23 @@ const DashboardPage = () => {
   // For hashtag searching
   const [hashtagOptions, setHashtagOptions] = useState([]);
   const [hashtagSelected, setHashtagSelected] = useState([]);
+  // For pagination of posts
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchPosts = async () => {
+  const handlePageChange = useCallback((newPage) => {
+          setCurrentPage(newPage);
+  }, []); 
+
+  const fetchPosts = async (page = 1) => {
     try {
-      const response = await api.get("api/posts/");
+      const response = await api.get(`api/posts/?page=${page}`);
       const data = response.data.results ? response.data.results : response.data;
       setPosts(Array.isArray(data) ? data : []);
+      setCurrentPage(response.data.current_page || 1);
+      setTotalPages(response.data.total_pages || 1);
       console.log("Posts:", posts);
+      console.log("Total Pages:", totalPages);
     } catch (error) {
       console.error("Error fetching posts:", error);
       setErrorMessage("Failed to fetch posts.");
@@ -47,43 +58,33 @@ const DashboardPage = () => {
   };
 
   // Get posts from user's joined communities
-  const fetchCommunityPosts = async () => {
+  const fetchCommunityPosts = async (page = 1) => {
     try {
-      // Get posts from user's following
-      const response = await api.get("api/posts/communities");
-      
+      const response = await api.get(`api/posts/communities?page=${page}`);
       const data = response.data.results ? response.data.results : response.data;
-      
-      // Update user posts with response data
       setCommunityPosts(Array.isArray(data) ? data : []);
+      setCurrentPage(response.data.current_page || 1);
+      setTotalPages(response.data.total_pages || 1);
       console.log("Community Posts:", data);
     } catch (error) {
-      // Handle any errors that may occur during the API call
-      console.error("Error fetching user posts:", error);
-      setErrorMessage("Failed to load followed user posts.");
-      
-      // Reset the posts in case of an error
-      setUserPosts([]);
+      console.error("Error fetching community posts:", error);
+      setErrorMessage("Failed to load community posts.");
+      setCommunityPosts([]);
     }
   };
 
   // Get posts from user's followed profiles
-  const fetchUserPosts = async () => {
+  const fetchUserPosts = async (page = 1) => {
     try {
-      // Get posts from user's following
-      const response = await api.get("api/posts/following");
-      
+      const response = await api.get(`api/posts/following?page=${page}`);
       const data = response.data.results ? response.data.results : response.data;
-      
-      // Update user posts with response data
       setUserPosts(Array.isArray(data) ? data : []);
+      setCurrentPage(response.data.current_page || 1);
+      setTotalPages(response.data.total_pages || 1);
       console.log("User Posts:", data);
     } catch (error) {
-      // Handle any errors that may occur during the API call
       console.error("Error fetching user posts:", error);
       setErrorMessage("Failed to load followed user posts.");
-      
-      // Reset the posts in case of an error
       setUserPosts([]);
     }
   };
@@ -93,28 +94,28 @@ const DashboardPage = () => {
   // Update global posts when the "explore-posts" tab is set to active
   useEffect(() => {
     if (currentTab === "explore-posts") {
-      fetchPosts();
+      fetchPosts(currentPage);
     }
-  }, [currentTab]);
+  }, [currentTab, currentPage]);
 
   // Update user following posts when the "user-posts" tab is set to active
   useEffect(() => {
     if (currentTab === "user-posts") {
-      fetchUserPosts();
+      fetchUserPosts(currentPage);
     }
-  }, [currentTab]);
+  }, [currentTab, currentPage]);
 
   // Fetch community posts on community-posts tab
   useEffect(() => {
     if (currentTab === "community-posts") {
-      fetchCommunityPosts();
+      fetchCommunityPosts(currentPage);
     }
-  }, [currentTab]);
+  }, [currentTab, currentPage]);
 
   useEffect(() => {
-    fetchPosts();
-    fetchUserPosts();
-    fetchCommunityPosts();
+    fetchPosts(currentPage);
+    fetchUserPosts(currentPage);
+    fetchCommunityPosts(currentPage);
   }, []);
 
   const handlePostSubmit = async (event) => {
@@ -162,9 +163,9 @@ const DashboardPage = () => {
           }
           : post
       );
-      fetchPosts();
-      fetchCommunityPosts();
-      fetchUserPosts();
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
     } catch (error) {
       console.error("Error toggling like:", error);
     }
@@ -184,9 +185,9 @@ const DashboardPage = () => {
         }
       );
       console.log("Comment created:", response.data);
-      fetchPosts();
-      fetchCommunityPosts();
-      fetchUserPosts();
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
       setNewComment({ ...newComment, [postId]: "" });
     } catch (error) {
       console.error("Failed to create comment:", error);
@@ -221,9 +222,9 @@ const DashboardPage = () => {
       const response = await api.delete(`/api/posts/${postId}/`);
   
       // Update the state to reflect the deleted post
-      fetchPosts();
-      fetchCommunityPosts();
-      fetchUserPosts();
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
       setSuccessMessage("Post successfully deleted.");
       setErrorMessage("");
     } catch (error) {
@@ -401,6 +402,12 @@ const DashboardPage = () => {
                 />
               ))
             )}
+            {/* Pagination Component */}
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-4">
+                  <PaginationComponent currentPage={currentPage} totalPages={totalPages} handlePageChange={handlePageChange} />
+              </div>
+            )}
           </div>
         </div>
         )}
@@ -426,6 +433,11 @@ const DashboardPage = () => {
                 />
               ))
             )}
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-4">
+                  <PaginationComponent currentPage={currentPage} totalPages={totalPages} handlePageChange={handlePageChange} />
+              </div>
+            )}
           </div>
         </div>
         )}
@@ -450,6 +462,11 @@ const DashboardPage = () => {
               />
             ))
           )}
+          {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-4">
+                  <PaginationComponent currentPage={currentPage} totalPages={totalPages} handlePageChange={handlePageChange} />
+              </div>
+            )}
         </div>
       </div>
         )}

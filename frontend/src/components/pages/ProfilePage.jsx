@@ -78,7 +78,8 @@ const ProfilePage = () => {
   const fetchUserPosts = async () => {
     try {
       const response = await api.get(`api/posts/?user_id=${userId}`);
-      setUserPosts(response.data);
+      const data = response.data.results ? response.data.results : response.data;
+      setUserPosts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching user posts:", error);
     }
