@@ -6,6 +6,7 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api"; 
 import { useParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import Post from "../widgets/Post";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -778,165 +779,25 @@ const ProfilePage = () => {
           <div className="card-body">
             <h5 className="card-title">User Posts</h5>
             {/* Posts Section */}
-                      <div>
-                        {userPosts.length === 0 ? (
-                          <p>User hasn't created any posts.</p>
-                        ) : (
-                          userPosts.map((post) => (
-                            <div
-                              key={post.id}
-                              className="post mb-4"
-                              style={{
-                                background: "#fff",
-                                padding: "15px",
-                                borderRadius: "8px",
-                                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                              }}
-                            >
-                              <div className="d-flex align-items-center mb-3">
-                                <img
-                                  src={post.user_image || default_profile_picture}
-                                  alt="User Avatar"
-                                  style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px" }}
-                                />
-                                <div>
-                                  <div style={{ fontWeight: "bold" }}>
-                                    <span
-                                        className="text-primary"
-                                        style={{ cursor: "pointer" }}
-                                        onClick={() => navigate(`/profile/${post.user}`)}
-                                    >
-                                      {post.user_name} {post.user_last_name}
-                                    </span>
-                                  </div>
-                                  <div style={{ color: "#777", fontSize: "12px" }}>
-                                    {new Date(post.created_at).toLocaleDateString()}
-                                  </div>
-                                </div>
-                              </div>
-            
-                              <p>{renderPostText(post.post_text)}</p>
-            
-                              {post.image_url && (
-                                <img
-                                  src={post.image_url}
-                                  alt="Post"
-                                  style={{
-                                    maxWidth: "100%",
-                                    borderRadius: "8px",
-                                    marginTop: "10px",
-                                    marginBottom: "10px",
-                                  }}
-                                />
-                              )}
-            
-                              {/* Like Button and Count */}
-                              <div className="d-flex align-items-center mb-3">
-                                <button
-                                  className="btn btn-md me-2"
-                                  style={{
-                                    backgroundColor: post.liked_by_user ? "#e0f7fa" : "#f1f1f1",
-                                    color: post.liked_by_user ? "#007BFF" : "#555",
-                                    border: "none",
-                                    borderRadius: "20px",
-                                    fontWeight: 500,
-                                  }}
-                                  onClick={() => handleLikeToggle(post.id)}
-                                >
-                                  <ThumbsUp size={20} /> {post.liked_by_user ? "Liked" : "Like"}
-                                </button>
-                                <span style={{ color: "#555", fontSize: "14px" }}>
-                                  {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
-                                </span>
-                                {isOwner && (
-                                  <div>
-                                    <button
-                                      className="btn btn-danger ms-5"
-                                      style={{
-                                        borderRadius: "25px",
-                                        border: "none"
-                                      }}
-                                      onClick={() => handleDeletePost(post.id)}
-                                    >
-                                      <Trash size={20} />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-            
-                              {/* Comments Section */}
-                              <div className="comment-section">
-                                <h6>Comments</h6>
-                                {post.comments?.length > 0 ? (
-                                  <ul className="list-unstyled">
-                                    {post.comments.slice(0, 3).map((comment) => (
-                                      <li
-                                        key={comment.id}
-                                        className="d-flex align-items-start mb-2"
-                                        style={{ background: "#f0f2f5", padding: "8px", borderRadius: "12px" }}
-                                      >
-                                        <img
-                                          src={comment.user_image || default_profile_picture}
-                                          alt="User Avatar"
-                                          style={{
-                                            width: "30px",
-                                            height: "30px",
-                                            borderRadius: "50%",
-                                            marginRight: "10px",
-                                            marginTop: "3px",
-                                          }}
-                                        />
-                                          <div>
-                                          <span
-                                          className="text-primary"
-                                          style={{ cursor: "pointer" }}
-                                          onClick={() => navigate(`/profile/${comment.user}`)}
-                                          >
-                                            <strong>
-                                              {comment.user_name} {comment.user_last_name}
-                                            </strong>
-                                          </span>
-                                          : {comment.comment_text}
-                                          <br />
-                                          <small style={{ color: "#777" }}>
-                                            {new Date(comment.created_at).toLocaleDateString()}
-                                          </small>
-                                        </div>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-muted">No comments yet.</p>
-                                )}
-                              </div>
-            
-                              {/* Add Comment */}
-                              <form
-                                onSubmit={(e) => handleCommentSubmit(e, post.id)}
-                                className="d-flex mt-2"
-                              >
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Write a comment..."
-                                  value={newComment[post.id] || ""}
-                                  onChange={(e) =>
-                                    setNewComment({ ...newComment, [post.id]: e.target.value })
-                                  }
-                                  required
-                                />
-                                <button
-                                  type="submit"
-                                  className="btn btn-primary ms-2"
-                                  style={{ borderRadius: "20px" }}
-                                >
-                                  Submit
-                                </button>
-                              </form>
-                            </div>
-                          ))
-                        )}
-                      </div>
+            <div>
+              {userPosts.length === 0 ? (
+                <p>No posts in the global feed yet.</p>
+              ) : (
+                userPosts.map((post) => (
+                  <Post
+                    key={post.id}
+                    post={post}
+                    user={user}
+                    renderPostText={renderPostText}
+                    handleLikeToggle={handleLikeToggle}
+                    handleDeletePost={handleDeletePost}
+                    handleCommentSubmit={handleCommentSubmit}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
