@@ -129,7 +129,7 @@ const HashtagPage = () => {
           {/* Posts Section */}
           <div>
             {hashtagPosts.length === 0 ? (
-              <p>No posts in the global feed yet.</p>
+              <p>No posts under this hashtag.</p>
             ) : (
                 hashtagPosts.map((post) => (
                 <div
@@ -156,6 +156,14 @@ const HashtagPage = () => {
                             onClick={() => navigate(`/profile/${post.user}`)}
                         >
                           {post.user_name} {post.user_last_name}
+                        </span>
+
+                        <span
+                            className="text-primary"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => navigate(`/communities/${post.community}`)}
+                        >
+                          <p className="text-muted fst-italic">Posted in {post.community_name} Community</p>
                         </span>
                       </div>
                       <div style={{ color: "#777", fontSize: "12px" }}>
