@@ -94,23 +94,36 @@ const DashboardPage = () => {
   // Update global posts when the "explore-posts" tab is set to active
   useEffect(() => {
     if (currentTab === "explore-posts") {
-      fetchPosts(currentPage);
+      setCurrentPage(1);
+      fetchPosts(1);
     }
-  }, [currentTab, currentPage]);
+  }, [currentTab]);
 
   // Update user following posts when the "user-posts" tab is set to active
   useEffect(() => {
     if (currentTab === "user-posts") {
-      fetchUserPosts(currentPage);
+      setCurrentPage(1);
+      fetchUserPosts(1);
     }
-  }, [currentTab, currentPage]);
+  }, [currentTab]);
 
   // Fetch community posts on community-posts tab
   useEffect(() => {
     if (currentTab === "community-posts") {
-      fetchCommunityPosts(currentPage);
+      setCurrentPage(1);
+      fetchCommunityPosts(1);
     }
-  }, [currentTab, currentPage]);
+  }, [currentTab]);
+
+  useEffect(() => {
+    if (currentTab === "explore-posts") {
+      fetchPosts(currentPage); // Fetch posts based on currentPage
+    } else if (currentTab === "user-posts") {
+      fetchUserPosts(currentPage); // Fetch user posts based on currentPage
+    } else if (currentTab === "community-posts") {
+      fetchCommunityPosts(currentPage); // Fetch community posts based on currentPage
+    }
+  }, [currentPage]); // On page change to change posts displayed
 
   useEffect(() => {
     fetchPosts(currentPage);
