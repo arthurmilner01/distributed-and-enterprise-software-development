@@ -111,13 +111,13 @@ const HashtagPage = () => {
   return (
     <div className="container" style={{ maxWidth: "800px", margin: "20px auto" }}>
         <button
-          className="btn btn-link"
-          style={{ fontSize: "24px", color: "#007BFF", cursor: "pointer" }}
+          className="btn btn-link btn-info mb-3"
+          style={{ cursor: "pointer", textDecoration:"none"}}
           onClick={handleReturnHome}
         >
           <Home /> Return to Home
         </button>
-        <h3>Viewing posts under the hashtag: #{ hashtagText }</h3>
+        <h5>Viewing posts under the hashtag: #{ hashtagText }</h5>
 
       {errorMessage && (
         <div className="alert alert-danger mt-3">{errorMessage}</div>

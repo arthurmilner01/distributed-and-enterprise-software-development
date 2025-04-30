@@ -4,7 +4,9 @@ import default_profile_picture from "../../assets/images/default_profile_picture
 import useApi from "../../api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ThumbsUp, Trash } from "lucide-react";
+import { ThumbsUp, Trash, Search } from "lucide-react";
+import { Typeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 
 const DashboardPage = () => {
@@ -26,6 +28,9 @@ const DashboardPage = () => {
   const [newPostVideo, setNewPostVideo] = useState(null);
   // Default tab explore posts, state used to set tab
   const [currentTab, setCurrentTab] = useState("explore-posts");
+  // For hashtag searching
+  const [hashtagOptions, setHashtagOptions] = useState([]);
+  const [hashtagSelected, setHashtagSelected] = useState([]);
 
   const fetchPosts = async () => {
     try {
@@ -227,6 +232,26 @@ const DashboardPage = () => {
       setSuccessMessage("");
     }
   };
+
+  // When searching get the options to display via typeahead
+  const handleHashtagSearch = async (query) => {
+    try {
+      const response = await api.get(`/api/posts/search-hashtags?hashtag_query=${query}`);
+      console.log("Fetched hashtags:", response); // This shows actual response
+      setHashtagOptions(response.data); // Display returned hashtags
+    } catch (error) {
+      console.error("Error fetching hashtags:", error);
+    }
+  };
+
+  // When typeahead selected navigate to filter posts by that hashtag
+  const handleHashtagChange = (selected) => {
+    setHashtagSelected(selected);
+    // If selected exists navigate
+    if (selected.length > 0) {
+      navigate(`/hashtag/${selected[0].name}`);
+    }
+  };
   
 
   if (loading) return <p>Loading user data...</p>;
@@ -241,7 +266,21 @@ const DashboardPage = () => {
       {successMessage && (
         <div className="alert alert-success mt-3">{successMessage}</div>
       )}
-
+      {/* Search by hashtag section */}
+      <div className="mb-3 p-3 bg-light-subtle border border-secondary-subtle" style={{borderRadius: "10px"}}>
+        <p><Search size={20}/> Search by hashtag:</p>
+        <Typeahead
+          labelKey="name"
+          onInputChange={handleHashtagSearch}
+          options={hashtagOptions}
+          placeholder="Search posts by hashtag..."
+          onChange={handleHashtagChange}
+          selected={hashtagSelected}
+          minLength={1}
+          allowNew={false}
+        />
+     </div>
+     <hr className="m-3"></hr>
       {/* Create Post Section */}
       <div
         className="create-post mb-4"

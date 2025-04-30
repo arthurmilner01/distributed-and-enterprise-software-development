@@ -174,6 +174,19 @@ class PostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # For searching hashtags and typeaheads
+    @action(detail=False, methods=["get"], url_path="search-hashtags")
+    def search_hashtags(self, request):
+        query = request.query_params.get("hashtag_query", "")
+
+        if query:
+            hashtags = Hashtag.objects.filter(name__icontains=query).order_by("name")[:5]
+        else:
+            hashtags = Hashtag.objects.all().order_by("name")[:10]
+        
+        data = [{"id": tag.id, "name": tag.name} for tag in hashtags]
+        return Response(data, status=status.HTTP_200_OK)
 
 # View set for following/unfollowing users and returning list of followed/following users
 class FollowViewSet(viewsets.ModelViewSet):
