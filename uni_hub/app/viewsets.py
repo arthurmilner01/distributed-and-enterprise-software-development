@@ -131,16 +131,33 @@ class PostViewSet(viewsets.ModelViewSet):
             "like_count": like_count
         }, status=status.HTTP_200_OK)
     
-     # Returns posts by the passed community id
+    # Returns posts by the passed community id
     @action(detail=False, methods=["get"], url_path="community")
     def community(self, request):
         community_id = request.query_params.get("community_id")
 
         if not community_id:
-            return Response({"detail": "community_id query parameter is required."}, status=400)
+            return Response({"detail": "Community not found."}, status=404)
 
         # Get posts from the specified community
         posts = Post.objects.filter(community_id=community_id).order_by("-created_at")
+
+        # Pagination
+        paginator = StandardResultsSetPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        serializer = self.get_serializer(paginated_posts, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    # Returns posts by the passed user id
+    @action(detail=False, methods=["get"], url_path="user")
+    def user(self, request):
+        user_id = request.query_params.get("user_id")
+
+        if not user_id:
+            return Response({"detail": "User posts not found."}, status=404)
+
+        # Get posts from the specified community
+        posts = Post.objects.filter(user_id=user_id).order_by("-created_at")
 
         # Pagination
         paginator = StandardResultsSetPagination()

@@ -1,5 +1,5 @@
 import { useAuth } from "../../context/AuthContext";
-import { useState, useEffect } from "react"; 
+import { useState, useEffect, useCallback } from "react"; 
 import { Edit, Check, X, Users, UserPlus, UserCheck, FileText, MessageCircle, Star, Trash, ThumbsUp } from "lucide-react";
 import { Modal, Button, Form } from "react-bootstrap";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
@@ -7,11 +7,16 @@ import useApi from "../../api";
 import { useParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Post from "../widgets/Post";
+import PaginationComponent from "../widgets/PaginationComponent";
+
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userId } = useParams(); // Get userId from URL
+  const handlePageChange = useCallback((newPage) => {
+          setCurrentPage(newPage);
+  }, []); 
   const isOwner = user.id === parseInt(userId); // Is user viewing their own profile
   const [currentTab, setCurrentTab] = useState("posts"); // Default tab set to posts
   const [isEditing, setIsEditing] = useState(false); // State to monitor if user is editing details or not
@@ -66,20 +71,28 @@ const ProfilePage = () => {
   // Count order: joined communities, following, followers, posts, comments, achievements 
   const [profileBadges, setProfileBadges] = useState([]);
 
-
-
-
   // List of user's posts
   const [userPosts, setUserPosts] = useState([]);
   // For posting a comment
   const [newComment, setNewComment] = useState({});
 
+  // For pagination of posts
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Fetch the posts of the viewed user
-  const fetchUserPosts = async () => {
+  const fetchUserPosts = async (page = 1) => {
     try {
-      const response = await api.get(`api/posts/?user_id=${userId}`);
+      const response = await api.get("api/posts/user", {
+        params: { 
+          user_id: userId,
+          page: page
+         },
+      });
       const data = response.data.results ? response.data.results : response.data;
       setUserPosts(Array.isArray(data) ? data : []);
+      setCurrentPage(response.data.current_page || 1);
+      setTotalPages(response.data.total_pages || 1);
     } catch (error) {
       console.error("Error fetching user posts:", error);
     }
@@ -99,7 +112,7 @@ const ProfilePage = () => {
         }
       );
       console.log("Comment created:", response.data);
-      fetchUserPosts();
+      fetchUserPosts(currentPage);
       setNewComment({ ...newComment, [postId]: "" });
     } catch (error) {
       console.error("Failed to create comment:", error);
@@ -131,7 +144,8 @@ const ProfilePage = () => {
       const response = await api.delete(`/api/posts/${postId}/`);
   
       // Update the state to reflect the deleted post
-      fetchUserPosts();
+      setCurrentPage(1);
+      fetchUserPosts(currentPage);
       setSuccessMessage("Post successfully deleted.");
       setErrorMessage("");
     } catch (error) {
@@ -146,9 +160,9 @@ const ProfilePage = () => {
   // Fetch posts when the "Posts" tab is active
   useEffect(() => {
     if (currentTab === "posts" && userId) {
-      fetchUserPosts();
+      fetchUserPosts(currentPage);
     }
-  }, [currentTab, userId]);
+  }, [currentTab, userId, currentPage]);
 
   // State for list of user's communities (and roles)
   const [userCommunities, setUserCommunities] = useState([]);
@@ -797,6 +811,12 @@ const ProfilePage = () => {
                     setNewComment={setNewComment}
                   />
                 ))
+              )}
+              {/* Pagination Component */}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <PaginationComponent currentPage={currentPage} totalPages={totalPages} handlePageChange={handlePageChange} />
+                </div>
               )}
             </div>
           </div>
