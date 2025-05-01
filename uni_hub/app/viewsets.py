@@ -56,19 +56,31 @@ class PostViewSet(viewsets.ModelViewSet):
         try:
             post = self.get_object()
 
-            if post.user != request.user:
+            # If owner of the post
+            is_post_owner = post.user == request.user
+            # If community leader of the community in which the post was made
+            is_community_owner = post.community and post.community.is_community_owner == request.user
+
+            # Error if neither
+            if not (is_post_owner or is_community_owner):
                 return Response({"error": "You cannot delete a post that isn't your own."}, status=status.HTTP_403_FORBIDDEN)
             
         except Post.DoesNotExist:
             return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
+            # Get the hashtags in the post before deleting it
+            related_hashtags = list(post.hashtags.all())
             # Delete related likes
             post.post_likes.all().delete()
             # Delete related comments
             post.comments.all().delete()
-            # Now delete the post itself
+            # Delete the post itself
             post.delete()
+            # Delete the hashtags which are no longer in use
+            for hashtag in related_hashtags:
+                if not hashtag.posts.exists():
+                    hashtag.delete()
             # Return success
             return Response({"success": "Post and related comments/likes have been deleted."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:

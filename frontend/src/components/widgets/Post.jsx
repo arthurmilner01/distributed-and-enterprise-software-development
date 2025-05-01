@@ -110,7 +110,8 @@ const Post = ({
         <span style={{ color: "#555", fontSize: "14px" }}>
           {post.like_count} {post.like_count === 1 ? "Like" : "Likes"}
         </span>
-        {post.user === user.id && (
+        {/* If the post belongs to the user or if the community leader (also checked on backend regardless) */}
+        {(post.user === user.id || isLeader) && (
           <div>
             <button
               className="btn btn-danger ms-5"
