@@ -464,15 +464,16 @@ const DashboardPage = () => {
             <p>No posts in the community posts feed yet. Try joining a community!</p>
           ) : (
             communityPosts.map((communityPost) => (
-              <CommunityPost
-                key={communityPost.id}
-                communityPost={communityPost}
-                user={user}
-                handleLikeToggle={handleLikeToggle}
-                handleCommentSubmit={handleCommentSubmit}
-                newComment={newComment}
-                setNewComment={setNewComment}
-                renderPostText={renderPostText}
+              <Post
+              key={communityPost.id}
+              post={communityPost}
+              user={user}
+              renderPostText={renderPostText}
+              handleLikeToggle={handleLikeToggle}
+              handleDeletePost={handleDeletePost}
+              handleCommentSubmit={handleCommentSubmit}
+              newComment={newComment}
+              setNewComment={setNewComment}
               />
             ))
           )}
