@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import Post from "../widgets/Post";
-import CommunityPost from "../widgets/CommunityPost";
 import PaginationComponent from "../widgets/PaginationComponent";
 
 

@@ -1,7 +1,9 @@
 import React from "react";
+import { useState } from "react";
 import { Trash, ThumbsUp } from "lucide-react";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import { useNavigate } from "react-router-dom";
+import { Modal, Button } from "react-bootstrap";
 
 const Post = ({
   post,
@@ -14,6 +16,7 @@ const Post = ({
   setNewComment,
 }) => {
   const navigate = useNavigate();
+  const [showAllComments, setShowAllComments] = useState(false);
 
   return (
     <div
@@ -149,6 +152,13 @@ const Post = ({
                 </div>
               </li>
             ))}
+            {post.comments.length > 5 && (
+              <div className="text-center mt-2">
+                <Button variant="outline-primary" size="sm" onClick={() => setShowAllComments(true)}>
+                  View all comments
+                </Button>
+              </div>
+            )}
           </ul>
         ) : (
           <p className="text-muted">No comments yet.</p>
@@ -178,7 +188,50 @@ const Post = ({
           Submit
         </button>
       </form>
+      {/* Modal which displays all the comments on a post */}
+      <Modal show={showAllComments} onHide={() => setShowAllComments(false)} scrollable>
+        <Modal.Header closeButton>
+          <Modal.Title>All Comments</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {post.comments.map((comment) => (
+            <div
+              key={comment.id}
+              className="d-flex align-items-start mb-3"
+              style={{ background: "#f0f2f5", padding: "8px", borderRadius: "12px" }}
+            >
+              <img
+                src={comment.user_image || default_profile_picture}
+                alt="User Avatar"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "50%",
+                  marginRight: "10px",
+                  marginTop: "3px",
+                }}
+              />
+              <div>
+                <span
+                  className="text-primary"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate(`/profile/${comment.user}`)}
+                >
+                  <strong>{comment.user_name} {comment.user_last_name}</strong>
+                </span>
+                : {comment.comment_text}
+                <br />
+                <small style={{ color: "#777" }}>
+                  {new Date(comment.created_at).toLocaleDateString()}
+                </small>
+              </div>
+            </div>
+          ))}
+        </Modal.Body>
+      </Modal>
+
     </div>
+
   );
 };
 
