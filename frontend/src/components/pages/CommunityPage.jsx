@@ -12,9 +12,9 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
-import PostPinButton from "../ui/PinPostButton";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // Standard Datepicker CSS
+import Post from "../widgets/Post";
 
 const CommunityPage = () => {
   const { communityId } = useParams();
@@ -46,6 +46,7 @@ const CommunityPage = () => {
   const [posts, setPosts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState("");
+  const [newComment, setNewComment] = useState({});
 
   //Pinned posts State
   const [pinnedPosts, setPinnedPosts] = useState([]);
@@ -504,7 +505,91 @@ const CommunityPage = () => {
     }
   };
 
+  // Using regular expression to make hashtags links
+  function renderPostText(text) {
+    // If a hashtag is used before the word make it a clickable link
+    // Browses to filtered posts which contain that hashtag
+    return text.split(/(\s+)/).map((word, index) => {
+      if (word.startsWith("#")) {
+        const tag = word.slice(1);
+        return (
+          <span
+            key={index}
+            className="text-info"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/hashtag/${tag}`)}
+          >
+            {word}
+          </span>
+        );
+      }
+      return word;
+    });
+  }
 
+  // Handles submitting likes on a specific post
+  const handleLikeToggle = async (postId) => {
+    try {
+      const response = await api.post(`/api/posts/${postId}/toggle-like/`);
+      const updatedPosts = posts.map((post) =>
+        post.id === postId
+          ? {
+            ...post,
+            liked_by_user: response.data.liked,
+            like_count: response.data.like_count,
+          }
+          : post
+      );
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      // Send DELETE request
+      const response = await api.delete(`/api/posts/${postId}/`);
+  
+      // Update the state to reflect the deleted post
+      setCurrentPage(1); // Just in-case post is last on a page
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
+      setSuccessMessage("Post successfully deleted.");
+      setErrorMessage("");
+    } catch (error) {
+      // Handle error if deletion fails
+      console.error("Error deleting post:", error);
+      setErrorMessage("Failed to delete the post, does the post belong to you?.");
+      setSuccessMessage("");
+    }
+  };
+
+  // To save a posted comment
+  const handleCommentSubmit = async (event, postId) => {
+    event.preventDefault();
+    if (!newComment[postId] || newComment[postId].trim() === "") return;
+  
+    try {
+      const response = await api.post(
+        `api/posts/${postId}/comments/`,
+        {
+          comment_text: newComment[postId],
+          post: postId,
+        }
+      );
+      console.log("Comment created:", response.data);
+      fetchPosts(currentPage);
+      fetchCommunityPosts(currentPage);
+      fetchUserPosts(currentPage);
+      setNewComment({ ...newComment, [postId]: "" });
+    } catch (error) {
+      console.error("Failed to create comment:", error);
+    }
+  };
 
   // Fetches all pinned posts
   const fetchPinnedPosts = async () => {
@@ -522,6 +607,7 @@ const CommunityPage = () => {
   const isPostPinned = (postId) => {
     return pinnedPosts.some(pinnedPost => pinnedPost.post_id === postId);
   };
+
   const openEventModal = () => {
     setIsEventModalOpen(true);
     setEventErrorMessage(""); // Clear previous event modal errors
@@ -933,57 +1019,25 @@ const CommunityPage = () => {
               >
                 Create Post
               </button>
-              {posts && posts.length > 0 ? (
-                <ul className="list-group">
-                  {posts.map((post) => (
-                    <li key={post.id} className="list-group-item d-flex align-items-start">
-                      <img
-                        src={post.user_image || default_profile_picture}
-                        alt="User Avatar"
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          marginRight: "15px",
-                          border: "2px solid #ddd",
-                        }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <h5>
-                          {post.user_name} {post.user_last_name}
-                        </h5>
-                        <p>{post.post_text}</p>
-                        <small>{new Date(post.created_at).toLocaleDateString()}</small>
-                      </div>
-                      {/* Pinned & Like*/}
-                      <h5>
-                        {post.user_name} {post.user_last_name}
-                        {isPostPinned(post.id) && (
-                          <span className="badge bg-warning ms-2">
-                            <Pin size={12} className="me-1" />
-                            Pinned
-                          </span>
-                        )}
-                      </h5>
-
-                      {isLeader && (
-                        <PostPinButton
-                          post={post}
-                          communityId={communityId}
-                          isPinned={isPostPinned(post.id)}
-                          onPinStatusChange={() => {
-                            fetchPinnedPosts();
-                            fetchCommunityPosts();
-                          }}
-                        />
-                      )}
-                      <button className="btn btn-outline-danger" style={{ marginLeft: "auto" }}>
-                        ❤️ {post.likes}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <Post
+                    key={post.id}
+                    post={post}
+                    user={user}
+                    renderPostText={renderPostText}
+                    handleLikeToggle={handleLikeToggle}
+                    handleDeletePost={handleDeletePost}
+                    handleCommentSubmit={handleCommentSubmit}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                    isLeader={isLeader}
+                    isPostPinned={isPostPinned}
+                    fetchPinnedPosts={fetchPinnedPosts}
+                    fetchCommunityPosts={fetchCommunityPosts}
+                    communityId={communityId}
+                  />
+                ))
               ) : (
                 <p>No posts yet.</p>
               )}

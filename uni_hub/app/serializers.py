@@ -515,7 +515,7 @@ class PinnedPostSerializer(serializers.ModelSerializer):
         if obj.post.user.profile_picture:
             storage = S3Boto3Storage()
             return storage.url(obj.post.user.profile_picture.name)
-        return "https://via.placeholder.com/150"
+        return ""
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:

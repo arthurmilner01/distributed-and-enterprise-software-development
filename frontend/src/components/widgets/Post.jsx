@@ -1,9 +1,11 @@
 import React from "react";
 import { useState } from "react";
-import { Trash, ThumbsUp } from "lucide-react";
+import { Trash, ThumbsUp, Pin } from "lucide-react";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import { useNavigate } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
+import PostPinButton from "../ui/PinPostButton";
+
 
 const Post = ({
   post,
@@ -14,6 +16,11 @@ const Post = ({
   handleCommentSubmit,
   newComment,
   setNewComment,
+  isLeader= false, // Default values as only used on community page
+  isPostPinned = () => {},
+  fetchPinnedPosts = () => {},
+  fetchCommunityPosts = () => {},
+  communityId = 0
 }) => {
   const navigate = useNavigate();
   const [showAllComments, setShowAllComments] = useState(false);
@@ -43,7 +50,24 @@ const Post = ({
               onClick={() => navigate(`/profile/${post.user}`)}
             >
               {post.user_name} {post.user_last_name}
+              {isPostPinned(post.id) && (
+                <span className="badge bg-warning ms-2">
+                  <Pin size={12} className="me-1" />
+                  Pinned
+                </span>
+              )}
             </span>
+            {isLeader && (
+              <PostPinButton
+                post={post}
+                communityId={communityId}
+                isPinned={isPostPinned(post.id)}
+                onPinStatusChange={() => {
+                  fetchPinnedPosts();
+                  fetchCommunityPosts();
+                }}
+              />
+            )}
           </div>
           <div style={{ color: "#777", fontSize: "12px" }}>
             {new Date(post.created_at).toLocaleDateString()}
