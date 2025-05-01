@@ -26,27 +26,12 @@ class PostViewSet(viewsets.ModelViewSet):
         queryset = Post.objects.all().order_by("-created_at")
         request = self.request
         community_id = request.query_params.get("community")
-        user_id = request.query_params.get("user_id")
-        community_id_kwarg = self.kwargs.get("community_id")
-
 
         # If all show global posts
         if community_id == "all":
-            return queryset.exclude(community__community_name="Global Community (News Feed)")
-        
-        # If community id passed filter by that communities posts
-        if community_id:
-            return queryset.filter(community_id=community_id)
-        
-        # If community id passed filter by that communities posts
-        if community_id_kwarg:
-            return queryset.filter(community_id=community_id_kwarg)
-        
-        # If user id passed filter by that user's posts
-        if user_id:
-            return queryset.filter(user_id=user_id, community__community_name="Global Community (News Feed)")
+            return queryset.filter(community__community_name="Global Community (News Feed)")
 
-        return queryset.filter(community__community_name="Global Community (News Feed)")
+        return queryset
 
     # Creates either global or community post
     def perform_create(self, serializer):
@@ -133,6 +118,23 @@ class PostViewSet(viewsets.ModelViewSet):
             "liked": liked,
             "like_count": like_count
         }, status=status.HTTP_200_OK)
+    
+     # Returns posts by the passed community id
+    @action(detail=False, methods=["get"], url_path="community")
+    def community(self, request):
+        community_id = request.query_params.get("community_id")
+
+        if not community_id:
+            return Response({"detail": "community_id query parameter is required."}, status=400)
+
+        # Get posts from the specified community
+        posts = Post.objects.filter(community_id=community_id).order_by("-created_at")
+
+        # Pagination
+        paginator = StandardResultsSetPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        serializer = self.get_serializer(paginated_posts, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
     # Returns posts by the user's followed profiles
     @action(detail=False, methods=["get"], url_path="following")

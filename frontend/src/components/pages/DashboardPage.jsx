@@ -42,7 +42,7 @@ const DashboardPage = () => {
 
   const fetchPosts = async (page = 1) => {
     try {
-      const response = await api.get(`api/posts/?page=${page}`);
+      const response = await api.get(`api/posts/?page=${page}&community=all`);
       const data = response.data.results ? response.data.results : response.data;
       setPosts(Array.isArray(data) ? data : []);
       setCurrentPage(response.data.current_page || 1);
@@ -126,8 +126,6 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchPosts(currentPage);
-    fetchUserPosts(currentPage);
-    fetchCommunityPosts(currentPage);
   }, []);
 
   const handlePostSubmit = async (event) => {

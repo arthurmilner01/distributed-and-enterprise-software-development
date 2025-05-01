@@ -1,7 +1,7 @@
 
 
-import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Pin, PlusCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { CheckCircle, XCircle, PlusCircle } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams, useNavigate } from "react-router-dom";
 import useApi from "../../api";
@@ -15,6 +15,8 @@ import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // Standard Datepicker CSS
 import Post from "../widgets/Post";
+import PaginationComponent from "../widgets/PaginationComponent";
+
 
 const CommunityPage = () => {
   const { communityId } = useParams();
@@ -47,6 +49,9 @@ const CommunityPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState("");
   const [newComment, setNewComment] = useState({});
+  // For pagination of posts
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   //Pinned posts State
   const [pinnedPosts, setPinnedPosts] = useState([]);
@@ -97,6 +102,10 @@ const CommunityPage = () => {
   const currentUserMembership = communityMembers.find(member => member.id === user?.id);
   // Check if their role in this community is 'EventManager'
   const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
+
+   const handlePageChange = useCallback((newPage) => {
+            setCurrentPage(newPage);
+    }, []); 
 
   const fetchCommunityMembers = async () => {
     try {
@@ -227,13 +236,18 @@ const CommunityPage = () => {
   };
 
   // 3) Fetch posts for this community
-  const fetchCommunityPosts = async () => {
+  const fetchCommunityPosts = async (page = 1) => {
     try {
-      const response = await api.get("api/posts/", {
-        params: { community: communityId },
+      const response = await api.get("api/posts/community", {
+        params: { 
+          community_id: communityId,
+          page: page
+         },
       });
       const data = response.data.results ? response.data.results : response.data;
       setPosts(Array.isArray(data) ? data : []);
+      setCurrentPage(response.data.current_page || 1);
+      setTotalPages(response.data.total_pages || 1);
     } catch (error) {
       console.error("Error fetching community posts:", error);
     }
@@ -304,7 +318,7 @@ const CommunityPage = () => {
     if (communityId) {
       fetchCommunity();
       fetchAnnouncements();
-      fetchCommunityPosts();
+      fetchCommunityPosts(currentPage);
       fetchPinnedPosts();
       fetchEvents();
       if (user) {
@@ -313,6 +327,10 @@ const CommunityPage = () => {
       }
     }
   }, [communityId, user, isMember, isRequested]);
+
+  useEffect(() => {
+    fetchCommunityPosts(currentPage); // Fetch posts based on currentPage
+  }, [currentPage]); // When page changes
 
   // Is the current user the leader?
   const isLeader = community?.is_community_owner === user?.id;
@@ -540,9 +558,7 @@ const CommunityPage = () => {
           }
           : post
       );
-      fetchPosts(currentPage);
       fetchCommunityPosts(currentPage);
-      fetchUserPosts(currentPage);
     } catch (error) {
       console.error("Error toggling like:", error);
     }
@@ -555,9 +571,7 @@ const CommunityPage = () => {
   
       // Update the state to reflect the deleted post
       setCurrentPage(1); // Just in-case post is last on a page
-      fetchPosts(currentPage);
       fetchCommunityPosts(currentPage);
-      fetchUserPosts(currentPage);
       setSuccessMessage("Post successfully deleted.");
       setErrorMessage("");
     } catch (error) {
@@ -582,9 +596,7 @@ const CommunityPage = () => {
         }
       );
       console.log("Comment created:", response.data);
-      fetchPosts(currentPage);
       fetchCommunityPosts(currentPage);
-      fetchUserPosts(currentPage);
       setNewComment({ ...newComment, [postId]: "" });
     } catch (error) {
       console.error("Failed to create comment:", error);
@@ -944,12 +956,12 @@ const CommunityPage = () => {
               isLeader={isLeader}
               onUnpin={() => {
                 fetchPinnedPosts();
-                fetchCommunityPosts();
+                fetchCommunityPosts(currentPage);
               }}
               communityId={communityId}
               onReorder={() => {
                 fetchPinnedPosts();
-                fetchCommunityPosts();
+                fetchCommunityPosts(currentPage);
               }}
             />
           ) : null}
@@ -1040,6 +1052,12 @@ const CommunityPage = () => {
                 ))
               ) : (
                 <p>No posts yet.</p>
+              )}
+              {/* Pagination Component */}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <PaginationComponent currentPage={currentPage} totalPages={totalPages} handlePageChange={handlePageChange} />
+                </div>
               )}
             </div>
           </div>
