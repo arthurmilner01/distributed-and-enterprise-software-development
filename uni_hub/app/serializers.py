@@ -171,6 +171,7 @@ class PostSerializer(serializers.ModelSerializer):
     )
     community_name = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
+    liked_by_user = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -188,6 +189,7 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "like_count",
             "comments",
+            "liked_by_user"
         ]
         read_only_fields = ["id", "user", "created_at", "comments"]
 
@@ -204,6 +206,14 @@ class PostSerializer(serializers.ModelSerializer):
             return storage.url(image.name)
 
         return ""
+    
+    def get_liked_by_user(self, obj):
+        # If the user has liked the post return true to visually display this
+        user = self.context.get("request").user
+        if user and user.is_authenticated:
+            return obj.post_likes.filter(user=user).exists()
+        # Else return false
+        return False
     
     def create(self, validated_data):
         # Extracts hashtags from a post, only get unique hashtags ignoring repeats

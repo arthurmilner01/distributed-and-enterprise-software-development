@@ -32,6 +32,13 @@ class PostViewSet(viewsets.ModelViewSet):
             return queryset.filter(community__community_name="Global Community (News Feed)")
 
         return queryset
+    
+    # For keeping liked status updated visually
+    # Sending the user as context in serializer requests
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
     # Creates either global or community post
     def perform_create(self, serializer):
