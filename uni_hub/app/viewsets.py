@@ -735,7 +735,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
         Customize the queryset based on query parameters.
         This handles filtering and ordering.
         """
-        queryset = Community.objects.all()
+        queryset = Community.objects.filter(is_community_owner__isnull=False)
         
         queryset = queryset.annotate(member_count=Count('user_communities'))
         
@@ -1157,7 +1157,10 @@ class UserSearchViewSet(viewsets.ModelViewSet):
         """
         request_user = self.request.user
         #Start with all active users, excluding the current user
-        queryset = User.objects.filter(is_active=True).exclude(id=request_user.id).select_related('university')
+        queryset = User.objects.filter(is_active=True) \
+                          .exclude(id=request_user.id) \
+                          .exclude(is_superuser=True) \
+                          .select_related('university')
 
         search_query = self.request.query_params.get('search', None)
         university_id = self.request.query_params.get('university', None)
