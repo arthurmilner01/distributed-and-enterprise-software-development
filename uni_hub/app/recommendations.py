@@ -62,9 +62,7 @@ def get_community_recommendations_by_joined_keywords(user, limit=5):
     return recommended_communities_qs[:limit]
 
 
-# ============================================
 # USER RECOMMENDATION LOGIC (Mutual Followers)
-# ============================================
 def get_user_recommendations_mutuals(user, limit=5):
     """
     Generates user recommendations based on mutual follows ("friends of friends").

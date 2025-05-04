@@ -526,17 +526,50 @@ class PinnedPostSerializer(serializers.ModelSerializer):
             storage = S3Boto3Storage()
             return storage.url(obj.post.user.profile_picture.name)
         return ""
+# uni_hub/app/serializers.py
+from .models import RSVP # Ensure RSVP is imported
 
 class EventSerializer(serializers.ModelSerializer):
+
+    capacity = serializers.IntegerField(required=False, allow_null=True) # Add capacity field
+    rsvp_accepted_count = serializers.SerializerMethodField(read_only=True)
+    current_user_rsvp_status = serializers.SerializerMethodField(read_only=True)
+    
+
     class Meta:
         model = Event
-        fields = '__all__'
-
-    def validate(self, data):
+        # Add the new fields to the list
+        fields = [
+            'id', 'event_name', 'community', 'date', 'location',
+            'description', 'event_type',
+            'capacity', 'rsvp_accepted_count', 'current_user_rsvp_status' # Added here
+        ]
+        # Keep existing extra_kwargs if any
         
-        return data
+    def get_rsvp_accepted_count(self, obj):
+        # Calculate count directly here
+        return RSVP.objects.filter(event=obj, status='Accepted').count()
 
+    def get_current_user_rsvp_status(self, obj):
+        user = self.context.get('request').user
+        if user and user.is_authenticated:
+            try:
+                rsvp = RSVP.objects.get(event=obj, user=user)
+                return rsvp.status
+            except RSVP.DoesNotExist:
+                return None # No RSVP found for this user/event
+        return None # User not authenticated
+    
+class RSVPSerializer(serializers.ModelSerializer):
+    # User will be set from context, event from URL kwarg in view
+    status = serializers.ChoiceField(choices=RSVP.RSVP_STATUS_CHOICES)
 
+    class Meta:
+        model = RSVP
+        fields = ['id', 'user', 'event', 'status', 'rsvp_date']
+        read_only_fields = ['id', 'user', 'event', 'rsvp_date'] # User/Event set by view
+
+    # Add validation logic within the view that uses this serializer
 class UserSearchSerializer(serializers.ModelSerializer):
     university = UniversitySerializer(read_only=True)
     profile_picture_url = serializers.CharField(source='get_profile_picture_url', read_only=True)

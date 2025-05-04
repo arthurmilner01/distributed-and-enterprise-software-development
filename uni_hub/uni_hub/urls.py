@@ -11,5 +11,6 @@ urlpatterns = [
     path("", include("app.urls")),
     path('api-auth/', include('rest_framework.urls')),  # Enables login form in DRF
     path("user/update/<int:user_id>/", UserProfileUpdateView.as_view(), name="user-update"),
+    path('api/events/<int:event_pk>/rsvp/', RSVPUpdateView.as_view(), name='event-rsvp'),
 ]
 

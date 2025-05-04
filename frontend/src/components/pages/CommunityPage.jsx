@@ -89,6 +89,7 @@ const CommunityPage = () => {
   const [eventLocation, setEventLocation] = useState("");
   const [eventErrorMessage, setEventErrorMessage] = useState(""); // Error specific to event modal
   const [expandedEventId, setExpandedEventId] = useState(null); // Track expanded event
+  const [eventCapacity, setEventCapacity] = useState('');
   // State for Editing Events
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null); // Store the whole event object being edited
@@ -99,6 +100,7 @@ const CommunityPage = () => {
   const [editEventDate, setEditEventDate] = useState(null);
   const [editEventType, setEditEventType] = useState("");
   const [editEventLocation, setEditEventLocation] = useState("");
+  const [editEventCapacity, setEditEventCapacity] = useState('');
   const currentUserMembership = communityMembers.find(member => member.id === user?.id);
   // Check if their role in this community is 'EventManager'
   const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
@@ -633,6 +635,7 @@ const CommunityPage = () => {
     setEventDate(null);
     setEventType("");
     setEventLocation("");
+    setEventCapacity(''); 
     setEventErrorMessage(""); // Clear error on close
   };
 
@@ -660,6 +663,13 @@ const CommunityPage = () => {
       setEventErrorMessage("Invalid date/time selected. Please choose a date and time.");
       return;
     }
+    const capacityValue = eventCapacity === '' ? null : parseInt(eventCapacity, 10);
+
+    // Basic validation for capacity if needed (e.g., ensure it's a positive number if not null)
+    if (capacityValue !== null && (isNaN(capacityValue) || capacityValue < 1)) {
+         setEventErrorMessage("Capacity must be a positive number if provided.");
+         return;
+    }
 
     try {
       await api.post("/api/events/", {
@@ -669,6 +679,7 @@ const CommunityPage = () => {
         date: formattedTimestamp,
         event_type: eventType,
         location: eventLocation,
+        capacity: capacityValue,
         community: parseInt(communityId),
       });
       setSuccessMessage("Event created successfully!");
@@ -705,6 +716,7 @@ const CommunityPage = () => {
     setEditEventDate(eventToEdit.date ? new Date(eventToEdit.date) : null);
     setEditEventType(eventToEdit.event_type || "");
     setEditEventLocation(eventToEdit.location || "");
+    setEditEventCapacity(eventToEdit.capacity ?? '');
 
     setEditEventErrorMessage(""); // Clear previous errors
     setIsEditEventModalOpen(true); // Open the modal
@@ -714,6 +726,7 @@ const CommunityPage = () => {
     setIsEditEventModalOpen(false);
     setEditingEvent(null); // Clear the event being edited
     setEditEventErrorMessage(""); // Clear errors
+    setEditEventCapacity('');
   };
 
   // Handles the submission of the Edit Event form
@@ -741,6 +754,11 @@ const CommunityPage = () => {
       setEditEventErrorMessage("Invalid date/time selected.");
       return;
     }
+    const capacityValue = editEventCapacity === '' ? null : parseInt(editEventCapacity, 10);
+    if (capacityValue !== null && (isNaN(capacityValue) || capacityValue < 1)) {
+         setEditEventErrorMessage("Capacity must be a positive number if provided.");
+         return;
+    }
 
     // Prepare the data payload - only send fields that can be updated
     const updatedEventData = {
@@ -749,8 +767,8 @@ const CommunityPage = () => {
       date: formattedTimestamp,
       event_type: editEventType,
       location: editEventLocation,
-      // Include community ID if your PATCH/PUT endpoint requires it
-      // community: parseInt(communityId),
+      capacity: capacityValue,
+   
     };
 
     try {
@@ -796,6 +814,29 @@ const CommunityPage = () => {
       console.error("Error deleting event:", error);
       setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to delete event.");
     }
+  };
+  const handleRSVPUpdate = async (eventId, status) => {
+      setSuccessMessage(""); // Clear previous messages
+      setErrorMessage("");
+
+      try {
+          console.log(`Sending RSVP for Event ${eventId} with status: ${status}`); // Debug log
+          // Use POST to the new endpoint
+          const response = await api.post(`/api/events/${eventId}/rsvp/`, { status });
+
+          console.log("RSVP Response:", response.data); // Debug log
+          setSuccessMessage(`Your RSVP has been updated to ${status}.`);
+
+          // Refetch events to update the counts and button states
+          fetchEvents();
+
+      } catch (error) {
+          console.error("Error updating RSVP:", error);
+          // Display specific backend errors if available (like capacity full)
+          setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to update RSVP.");
+          setSuccessMessage(""); // Clear success message on error
+      } finally {
+      }
   };
 
   if (!community) {
@@ -1082,72 +1123,96 @@ const CommunityPage = () => {
             <div className="card-body">
               {events.length > 0 ? (
                 <ul className="list-group list-group-flush">
-                  {events.map((event) => (
-                    <li key={event.id} className="list-group-item px-0 py-3">
+                  {events.map((event) => {
+                    // --- ADD: Helper variables for clarity ---
+                    const isEventManagerOrLeader = isLeader || isCurrentUserEventManager; // Combine check
+                    const isEventPast = new Date(event.date) < new Date();
+                    const currentUserStatus = event.current_user_rsvp_status;
+                    // --- END ADD ---
+
+                    return ( 
+                      <li key={event.id} className="list-group-item px-0 py-3">
                       <div className="d-flex justify-content-between align-items-center">
-                        {/* Event Name and Date */}
-                        <div>
-                          <h5 className="mb-1 h6">{event.event_name}</h5>
-                          <small className="text-muted">
-                            {new Date(event.date).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
-                          </small>
-                        </div>
-                        {/* Button Group for Actions */}
-                        <div className="d-flex align-items-center flex-shrink-0">
+                           {/* Event Name and Date */}
+                           <div>
+                               <h5 className="mb-1 h6">{event.event_name}</h5>
+                               <small className="text-muted">
+                                   {new Date(event.date).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                               </small>
+                           </div>
+                           {/* Button Group for Actions */}
+                            <div className="d-flex align-items-center flex-shrink-0">
+                               {/* Edit/Delete Buttons (Existing Logic) */}
+                               {isEventManagerOrLeader && !isEventPast && ( // Also hide edit/delete for past events
+                                   <>
+                                       <button className="btn btn-outline-primary btn-sm me-2 p-1" onClick={() => handleEditEventClick(event)} title="Edit Event">Edit</button>
+                                       <button className="btn btn-outline-danger btn-sm me-2 p-1" onClick={() => handleDeleteEventClick(event.id)} title="Delete Event">Delete</button>
+                                   </>
+                               )}
+                               {/* Expand/Collapse Button (Existing) */}
+                               <button className="btn btn-link btn-sm p-1 text-secondary" onClick={() => toggleEventDetails(event.id)} aria-expanded={expandedEventId === event.id} aria-controls={`event-details-${event.id}`} title="Toggle Details">
+                                   {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                   <span className="visually-hidden">Toggle details</span>
+                               </button>
+                           </div>
+                       </div>
 
-                          {/* Check if Leader OR if specifically EventManager for *this* community */}
-                          {(isLeader || isCurrentUserEventManager) && (
-                            <>
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                className="me-2 p-1"
-                                onClick={() => handleEditEventClick(event)}
-                                aria-label={`Edit event ${event.event_name}`}
-                                title="Edit Event"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                className="me-2 p-1"
-                                onClick={() => handleDeleteEventClick(event.id)}
-                                aria-label={`Delete event ${event.event_name}`}
-                                title="Delete Event"
-                              >
-                                Delete
-                              </Button>
-                            </>
-                          )}
+                       {/* Collapsible Event Details */}
+                       <div id={`event-details-${event.id}`} className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}>
+                           <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
+                           <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
+                           <p className="mb-1"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
 
-                          {/* Expand/Collapse Button */}
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => toggleEventDetails(event.id)}
-                            aria-expanded={expandedEventId === event.id}
-                            aria-controls={`event-details-${event.id}`}
-                            className="p-1 text-secondary" // Subtle style
-                            title="Toggle Details" // Tooltip
-                          >
-                            {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                            <span className="visually-hidden">Toggle details</span>
-                          </Button>
-                        </div>
-                      </div>
+                           {/* --- ADDED: Capacity Info --- */}
+                           {isEventManagerOrLeader && event.capacity != null && (
+                               <p className="mb-1">
+                                   <strong>Capacity:</strong> {event.rsvp_accepted_count ?? 0} / {event.capacity} accepted
+                               </p>
+                           )}
+                           {/* --- END ADDED: Capacity Info --- */}
+                       </div>
 
-                      {/* Collapsible Event Details */}
-                      <div
-                        id={`event-details-${event.id}`}
-                        className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}
-                      >
-                        <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
-                        <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
-                        <p className="mb-0"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
-                      </div>
-                    </li>
-                  ))}
+                       {/* --- ADDED: RSVP Section --- */}
+                       {/* Only show RSVP section for members and if event is not past */}
+                       {isMember && !isEventPast && ( // Assuming `isMember` checks if the user is part of the *community*
+                           <div className="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
+                               <small className="text-muted me-2 fw-bold">Your RSVP:</small>
+                               <div className="btn-group btn-group-sm" role="group" aria-label="RSVP status">
+                                   <button type="button"
+                                           className={`btn ${currentUserStatus === 'Accepted' ? 'btn-success' : 'btn-outline-success'}`}
+                                           onClick={() => handleRSVPUpdate(event.id, 'Accepted')} /* Add handler later */ >
+                                       Accept
+                                   </button>
+                                   <button type="button"
+                                           className={`btn ${currentUserStatus === 'Tentative' ? 'btn-warning text-dark' : 'btn-outline-warning'}`} /* Added text-dark for better contrast */
+                                           onClick={() => handleRSVPUpdate(event.id, 'Tentative')} /* Add handler later */ >
+                                       Maybe
+                                   </button>
+                                   <button type="button"
+                                           className={`btn ${currentUserStatus === 'Declined' ? 'btn-danger' : 'btn-outline-danger'}`}
+                                           onClick={() => handleRSVPUpdate(event.id, 'Declined')} /* Add handler later */ >
+                                       Decline
+                                   </button>
+                               </div>
+                           </div>
+                       )}
+                        {/* Show simple status if event is past */}
+                        {isMember && isEventPast && (
+                           <div className="mt-2 pt-2 border-top">
+                               <small className="text-muted fw-bold me-2">Your RSVP:</small>
+                               {currentUserStatus ? (
+                                   <span className={`badge ${currentUserStatus === 'Accepted' ? 'bg-success' : currentUserStatus === 'Declined' ? 'bg-danger' : 'bg-warning text-dark'}`}>
+                                       {currentUserStatus} (Past)
+                                   </span>
+                               ) : (
+                                    <span className="badge bg-secondary">Event Past</span>
+                               )}
+                           </div>
+                        )}
+                       {/* --- END ADDED: RSVP Section --- */}
+                   </li>
+                    ); 
+                  })}
                 </ul>
               ) : (
                 // Message when no events exist
@@ -1461,6 +1526,19 @@ const CommunityPage = () => {
                 </Form.Text>
               )}
             </Form.Group>
+            <Form.Group className="mb-3" controlId="eventCapacity">
+                    <Form.Label>Capacity (Optional)</Form.Label>
+                    <Form.Control
+                        type="number"
+                        placeholder="Max attendees (leave blank for unlimited)"
+                        value={eventCapacity} // Use state variable 'eventCapacity'
+                        onChange={(e) => setEventCapacity(e.target.value)} // Use state setter 'setEventCapacity'
+                        min="1" // Optional: prevent negative numbers or zero
+                    />
+                    <Form.Text muted>
+                        Leave blank if there is no limit on attendees.
+                    </Form.Text>
+                </Form.Group>
 
 
           </Modal.Body>
@@ -1529,6 +1607,19 @@ const CommunityPage = () => {
               <Form.Label>Location / Platform <span className="text-danger">*</span></Form.Label>
               <Form.Control type="text" value={editEventLocation} onChange={(e) => setEditEventLocation(e.target.value)} required />
             </Form.Group>
+            <Form.Group className="mb-3" controlId="editEventCapacity">
+                    <Form.Label>Capacity (Optional)</Form.Label>
+                    <Form.Control
+                        type="number"
+                        placeholder="Max attendees (leave blank for unlimited)"
+                        value={editEventCapacity} // Use state variable 'editEventCapacity'
+                        onChange={(e) => setEditEventCapacity(e.target.value)} // Use state setter 'setEditEventCapacity'
+                        min="1"
+                    />
+                     <Form.Text muted>
+                        Leave blank if there is no limit on attendees.
+                    </Form.Text>
+                </Form.Group>
 
           </Modal.Body>
           <Modal.Footer>

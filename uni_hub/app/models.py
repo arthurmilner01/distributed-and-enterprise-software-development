@@ -140,6 +140,8 @@ class Event(models.Model):
     location = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     event_type = models.CharField(max_length=50, null=True, blank=True)
+    
+    capacity = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum number of attendees (optional)")
 
     def __str__(self):
         return self.event_name

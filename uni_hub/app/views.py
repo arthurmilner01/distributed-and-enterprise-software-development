@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework import permissions, generics
-
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.utils import timezone
 import requests
@@ -359,3 +359,51 @@ class RecommendedUsersView(APIView): # Changed from ListAPIView
         }
 
         return Response(response_data)
+class RSVPUpdateView(generics.GenericAPIView):
+    """
+    Allows authenticated community members to create or update their RSVP
+    for a specific event. Checks event capacity on 'Accepted' status.
+    """
+    serializer_class = RSVPSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCommunityMemberForEvent]
+    queryset = Event.objects.all() # Needed for get_object/permission check
+    lookup_url_kwarg = 'event_pk' # Specify the URL keyword for the event ID
+
+    # Define get_object to fetch the Event for permission checks
+    def get_object(self):
+        queryset = self.get_queryset()
+        event_pk = self.kwargs.get(self.lookup_url_kwarg)
+        obj = get_object_or_404(queryset, pk=event_pk)
+        self.check_object_permissions(self.request, obj) # Manually check object perms
+        return obj
+
+    def post(self, request, *args, **kwargs):
+        event = self.get_object() # Fetch event and run object permissions
+        user = request.user
+        status_to_set = request.data.get('status')
+
+        # Validate status choice
+        if status_to_set not in dict(RSVP.RSVP_STATUS_CHOICES):
+            return Response({'detail': 'Invalid RSVP status provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # --- Capacity Check ---
+        if status_to_set == 'Accepted' and event.capacity is not None:
+            accepted_count = RSVP.objects.filter(event=event, status='Accepted').count()
+            existing_rsvp = RSVP.objects.filter(user=user, event=event).first()
+            is_currently_accepted = existing_rsvp and existing_rsvp.status == 'Accepted'
+
+            # Block only if full AND user isn't already accepted
+            if accepted_count >= event.capacity and not is_currently_accepted:
+                 return Response({'detail': 'Event has reached maximum capacity.'}, status=status.HTTP_400_BAD_REQUEST)
+        # --- End Capacity Check ---
+
+        # Create or update the RSVP entry
+        rsvp, created = RSVP.objects.update_or_create(
+            user=user,
+            event=event,
+            defaults={'status': status_to_set}
+        )
+
+        serializer = self.get_serializer(rsvp) # Serialize the created/updated RSVP
+        resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(serializer.data, status=resp_status)

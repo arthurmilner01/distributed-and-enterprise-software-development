@@ -93,3 +93,18 @@ class IsCommunityLeader(BasePermission):
             community_id=community_id,
             role__in=["Leader"]
         ).exists()
+class IsCommunityMemberForEvent(BasePermission):
+    message = 'You must be a member of the community to RSVP.'
+
+    def has_permission(self, request, view):
+        # Let IsAuthenticated handle the initial check
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        # Assumes 'obj' is the Event instance passed from the view
+        if not hasattr(obj, 'community') or not obj.community:
+            return False
+        return UserCommunity.objects.filter(
+            user=request.user,
+            community=obj.community
+        ).exists()
