@@ -1,4 +1,4 @@
--- Active: 1740148092384@@127.0.0.1@3006@uni_hub_db
+-- Active: 1738950369406@@127.0.0.1@3006@uni_hub_db
 
 -- Inserts university data to auto-assign university at login
 INSERT INTO app_university(university_name, university_domain, university_logo)

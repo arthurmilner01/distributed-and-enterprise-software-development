@@ -13,6 +13,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Post, Community
 from .serializers import PostSerializer
+from .email_templates import AnnouncementNotificationEmail
 
 # Viewset for posting related functions, including creating global posts,
 # community posts, comments, likes, and filtering returned posts for the home page
@@ -706,8 +707,23 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         community_id = self.request.data.get('community_id')
         if not community_id:
             raise serializers.ValidationError({"community_id": "This field is required."})
-        # Get community and check leadership if needed...
-        serializer.save(created_by=self.request.user, community_id=community_id)
+
+        announcement = serializer.save(created_by=self.request.user, community_id=community_id)
+        
+        #Send emails to all community members
+        community = announcement.community
+        community_members = UserCommunity.objects.filter(community=community).select_related('user')
+        
+        for member in community_members:
+            #Dont send to the announcement creator
+            if member.user != self.request.user:
+                AnnouncementNotificationEmail.send_notification(
+                    recipient=member.user,
+                    announcement=announcement,
+                    community=community
+                )
+        
+        return announcement
 
 
 class CommunityViewSet(viewsets.ModelViewSet):

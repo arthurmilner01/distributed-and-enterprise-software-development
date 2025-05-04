@@ -1,0 +1,13 @@
+Hi {{ recipient.first_name }},
+
+A new announcement has been posted in {{ community.community_name }}:
+
+Title: {{ announcement.title }}
+Posted by: {{ announcement.created_by.first_name }} {{ announcement.created_by.last_name }}
+
+{{ announcement.content }}
+
+View this announcement and more community updates at http://localhost:5174/communities/{{ community.id }}
+
+Thanks,
+Uni Hub
