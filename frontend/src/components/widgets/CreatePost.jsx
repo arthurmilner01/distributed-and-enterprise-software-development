@@ -6,8 +6,6 @@ const CreatePost = ({
   setNewPost,
   newPostImage,
   setNewPostImage,
-  newPostVideo,
-  setNewPostVideo,
   handlePostSubmit,
   isMembersOnly = false,
   setIsMembersOnly = null
@@ -57,18 +55,6 @@ const CreatePost = ({
             id="photoInput"
             accept="image/*"
             onChange={(e) => setNewPostImage(e.target.files[0])}
-            style={{ display: "none" }}
-            />
-
-            {/* Video Upload */}
-            <label htmlFor="videoInput" className="btn btn-light border" style={{ fontWeight: 500 }}>
-            🎥 Video
-            </label>
-            <input
-            type="file"
-            id="videoInput"
-            accept="video/*"
-            onChange={(e) => setNewPostVideo(e.target.files[0])}
             style={{ display: "none" }}
             />
         </div>

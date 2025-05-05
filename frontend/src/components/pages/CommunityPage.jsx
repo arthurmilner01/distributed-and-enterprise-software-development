@@ -48,7 +48,7 @@ const CommunityPage = () => {
   const [newPost, setNewPost] = useState("");
   const [newComment, setNewComment] = useState({});
   const [newPostImage, setNewPostImage] = useState(null);
-  const [newPostVideo, setNewPostVideo] = useState(null);
+
 
   // For pagination of posts
   const [currentPage, setCurrentPage] = useState(1);
@@ -393,7 +393,7 @@ const CommunityPage = () => {
     event.preventDefault();
   
     // Prevent empty posts
-    if (!newPost.trim() && !newPostImage && !newPostVideo) {
+    if (!newPost.trim() && !newPostImage) {
       setErrorMessage("Please add text, an image, or a video before posting.");
       return;
     }
@@ -403,10 +403,6 @@ const CommunityPage = () => {
   
     if (newPostImage) {
       formData.append("image", newPostImage);
-    }
-  
-    if (newPostVideo) {
-      formData.append("video", newPostVideo);
     }
   
     if (communityId) {
@@ -426,7 +422,6 @@ const CommunityPage = () => {
       setPosts((prev) => [response.data, ...prev]);
       setNewPost("");
       setNewPostImage(null);
-      setNewPostVideo(null);
       setIsMembersOnly(false);
     } catch (error) {
       console.error("Failed to create post:", error);
@@ -1129,8 +1124,6 @@ const CommunityPage = () => {
                 setNewPost={setNewPost}
                 newPostImage={newPostImage}
                 setNewPostImage={setNewPostImage}
-                newPostVideo={newPostVideo}
-                setNewPostVideo={setNewPostVideo}
                 handlePostSubmit={handlePostSubmit}
                 isMembersOnly={isMembersOnly}
                 setIsMembersOnly={setIsMembersOnly}

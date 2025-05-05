@@ -26,7 +26,7 @@ const DashboardPage = () => {
   const api = useApi();
 
   const [newPostImage, setNewPostImage] = useState(null);
-  const [newPostVideo, setNewPostVideo] = useState(null);
+  
   // Default tab explore posts, state used to set tab
   const [currentTab, setCurrentTab] = useState("explore-posts");
   // For hashtag searching
@@ -304,8 +304,6 @@ const DashboardPage = () => {
         setNewPost={setNewPost}
         newPostImage={newPostImage}
         setNewPostImage={setNewPostImage}
-        newPostVideo={newPostVideo}
-        setNewPostVideo={setNewPostVideo}
         handlePostSubmit={handlePostSubmit}
       />
 
