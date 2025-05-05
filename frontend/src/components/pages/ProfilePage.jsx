@@ -450,9 +450,22 @@ const ProfilePage = () => {
     if (editableUser.bio !== fetchedUser.bio && editableUser.bio !== "This user hasn't added a bio...") {
       updatedUser.append('bio', editableUser.bio);
     }
+
     if (editableUser.interests !== fetchedUser.interests && editableUser.interests !== "This user hasn't added any interests...") {
-      updatedUser.append('interests', editableUser.interests);
-    }
+        updatedUser.append('interests', editableUser.interests);
+        
+        // Process interests for the new model - but send as a JSON string
+        if (editableUser.interests) {
+          const interestsList = editableUser.interests
+            .split(',')
+            .map(i => i.trim())
+            .filter(i => i !== "");
+          
+          // Key change: Send interests_list as a single JSON string instead of separate fields
+          updatedUser.append('interests_list', JSON.stringify(interestsList));
+        }
+      }
+  
     
     // If not default profile picture OR same as profile picture before
     if (editableUser.profile_picture && editableUser.profile_picture !== fetchedUser.profile_picture) {
@@ -760,14 +773,28 @@ const ProfilePage = () => {
             <div className="mb-3">
               <h4>Interests</h4>
               {isEditing ? (
-                <textarea
-                  name="interests"
-                  value={editableUser.interests}
-                  onChange={handleInputChange}
-                  className="form-control"
-                />
+                <div>
+                  <textarea
+                    name="interests"
+                    value={editableUser.interests}
+                    onChange={handleInputChange}
+                    className="form-control mb-2"
+                    placeholder="Enter interests separated by commas"
+                  />
+                  <small className="text-muted">Enter interests separated by commas (e.g., Programming, Music, Sports)</small>
+                </div>
               ) : (
-                <p>{fetchedUser.interests || "User hasn't provided any interests..."}</p>
+                <div>
+                  {fetchedUser.interests_list && fetchedUser.interests_list.length > 0 ? (
+                    <div className="d-flex flex-wrap gap-1">
+                      {fetchedUser.interests_list.map((interest, index) => (
+                        <span key={index} className="badge bg-secondary">{interest.interest}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>{fetchedUser.interests || "User hasn't provided any interests..."}</p>
+                  )}
+                </div>
               )}
             </div>
 

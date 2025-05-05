@@ -94,6 +94,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 class CustomUserSerializer(serializers.ModelSerializer):
     university = UniversitySerializer()
     profile_picture_url = serializers.SerializerMethodField()
+    interests_list = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -104,6 +105,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "last_name",
             "bio",
             "interests",
+            "interests_list", 
             "role",
             "profile_picture",
             "profile_picture_url",
@@ -111,6 +113,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "academic_program",
             "academic_year"
         ]
+    
+    def get_interests_list(self, obj):
+        """Return a list of interest objects for the user"""
+        user_interests = UserInterest.objects.filter(user=obj).select_related('interest')
+        return [{'id': ui.interest.id, 'interest': ui.interest.interest} for ui in user_interests]
 
     def get_profile_picture_url(self, obj):
         if obj.profile_picture and hasattr(obj.profile_picture, "name"):
@@ -129,28 +136,53 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 # For updating name, bio, interests and profile picture
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    interests_list = serializers.JSONField(required=False)  # Change to JSONField
+    
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests', 'academic_program', 'academic_year']
+        fields = ['first_name', 'last_name', 'bio', 'profile_picture', 'interests', 'interests_list', 'academic_program', 'academic_year']
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
-
+        interests_list = validated_data.pop('interests_list', None)
+        
+        # Handle profile picture upload
         if 'profile_picture' in request.FILES:
             image = request.FILES['profile_picture']
             storage = S3Boto3Storage()
             file_path = f"profile_pics/{instance.id}/{image.name}"  
             saved_path = storage.save(file_path, image)  
-            instance.profile_picture = saved_path  
+            instance.profile_picture = saved_path
+            
+        # Update regular fields  
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.bio = validated_data.get('bio', instance.bio)
         instance.interests = validated_data.get('interests', instance.interests)
         instance.academic_program = validated_data.get('academic_program', instance.academic_program)
         instance.academic_year = validated_data.get('academic_year', instance.academic_year)
+        
+        # Handle interests relationship if provided
+        if interests_list is not None:
+            UserInterest.objects.filter(user=instance).delete()
+            print(interests_list)
+            if isinstance(interests_list, str):
+                try:
+                    import json
+                    interests_list = json.loads(interests_list)
+                except:
+                    pass
+            
+            # Create new user interests from the list
+            if isinstance(interests_list, list):
+                for interest_item in interests_list:
+                    interest_item = interest_item.strip() if isinstance(interest_item, str) else str(interest_item)
+                    if interest_item:
+                        interest_obj, created = Interest.objects.get_or_create(interest=interest_item)
+                        UserInterest.objects.create(user=instance, interest=interest_obj)
+        
         instance.save()
         return instance
-
 
 #Serilizer for global posts
 
@@ -578,15 +610,26 @@ class UserSearchSerializer(serializers.ModelSerializer):
     university = UniversitySerializer(read_only=True)
     profile_picture_url = serializers.CharField(source='get_profile_picture_url', read_only=True)
     is_following = serializers.SerializerMethodField()
+    interests_list = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'first_name', 'last_name', 'bio',
-            'profile_picture_url', 'university', 'is_following'
+            'profile_picture_url', 'university', 'is_following', 'interests_list'
         ]
         read_only_fields = fields 
 
     def get_is_following(self, obj):
         request = self.context.get('request')
         return Follow.objects.filter(following_user=request.user, followed_user=obj).exists()
+        
+    def get_interests_list(self, obj):
+        """Return a list of interest objects for the user"""
+        user_interests = UserInterest.objects.filter(user=obj).select_related('interest')
+        return [{'id': ui.interest.id, 'interest': ui.interest.interest} for ui in user_interests]
+
+class InterestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Interest
+        fields = ['id', 'interest']

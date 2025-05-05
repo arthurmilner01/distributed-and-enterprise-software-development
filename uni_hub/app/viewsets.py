@@ -1167,11 +1167,11 @@ class UserSearchViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filter users based on search query, university, and apply ordering.
+        Filter users based on search query, university, interests, and apply ordering.
         Exclude the requesting user from the results.
         """
         request_user = self.request.user
-        #Start with all active users, excluding the current user
+        # Start with all active users, excluding the current user
         queryset = User.objects.filter(is_active=True) \
                           .exclude(id=request_user.id) \
                           .exclude(is_superuser=True) \
@@ -1179,9 +1179,10 @@ class UserSearchViewSet(viewsets.ModelViewSet):
 
         search_query = self.request.query_params.get('search', None)
         university_id = self.request.query_params.get('university', None)
+        interests = self.request.query_params.get('interests', None)
         ordering = self.request.query_params.get('ordering', 'last_name')
 
-        #Text search (first name, last name, bio)
+        # Text search (first name, last name, bio)
         if search_query:
             queryset = queryset.filter(
                 Q(first_name__icontains=search_query) |
@@ -1189,11 +1190,20 @@ class UserSearchViewSet(viewsets.ModelViewSet):
                 Q(bio__icontains=search_query)
             )
 
-        #University filter
+        # University filter
         if university_id:
             queryset = queryset.filter(university__id=university_id)
+            
+        # Interests filter
+        if interests:
+            interest_list = [i.strip() for i in interests.split(',') if i.strip()]
+            if interest_list:
+                # Filter users that have ALL of the specified interests
+                for interest in interest_list:
+                    queryset = queryset.filter(user_interests__interest__interest=interest)
+                queryset = queryset.distinct()
 
-        #Sort ordering
+        # Sort ordering
         valid_ordering_fields = {
             'last_name': 'last_name',
             '-last_name': '-last_name',
@@ -1215,5 +1225,6 @@ class UserSearchViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
 
 

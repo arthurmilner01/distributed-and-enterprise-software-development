@@ -427,3 +427,19 @@ class UserRSVPListView(generics.ListAPIView):
         return RSVP.objects.filter(user=self.request.user).select_related(
             'event', 'event__community' # Preload related data
         ).order_by('event__date') # Show upcoming events first
+
+
+class InterestSuggestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        query = request.query_params.get('query', '')
+        if not query or len(query) < 2:
+            return Response([], status=status.HTTP_200_OK)
+        
+        # Find interests that start with or contain the query
+        interests = Interest.objects.filter(
+            Q(interest__istartswith=query) | Q(interest__icontains=query)
+        ).distinct().values('id', 'interest')[:10]  # Limit 10 suggestions
+        
+        return Response(list(interests), status=status.HTTP_200_OK)

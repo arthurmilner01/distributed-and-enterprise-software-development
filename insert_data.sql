@@ -73,6 +73,112 @@ NULL, 0, 'Emma', 'Davis', 0, CURRENT_TIMESTAMP, 1, 'emmadavis@uwe.ac.uk', '1994-
 '707 Example Avenue', 'BS9 1JB', 'Passionate about snowboarding, and interested in technology and creative expression.', 
 'Snowboarding, Guitar', 'Creative Arts', 2, 'S', NULL, 5);
 
+INSERT INTO app_interest (interest) VALUES
+('Robotics'),
+('Sports'),
+('Swimming'),
+('Diving'),
+('Running'),
+('Programming'),
+('Engineering'),
+('Gaming'),
+('Hockey'),
+('Snowboarding'),
+('Guitar');
+
+-- Create UserInterest junction records based on user interests
+-- John Smith: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Jane Doe: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- James Wilson: Swimming
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Swimming');
+
+-- Felicity Herd: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Bowen Higgins: Diving, Running
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Diving')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Running');
+
+-- Leighton Kramer: Programming, Engineering
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Programming')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Engineering');
+
+-- Amelie Griffith: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Adan Khan: Gaming
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Gaming');
+
+-- Harold Jones: Hockey
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Hockey');
+
+-- Emma Davis: Snowboarding, Guitar
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Snowboarding')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Guitar');
+
+
+
+
+
 -- Inserting random follower/following relationships
 INSERT INTO app_follow (followed_at, followed_user_id, following_user_id) VALUES
     (NOW(),

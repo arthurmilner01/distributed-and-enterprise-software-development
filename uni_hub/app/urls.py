@@ -36,5 +36,6 @@ urlpatterns = [
     path('api/events/<int:event_pk>/rsvp/', RSVPUpdateView.as_view(), name='event-rsvp'),
     path('api/my-rsvps/', UserRSVPListView.as_view(), name='user-rsvp-list'), 
 
+    path('api/interests/suggestions/', InterestSuggestionsView.as_view(), name='interest-suggestions'),
 
 ]
