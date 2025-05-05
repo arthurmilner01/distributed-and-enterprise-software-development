@@ -341,26 +341,6 @@ const DiscoverCommunitiesPage = () => {
                             </div>
                         </div>
 
-                        {/* Display selected keywords as tags (Original Structure) */}
-                        {selectedKeywords.length > 0 && (
-                            <div className="mb-3">
-                                <label className="form-label">Active Keyword Filters:</label>
-                                <div className="d-flex flex-wrap gap-2">
-                                    {selectedKeywords.map((keyword) => (
-                                        <span key={keyword} className="badge bg-info text-dark py-2 px-3">
-                                            {keyword}
-                                            <button
-                                                type="button"
-                                                className="btn-close btn-close-white ms-2"
-                                                onClick={() => removeKeyword(keyword)} // Original handler name
-                                                aria-label={`Remove ${keyword} filter`}
-                                                style={{ fontSize: '0.5rem' }}
-                                            ></button>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </form>
                 </div>
              {/* --- End Search Panel Card Div --- */}
