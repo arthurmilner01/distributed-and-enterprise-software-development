@@ -142,21 +142,12 @@ const DiscoverUsersPage = () => {
 
             setUsers(response.data.results || []);
             setTotalItems(response.data.count || 0);
-            const calculatedTotalPages = response.data.total_pages || 1;
-            setTotalPages(calculatedTotalPages);
+            setTotalPages(response.data.total_pages || 1);
 
-             // Handle page correction (Original logic kept)
-             if (calculatedTotalPages > 0 && page > calculatedTotalPages) {
-                 // Avoid direct state set if the trigger was currentPage change
-                 if (page !== currentPage) {
-                     setCurrentPage(calculatedTotalPages);
-                 }
-             }
-             // If called with page 1, ensure currentPage state is also 1
-             else if (page === 1 && currentPage !== 1) {
-                 setCurrentPage(1);
-             }
-
+            // Simple page correction if needed
+            if (response.data.total_pages > 0 && page > response.data.total_pages) {
+                setCurrentPage(response.data.total_pages);
+            }
         } catch (error) {
             console.error("Error searching users:", error);
             setErrorMessage("Failed to search users. Please try again.");
@@ -166,42 +157,33 @@ const DiscoverUsersPage = () => {
         } finally {
             setIsLoading(false);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api, searchQuery, universityFilter, sortOrder, currentPage]); // Include all state/props used
+    }, [api]); // Only depend on the API object
 
 
 
     // Initial data load
     useEffect(() => {
         fetchUniversities();
-        performSearch(searchQuery, universityFilter, sortOrder, 1); // Initial search on page 1
+        // Initial search on first render
         if (isAuthenticated) {
-            fetchUserRecommendations(); // Fetch recommendations on initial load if authenticated
+            fetchUserRecommendations();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated]); // Rerun everything if auth status changes
+    }, [isAuthenticated]); // Only depends on authentication status
 
     // Search when filters/page change
     useEffect(() => {
-        // Flag to check if it's the very first render based on initial state values
-        const isInitialRender = currentPage === 1 && universityFilter === 'all' && sortOrder === 'last_name';
-        if (!isInitialRender) {
-             performSearch(searchQuery, universityFilter, sortOrder, currentPage);
-        }
+        performSearch(searchQuery, universityFilter, sortOrder, currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [universityFilter, sortOrder, currentPage]); // Dependencies that trigger re-search
+    }, [universityFilter, sortOrder, currentPage, searchQuery]); // Add searchQuery to dependencies
 
 
     // --- Action Handlers (Wrapped in useCallback) ---
 
     const handleSearch = useCallback((e) => {
         if (e) e.preventDefault();
-        if (currentPage === 1) {
-            performSearch(searchQuery, universityFilter, sortOrder, 1);
-        } else {
-            setCurrentPage(1); // This will trigger the useEffect above to run search
-        }
-    }, [performSearch, searchQuery, universityFilter, sortOrder, currentPage]); // Add deps
+        setCurrentPage(1); // This will trigger the useEffect above
+    }, []);
 
     const handlePageChange = useCallback((newPage) => {
         setCurrentPage(newPage);
@@ -272,15 +254,27 @@ const DiscoverUsersPage = () => {
                                 </div>
                             </div>
                             <div className="col-md-4">
-                                <select className="form-select" value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)} aria-label="Filter by university">
+                                <select 
+                                    className="form-select" 
+                                    value={universityFilter} 
+                                    onChange={(e) => { setUniversityFilter(e.target.value); }} 
+                                    aria-label="Filter by university"
+                                >
                                     <option value="all">All Universities</option>
-                                    {universities.map((uni) => ( <option key={uni.id} value={uni.id}>{uni.university_name || uni.name}</option> ))}
+                                    {universities.map((uni) => (
+                                        <option key={uni.id} value={uni.id}>{uni.university_name || uni.name}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
                         <div className="row mb-3">
                             <div className="col-md-4 offset-md-8">
-                                <select className="form-select" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} aria-label="Sort results">
+                                <select 
+                                    className="form-select" 
+                                    value={sortOrder} 
+                                    onChange={(e) => { setSortOrder(e.target.value); }} 
+                                    aria-label="Sort results"
+                                >
                                     <option value="last_name">Last Name (A-Z)</option>
                                     <option value="-last_name">Last Name (Z-A)</option>
                                     <option value="first_name">First Name (A-Z)</option>

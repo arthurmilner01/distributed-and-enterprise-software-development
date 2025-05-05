@@ -13,6 +13,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Post, Community
 from .serializers import PostSerializer
+from .email_templates import AnnouncementNotificationEmail
 
 # Viewset for posting related functions, including creating global posts,
 # community posts, comments, likes, and filtering returned posts for the home page
@@ -145,9 +146,24 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if not community_id:
             return Response({"detail": "Community not found."}, status=404)
+        try:
+            community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"detail": "Community not found."}, status=404)
 
-        # Get posts from the specified community
-        posts = Post.objects.filter(community_id=community_id).order_by("-created_at")
+        # Check if the user is a member of this community
+        user = request.user
+        is_member = UserCommunity.objects.filter(user=user, community_id=community_id).exists()
+            
+        # Base query to get posts from the community
+        posts_query = Q(community_id=community_id)
+            
+        # If not a member, exclude members-only posts
+        if not is_member:
+            posts_query &= Q(is_members_only=False)
+                
+        # Get posts based on the filter
+        posts = Post.objects.filter(posts_query).order_by("-created_at")
 
         # Pagination
         paginator = StandardResultsSetPagination()
@@ -706,8 +722,23 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         community_id = self.request.data.get('community_id')
         if not community_id:
             raise serializers.ValidationError({"community_id": "This field is required."})
-        # Get community and check leadership if needed...
-        serializer.save(created_by=self.request.user, community_id=community_id)
+
+        announcement = serializer.save(created_by=self.request.user, community_id=community_id)
+        
+        #Send emails to all community members
+        community = announcement.community
+        community_members = UserCommunity.objects.filter(community=community).select_related('user')
+        
+        for member in community_members:
+            #Dont send to the announcement creator
+            if member.user != self.request.user:
+                AnnouncementNotificationEmail.send_notification(
+                    recipient=member.user,
+                    announcement=announcement,
+                    community=community
+                )
+        
+        return announcement
 
 
 class CommunityViewSet(viewsets.ModelViewSet):
@@ -719,7 +750,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
         Customize the queryset based on query parameters.
         This handles filtering and ordering.
         """
-        queryset = Community.objects.all()
+        queryset = Community.objects.filter(is_community_owner__isnull=False)
         
         queryset = queryset.annotate(member_count=Count('user_communities'))
         
@@ -1141,7 +1172,10 @@ class UserSearchViewSet(viewsets.ModelViewSet):
         """
         request_user = self.request.user
         #Start with all active users, excluding the current user
-        queryset = User.objects.filter(is_active=True).exclude(id=request_user.id).select_related('university')
+        queryset = User.objects.filter(is_active=True) \
+                          .exclude(id=request_user.id) \
+                          .exclude(is_superuser=True) \
+                          .select_related('university')
 
         search_query = self.request.query_params.get('search', None)
         university_id = self.request.query_params.get('university', None)

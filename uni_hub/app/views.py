@@ -28,6 +28,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from .recommendations import *
+from .email_templates import RSVPNotificationEmail
 # Custom /auth/customjwt/create to store the refresh token as a cookie
 # Using customized Djoser TokenObtainPairView
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -404,6 +405,11 @@ class RSVPUpdateView(generics.GenericAPIView):
             defaults={'status': status_to_set}
         )
 
+        RSVPNotificationEmail.send_notification(
+            event=event,
+            user=user,
+            rsvp_status=status_to_set
+        )
         serializer = self.get_serializer(rsvp) # Serialize the created/updated RSVP
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=resp_status)

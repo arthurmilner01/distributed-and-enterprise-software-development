@@ -105,6 +105,9 @@ const CommunityPage = () => {
   // Check if their role in this community is 'EventManager'
   const isCurrentUserEventManager = currentUserMembership?.role === "EventManager";
 
+  const [isMembersOnly, setIsMembersOnly] = useState(false);
+
+
    const handlePageChange = useCallback((newPage) => {
             setCurrentPage(newPage);
     }, []); 
@@ -390,12 +393,13 @@ const CommunityPage = () => {
     try {
       const response = await axios.post(
         "http://localhost:8000/api/posts/",
-        { post_text: newPost, community: parseInt(communityId) },
+        { post_text: newPost, community: parseInt(communityId), is_members_only: isMembersOnly },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       setPosts((prev) => [response.data, ...prev]);
       setNewPost("");
       setIsModalOpen(false);
+      setIsMembersOnly(false);
     } catch (error) {
       console.error("Failed to create post:", error);
     }
@@ -839,6 +843,32 @@ const CommunityPage = () => {
       }
   };
 
+  const renderLocationWithLinks = (locationText) => {
+    //Check if the text contains a Zoom link
+    if (locationText.includes('Zoom Link:')) {
+      //Split the text by 'Zoom Link:' to separate the location from the link
+      const [locationPart, linkPart] = locationText.split('Zoom Link:');
+      
+      return (
+        <>
+          {locationPart}
+          <strong>Zoom Link: </strong>
+          <a 
+            href={linkPart.trim()} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-primary"
+          >
+            Join Meeting
+          </a>
+        </>
+      );
+    }
+    
+    //If no Zoom link is found just return the text
+    return locationText;
+  };
+
   if (!community) {
     return (
       <div className="container mt-5">
@@ -1161,7 +1191,14 @@ const CommunityPage = () => {
                        <div id={`event-details-${event.id}`} className={`mt-2 small collapse ${expandedEventId === event.id ? 'show' : ''}`}>
                            <p className="mb-1"><strong>Description:</strong> {event.description || <span className="text-muted">N/A</span>}</p>
                            <p className="mb-1"><strong>Type:</strong> <span className="text-capitalize">{event.event_type || "N/A"}</span></p>
-                           <p className="mb-1"><strong>Location/Platform:</strong> {event.location || <span className="text-muted">N/A</span>}</p>
+                           <p className="mb-1">
+                              <strong>Location/Platform:</strong>{" "}
+                              {event.location ? (
+                                renderLocationWithLinks(event.location)
+                              ) : (
+                                <span className="text-muted">N/A</span>
+                              )}
+                            </p>
 
                            {/* --- ADDED: Capacity Info --- */}
                            {isEventManagerOrLeader && event.capacity != null && (
@@ -1282,6 +1319,18 @@ const CommunityPage = () => {
               rows="3"
               required
             />
+            <div className="form-check" style={{ marginBottom: "15px", textAlign: "left" }}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="membersOnlyCheck"
+                checked={isMembersOnly}
+                onChange={(e) => setIsMembersOnly(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="membersOnlyCheck">
+                Members-only post (visible only to community members)
+              </label>
+            </div>
             <div
               style={{
                 display: "flex",
