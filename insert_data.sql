@@ -1,5 +1,3 @@
--- Active: 1738950369406@@127.0.0.1@3006@uni_hub_db
-
 USE uni_hub_db;
 
 -- Inserts university data to auto-assign university at login
@@ -374,7 +372,14 @@ INSERT INTO app_community (
 INSERT INTO app_keyword (keyword)
 VALUES 
 ('Chess'), 
-('Games');
+('Games'),
+('Programming'),
+('Coding'),
+('Bowling'),
+('Movies'),
+('Social'),
+('Mathematics'),
+('Drawing');
 
 -- Attach the keywords to communities
 INSERT INTO app_communitykeyword (community_id, keyword_id)
@@ -386,6 +391,38 @@ VALUES
 (
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
     (SELECT id FROM app_keyword WHERE keyword = 'Games')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Python Lovers'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Programming')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Python Lovers'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Coding')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Bowling Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Bowling')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Bowling Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Games')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Film Club'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Movies')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Film Club'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Social')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Engineering Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Mathematics')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Art Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Drawing')
 );
 
 
@@ -658,6 +695,18 @@ INSERT INTO app_comment (
     
     ('Would love to!.', NOW(),
     (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Time and a place, I will be there.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Yes, yes, yes!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Study group, population me!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
     
     ('AQA might have some?', NOW(),
