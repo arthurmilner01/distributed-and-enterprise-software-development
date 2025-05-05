@@ -278,17 +278,6 @@ const DiscoverUsersPage = () => {
         performSearch(searchQuery, universityFilter, selected, sortOrder, 1);
     };
 
-    // Remove an interest from the selected interests
-    const removeInterest = (interestToRemove) => {
-        const newInterests = selectedInterests.filter(i => 
-            typeof i === 'string' 
-                ? i !== interestToRemove 
-                : i.interest !== interestToRemove
-        );
-        setSelectedInterests(newInterests);
-        setCurrentPage(1);
-        performSearch(searchQuery, universityFilter, newInterests, sortOrder, 1);
-    };
 
     // --- Render ---
     return (

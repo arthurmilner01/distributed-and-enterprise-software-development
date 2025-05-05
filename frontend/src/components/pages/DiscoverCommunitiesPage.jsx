@@ -211,13 +211,6 @@ const DiscoverCommunitiesPage = () => {
         performSearch(selectedKeywordStrings, 1); 
     };
 
-    //Remove a keyword from the selected keywords (Original Function - adapted)
-    const removeKeyword = (keywordToRemove) => {
-        const newKeywords = selectedKeywords.filter(k => k !== keywordToRemove);
-        setSelectedKeywords(newKeywords);
-        setCurrentPage(1);
-        performSearch(newKeywords, 1);
-    };
 
 
     //Join a community (Original Function)
