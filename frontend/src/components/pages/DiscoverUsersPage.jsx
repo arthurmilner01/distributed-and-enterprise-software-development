@@ -175,15 +175,16 @@ const DiscoverUsersPage = () => {
     useEffect(() => {
         performSearch(searchQuery, universityFilter, sortOrder, currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [universityFilter, sortOrder, currentPage, searchQuery]); // Add searchQuery to dependencies
+    }, [universityFilter, sortOrder, currentPage]); // Add searchQuery to dependencies
 
 
     // --- Action Handlers (Wrapped in useCallback) ---
 
     const handleSearch = useCallback((e) => {
         if (e) e.preventDefault();
-        setCurrentPage(1); // This will trigger the useEffect above
-    }, []);
+        setCurrentPage(1);
+        performSearch(searchQuery, universityFilter, sortOrder, 1);
+    }, [searchQuery, universityFilter, sortOrder, performSearch]);
 
     const handlePageChange = useCallback((newPage) => {
         setCurrentPage(newPage);
