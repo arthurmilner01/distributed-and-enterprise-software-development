@@ -7,6 +7,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import Post from "../widgets/Post";
 import PaginationComponent from "../widgets/PaginationComponent";
+import CreatePost from "../widgets/CreatePost";
 
 
 const DashboardPage = () => {
@@ -21,10 +22,9 @@ const DashboardPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [newPost, setNewPost] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newComment, setNewComment] = useState({});
   const api = useApi();
-  const [expandedPost, setExpandedPost] = useState(null);
+
   const [newPostImage, setNewPostImage] = useState(null);
   const [newPostVideo, setNewPostVideo] = useState(null);
   // Default tab explore posts, state used to set tab
@@ -153,7 +153,6 @@ const DashboardPage = () => {
       setPosts([response.data, ...posts]);
       setNewPost("");
       setNewPostImage(null);
-      setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to create post:", error);
     }
@@ -300,69 +299,17 @@ const DashboardPage = () => {
      </div>
      <hr className="m-3"></hr>
       {/* Create Post Section */}
-      <div
-        className="create-post mb-4"
-        style={{
-          background: "#fff",
-          padding: "15px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-        }}
-      >
-        <textarea
-          className="form-control mb-2"
-          style={{ minHeight: "100px", resize: "none" }}
-          placeholder="What's on your mind?"
-          value={newPost}
-          onChange={(e) => setNewPost(e.target.value)}
-        />
-        <div className="d-flex align-items-center gap-2 mb-2">
-          {/* Photo Upload Button */}
-          <label
-            htmlFor="photoInput"
-            className="btn btn-light  border"
-            style={{ fontWeight: 500 }}
-          >
-            📷 Photo
-          </label>
-          <input
-            type="file"
-            id="photoInput"
-            accept="image/*"
-            onChange={(e) => setNewPostImage(e.target.files[0])}
-            style={{ display: "none" }}
-          />
+      <CreatePost
+        newPost={newPost}
+        setNewPost={setNewPost}
+        newPostImage={newPostImage}
+        setNewPostImage={setNewPostImage}
+        newPostVideo={newPostVideo}
+        setNewPostVideo={setNewPostVideo}
+        handlePostSubmit={handlePostSubmit}
+      />
 
-          {/* Video Upload Button */}
-          <label
-            htmlFor="videoInput"
-            className="btn btn-light  border"
-            style={{ fontWeight: 500 }}
-          >
-            🎥 Video
-          </label>
-          <input
-            type="file"
-            id="videoInput"
-            accept="video/*"
-            onChange={(e) => setNewPostVideo(e.target.files[0])}
-            style={{ display: "none" }}
-          />
-        </div>
-
-        {newPostImage && (
-          <div className="mb-2">
-            <img
-              src={URL.createObjectURL(newPostImage)}
-              alt="Selected"
-              style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "8px" }}
-            />
-          </div>
-        )}
-        <button className="btn btn-primary" onClick={handlePostSubmit}>Post</button>
-      </div>
-
-      {/* Tabs to allow show/hide of different data attached to the user */}
+      {/* Tabs to allow show/hide of different post types to the user */}
       <ul className="nav nav-pills mb-3 d-flex justify-content-center" id="profile-tabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button

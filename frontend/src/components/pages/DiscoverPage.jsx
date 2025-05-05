@@ -1,10 +1,8 @@
-    import { useNavigate, Link } from "react-router-dom";
+    import { Link } from "react-router-dom";
     import { useAuth } from "../../context/AuthContext";
     import { User, Users, CalendarDays } from 'lucide-react';
 
     const DiscoverPage = () => {
-    const { user } = useAuth();
-    const navigate = useNavigate();
 
     return (
         <div className="d-flex flex-column align-items-center justify-content-start" style={{ minHeight: "80vh", paddingTop: "25vh" }}>
