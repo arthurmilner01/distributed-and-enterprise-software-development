@@ -146,9 +146,24 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if not community_id:
             return Response({"detail": "Community not found."}, status=404)
+        try:
+            community = Community.objects.get(id=community_id)
+        except Community.DoesNotExist:
+            return Response({"detail": "Community not found."}, status=404)
 
-        # Get posts from the specified community
-        posts = Post.objects.filter(community_id=community_id).order_by("-created_at")
+        # Check if the user is a member of this community
+        user = request.user
+        is_member = UserCommunity.objects.filter(user=user, community_id=community_id).exists()
+            
+        # Base query to get posts from the community
+        posts_query = Q(community_id=community_id)
+            
+        # If not a member, exclude members-only posts
+        if not is_member:
+            posts_query &= Q(is_members_only=False)
+                
+        # Get posts based on the filter
+        posts = Post.objects.filter(posts_query).order_by("-created_at")
 
         # Pagination
         paginator = StandardResultsSetPagination()

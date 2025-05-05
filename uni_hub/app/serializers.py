@@ -172,7 +172,7 @@ class PostSerializer(serializers.ModelSerializer):
     community_name = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
     liked_by_user = serializers.SerializerMethodField()
-
+    is_members_only = serializers.BooleanField(required=False, default=False)
     class Meta:
         model = Post
         fields = [
@@ -184,7 +184,8 @@ class PostSerializer(serializers.ModelSerializer):
             "community",
             "community_name",
             "post_text",
-            "image",             
+            "image",
+            "is_members_only",             
             "image_url",       
             "created_at",
             "like_count",

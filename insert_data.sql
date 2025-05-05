@@ -1,4 +1,4 @@
--- Active: 1740148092384@@127.0.0.1@3006
+-- Active: 1738950369406@@127.0.0.1@3006@uni_hub_db
 
 USE uni_hub_db;
 
@@ -120,70 +120,86 @@ INSERT INTO app_follow (followed_at, followed_user_id, following_user_id) VALUES
     (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'));
 
 -- Creating random posts from random users in global community
-INSERT INTO app_post (created_at, post_text, image, community_id, user_id) VALUES
+INSERT INTO app_post (created_at, post_text, image, community_id, user_id, is_members_only) VALUES
     (NOW() - INTERVAL 7 DAY, 'Excited to join the Global Community! #newmember', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 5 DAY, 'Anyone up for a virtual study group this week? #study #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 4 DAY, 'Loving the vibes here already! #newmember', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    FALSE),
 
-    (NOW() - INTERVAL 3 DAY, 'Does anyone know where I can find last year’s exam papers? #engineering', NULL,
+    (NOW() - INTERVAL 3 DAY, 'Does anyone know where I can find last year''s exam papers? #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 2 DAY, 'Had a great experience at the CV Workshop today. Highly recommend it! #study', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 1 DAY, 'Looking forward to the upcoming social events! #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 12 HOUR, 'Check out this article I found on sustainable engineering practices. #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    FALSE),
 
     (NOW(), 'Morning everyone! Hope you all have a productive day. #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 10 DAY, 'Finally settled in! Looking forward to meeting new people here. #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 9 DAY, 'What clubs are everyone joining this semester? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 6 DAY, 'Is there a Discord or WhatsApp group for international students? #international #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 3 DAY, 'Anyone else going to the charity fundraiser on Friday? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 30 HOUR, 'Missing my girls from back home! #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    FALSE),
 
-    (NOW() - INTERVAL 16 HOUR, 'Let’s organize a virtual movie night this weekend? #social', NULL,
+    (NOW() - INTERVAL 16 HOUR, 'Let''s organize a virtual movie night this weekend? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 6 HOUR, 'Working on a Python script. Can anyone help? #engineering #study', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    FALSE),
 
     (NOW(), 'Good luck to everyone with upcoming deadlines! #study #group', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Global Community (News Feed)'),
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'));
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    FALSE);
 
 -- Inserting the hashtags used in the posts
 INSERT INTO app_hashtag (name) VALUES
@@ -380,70 +396,86 @@ INSERT INTO app_usercommunity (joined_at, role, community_id, user_id) VALUES
         (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'));
 
 -- Creating posts in the communities
-INSERT INTO app_post (created_at, post_text, image, community_id, user_id) VALUES
+INSERT INTO app_post (created_at, post_text, image, community_id, user_id, is_members_only) VALUES
     (NOW() - INTERVAL 7 DAY, 'Excited to become a member of the UWE Games Society! #newmember', NULL,
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
-    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 5 DAY, 'Anyone up for a in-person study group this week on campus? #study #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Engineering Society'),
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 4 DAY, 'Loving the Uni Hub already! #newmember', NULL,
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 3 DAY, 'Does anyone know where I can find past papers? #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Engineering Society'),
-    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 2 DAY, 'Had a great experience at the library today. Highly recommend it! #study', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Study Skills'),
-    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 1 DAY, 'Looking forward to the upcoming football events! #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Football Society'),
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 12 HOUR, 'Anyone else love sustainable engineering practices?! #engineering', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Engineering Society'),
-    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    FALSE),
 
     (NOW(), 'Morning everyone! Who caught the footy last night? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Football Society'),
-    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 10 DAY, 'Hey guys what games are we playing this week? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
-    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 9 DAY, 'What clubs are everyone joining this semester? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
-    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 6 DAY, 'Anyone about for a kickabout later on campus? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Football Society'),
-    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 3 DAY, 'Who will be at the charity fundraiser on Friday? #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Football Society'),
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 30 HOUR, 'Throwback to the Open Mic Night — incredible performances! #social', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Film Club'),
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 16 HOUR, 'Anyone around to watch a classic film next week?', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Film Club'),
-    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    FALSE),
 
     (NOW() - INTERVAL 6 HOUR, 'Working on a Python side project. Anyone interested in collaborating? #engineering #study', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Python Lovers'),
-    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk')),
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    FALSE),
 
     (NOW(), 'Good luck to everyone with deadlines coming up! #study #group', NULL,
     (SELECT id FROM app_community WHERE community_name = 'Study Skills'),
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'));
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    FALSE);
 
 -- Post hashtag relationship
 INSERT INTO app_post_hashtags (post_id, hashtag_id)
@@ -478,86 +510,85 @@ JOIN
 INSERT INTO app_comment (
     comment_text, created_at, user_id, post_id
 ) VALUES
-    ('This is a great post! Looking forward to meeting you all.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'), 
+    ('This is a great post! Looking forward to meeting you all.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%')),
-
-    ('I totally agree!.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%')),
-
-    ('I would definitely be down for that.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
-
-    ('I love virtual study groups!.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
-
-    ('Does anyone have suggestions for other useful study resources?', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%')),
-
-    ('Have you tried google!', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%')),
-
-    ('I have no idea, sorry.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%')),
     
-    ('This is a great post! Looking forward to meeting you all.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'), 
+    ('I totally agree!.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%')),
-
-    ('I totally agree!.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'), 
+    
+    ('I would definitely be down for that.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+    
+    ('I love virtual study groups!.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+    
+    ('Does anyone have suggestions for other useful study resources?', NOW(),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%')),
+    
+    ('Have you tried google!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%')),
+    
+    ('I have no idea, sorry.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%')),
+   
+    ('This is a great post! Looking forward to meeting you all.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%')),
-
-    ('Very keen for this.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'), 
+    
+    ('I totally agree!.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%')),
+    
+    ('Very keen for this.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
-
-    ('Would love to!.', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'), 
+    
+    ('Would love to!.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
-
-    ('AQA might have some?', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%')),
-
-    ('Have you tried bing!', NOW(), 
-    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%'));
+    
+    ('AQA might have some?', NOW(),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%')),
+    
+    ('Have you tried bing!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%'));
 
 -- Adding likes to some of the posts
 INSERT INTO app_postlike (
     liked_at, post_id, user_id
 ) VALUES
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%'), 
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Excited to join the Global Community%'),
     (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk')),
-
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%'), 
+    
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%'),
     (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk')),
-
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%'), 
+    
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%'),
     (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk')),
-
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%'), 
+    
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%'),
     (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk')),
-
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%'), 
+    
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%'),
     (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk')),
-
-    (NOW(), 
-    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year’s exam papers%'), 
+    
+    (NOW(),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Does anyone know where I can find last year''s exam papers%'),
     (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'));
-
 -- Create events
 INSERT INTO app_event (
     event_name, date, location, description, event_type, community_id, capacity

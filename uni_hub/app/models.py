@@ -164,6 +164,7 @@ class Post(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     hashtags = models.ManyToManyField(Hashtag, related_name='posts', blank=True)
+    is_members_only = models.BooleanField(default=False, help_text="If checked, only community members can see this post")
 
     def __str__(self):
         return f"Post {self.id} by {self.user.email} {'in ' + self.community.community_name if self.community else ' (Global)'}"
