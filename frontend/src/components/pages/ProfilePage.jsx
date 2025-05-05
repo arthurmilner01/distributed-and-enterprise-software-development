@@ -79,6 +79,10 @@ const ProfilePage = () => {
   // For pagination of posts
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  // for events
+  const [userRsvps, setUserRsvps] = useState([]);
+  const [isRsvpLoading, setIsRsvpLoading] = useState(false); // Changed from true to false initially
+  const [rsvpError, setRsvpError] = useState('');
 
   // Fetch the posts of the viewed user
   const fetchUserPosts = async (page = 1) => {
@@ -236,6 +240,41 @@ const ProfilePage = () => {
       setAchievementErrorMessage("Failed to remove achievement. Please try again.");
     }
   }
+    const fetchUserRsvps = async () => {
+      // Use the isOwner variable defined in the component scope
+      if (!isOwner) { // Only fetch if viewing own profile
+          setUserRsvps([]);
+          return;
+      }
+      setIsRsvpLoading(true);
+      setRsvpError(''); // Clear previous error
+      try {
+          const response = await api.get('/api/my-rsvps/'); // Use the correct endpoint
+          setUserRsvps(response.data || []);
+      } catch (error) {
+          console.error("Error fetching user RSVPs for profile:", error);
+          setRsvpError("Could not load event RSVPs.");
+          setUserRsvps([]); // Clear data on error
+      } finally {
+          setIsRsvpLoading(false);
+      }
+  };
+  useEffect(() => {
+    // Fetch RSVPs only when the events tab is active AND it's the owner's profile
+    if (currentTab === "events" && isOwner) {
+      fetchUserRsvps();
+    }
+    // Clear RSVPs if navigating away from the tab or owner's profile (optional)
+    // else {
+    //   setUserRsvps([]);
+    // }
+  }, [currentTab, isOwner]); // Re-run if tab changes or owner status changes (though owner status is unlikely to change here)
+  const upcomingAcceptedRsvps = userRsvps.filter(rsvp => {
+    const eventDate = rsvp.event?.date ? new Date(rsvp.event.date) : null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Compare dates only
+    return rsvp.status === 'Accepted' && eventDate && eventDate >= today;
+  });
 
   // Fetch achievements when achievement tab selected
   useEffect(() => {
@@ -921,16 +960,61 @@ const ProfilePage = () => {
         )}
 
         {/* Tab for viewing user's attending events */}
-        {currentTab === "events" && (
-          <div className="tab-pane fade show active">
+        {currentTab === "events" && isOwner && ( // Render only if 'events' tab is active AND viewing own profile
+          <div className="tab-pane fade show active" id="events-content" role="tabpanel">
             <div className="card shadow-sm">
               <div className="card-body">
-                <h5 className="card-title">Upcoming Events</h5>
-                <p className="card-text">Upcoming events here...</p>
+                <h5 className="card-title mb-4">My Upcoming Accepted Events</h5>
+
+                {/* Loading State for RSVPs */}
+                {isRsvpLoading && (
+                  <div className="text-center p-3">
+                    <div className="spinner-border spinner-border-sm text-primary" role="status">
+                        <span className="visually-hidden">Loading events...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error State for RSVPs */}
+                 {!isRsvpLoading && rsvpError && <div className="alert alert-warning py-2" role="alert">{rsvpError}</div>}
+
+
+                {/* Display List if not loading, no error, and events exist */}
+                {!isRsvpLoading && !rsvpError && upcomingAcceptedRsvps.length > 0 && (
+                  <ul className="list-group list-group-flush">
+                    {upcomingAcceptedRsvps.map(rsvp => (
+                      <li key={rsvp.id} className="list-group-item px-0 d-flex justify-content-between align-items-center flex-wrap">
+                        <div className="me-3 mb-2 mb-md-0">
+                           <Link
+                                to={`/communities/${rsvp.event?.community}`}
+                                className="fw-bold text-dark text-decoration-none me-3 h6 d-block"
+                            >
+                                {rsvp.event?.event_name || 'Event Name Missing'}
+                            </Link>
+                           <div className="text-muted small mt-1">
+                                <span> {rsvp.event?.date ? new Date(rsvp.event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'}) : 'No Date'} </span>
+                                <span className="mx-2">|</span>
+                                <span> {rsvp.event?.date ? new Date(rsvp.event.date).toLocaleTimeString('en-US', { hour: 'numeric', minute:'2-digit', hour12: true }) : 'No Time'} </span>
+                                {rsvp.event?.location && ( <><span className="mx-2 d-none d-md-inline">|</span><span className='d-block d-md-inline'>{rsvp.event.location}</span></> )}
+                           </div>
+                        </div>
+                        <Link to={`/communities/${rsvp.event?.community}`} className="badge bg-light text-secondary text-decoration-none border align-self-start mt-1 mt-md-0">
+                            {rsvp.event?.community_name || 'Community'}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* No Upcoming Accepted Events Message */}
+                {!isRsvpLoading && !rsvpError && upcomingAcceptedRsvps.length === 0 && (
+                  <p className="text-muted">You haven't accepted any upcoming events.</p>
+                )}
               </div>
             </div>
           </div>
         )}
+
       </div>
 
       {/* Modal which allows the viewing of followers */}

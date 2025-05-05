@@ -526,16 +526,12 @@ class PinnedPostSerializer(serializers.ModelSerializer):
             storage = S3Boto3Storage()
             return storage.url(obj.post.user.profile_picture.name)
         return ""
-# uni_hub/app/serializers.py
-from .models import RSVP # Ensure RSVP is imported
 
 class EventSerializer(serializers.ModelSerializer):
 
     capacity = serializers.IntegerField(required=False, allow_null=True) # Add capacity field
     rsvp_accepted_count = serializers.SerializerMethodField(read_only=True)
     current_user_rsvp_status = serializers.SerializerMethodField(read_only=True)
-    
-
     class Meta:
         model = Event
         # Add the new fields to the list
@@ -569,7 +565,14 @@ class RSVPSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'event', 'status', 'rsvp_date']
         read_only_fields = ['id', 'user', 'event', 'rsvp_date'] # User/Event set by view
 
-    # Add validation logic within the view that uses this serializer
+class UserRSVPDetailSerializer(serializers.ModelSerializer):
+    # Nest the event details using the serializer above
+    event = EventSerializer(read_only=True)
+    class Meta:
+        model = RSVP
+        # Include the user's status and the nested event details
+        fields = ['id', 'status', 'rsvp_date', 'event']
+
 class UserSearchSerializer(serializers.ModelSerializer):
     university = UniversitySerializer(read_only=True)
     profile_picture_url = serializers.CharField(source='get_profile_picture_url', read_only=True)

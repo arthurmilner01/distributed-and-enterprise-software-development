@@ -464,6 +464,9 @@ const DiscoverCommunitiesPage = () => {
                              })}
                          </div>
                      )}
+                                         {!isRecLoading && !recError && recommendedCommunities.length === 0 && (
+                        <p className="text-muted text-center my-4">No community recommendations for you right now.</p>
+                    )}
                  </div>
             )}
             {/* === END Recommendations Section === */}

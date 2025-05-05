@@ -14,6 +14,7 @@ import UnauthLayout from "./components/layout/UnauthLayout";
 import ProfilePage from "./components/pages/ProfilePage";
 import CreateCommunityPage from "./components/pages/CreateCommunityPage"; 
 import CommunitiesDashboard from "./components/pages/CommunitiesDashboard"; 
+import EventsDashboard from "./components/pages/EventDashboardPage"; 
 import CommunityPage from "./components/pages/CommunityPage"; 
 import DiscoverPage from "./components/pages/DiscoverPage"; 
 import DiscoverCommunitiesPage from "./components/pages/DiscoverCommunitiesPage"; 
@@ -58,6 +59,7 @@ function App() {
                 />
               </Route>
               <Route path="communities" element={<CommunitiesDashboard />} />
+              <Route path="events" element={<EventsDashboard />} />
 
               <Route element={<RoleBasedRoute allowedRoles={["E", "C"]} />}>
                 <Route

@@ -407,3 +407,17 @@ class RSVPUpdateView(generics.GenericAPIView):
         serializer = self.get_serializer(rsvp) # Serialize the created/updated RSVP
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=resp_status)
+
+class UserRSVPListView(generics.ListAPIView):
+    """
+    Lists all RSVPs for the currently authenticated user,
+    ordered by the event date (upcoming first).
+    """
+    serializer_class = UserRSVPDetailSerializer # Use a detailed serializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter RSVPs by the request user and order by the related event's date
+        return RSVP.objects.filter(user=self.request.user).select_related(
+            'event', 'event__community' # Preload related data
+        ).order_by('event__date') # Show upcoming events first

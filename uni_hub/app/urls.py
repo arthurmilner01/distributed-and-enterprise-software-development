@@ -32,7 +32,9 @@ urlpatterns = [
 
     path('api/events/<int:community_id>/', EventViewSet.as_view({'post': 'create'}), name='create-event'),
     path('api/recommendations/communities/', RecommendedCommunitiesView.as_view(), name='recommended-communities'),
-     path('api/recommendations/users/', RecommendedUsersView.as_view(), name='recommended-users'),
+    path('api/recommendations/users/', RecommendedUsersView.as_view(), name='recommended-users'),
+    path('api/events/<int:event_pk>/rsvp/', RSVPUpdateView.as_view(), name='event-rsvp'),
+    path('api/my-rsvps/', UserRSVPListView.as_view(), name='user-rsvp-list'), 
 
 
 ]
