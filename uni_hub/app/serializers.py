@@ -409,7 +409,7 @@ User = get_user_model()
 
 class CommunitySerializer(serializers.ModelSerializer):
     keywords = serializers.ListField(
-        child=serializers.CharField(max_length=50), # Added max_length validation
+        child=serializers.CharField(max_length=50),
         write_only=True,
         required=False,
         help_text="List of keyword strings to set for the community on create/update."
@@ -571,7 +571,7 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'event_name', 'community', 'date', 'location',
             'description', 'event_type',
-            'capacity', 'rsvp_accepted_count', 'current_user_rsvp_status' # Added here
+            'capacity', 'rsvp_accepted_count', 'current_user_rsvp_status'
         ]
         # Keep existing extra_kwargs if any
         

@@ -215,7 +215,7 @@ const CommunityPage = () => {
     }
   };
 
-  // 1) Fetch community details
+  // Fetch community details
   const fetchCommunity = async () => {
     try {
       const response = await api.get(`api/communities/${communityId}/`);
@@ -235,19 +235,17 @@ const CommunityPage = () => {
         keywords: (communityData.keyword_list || []).join(', '),
       });
 
-      // --- CORRECTED LOG: Use communityData here ---
       console.log("Community Response:", communityData);
       setErrorMessage(""); // Clear error on success
 
     } catch (error) {
-      // --- CORRECTED LOG: Log the actual error object ---
       console.error("Error fetching community:", error);
-      // --- END CORRECTION ---
       setErrorMessage("Failed to load community details.");
       setCommunity(null); // Explicitly set community to null on error
     }
   };
-  // 2) Fetch announcements
+
+  // Fetch announcements
   const fetchAnnouncements = async () => {
     try {
       const response = await api.get(`api/announcements/?community_id=${communityId}`);
@@ -258,7 +256,7 @@ const CommunityPage = () => {
     }
   };
 
-  // 3) Fetch posts for this community
+  // Fetch posts for this community
   const fetchCommunityPosts = async (page = 1) => {
     try {
       const response = await api.get("api/posts/community", {
@@ -276,7 +274,7 @@ const CommunityPage = () => {
     }
   };
 
-  // 4) Determine if the current user is a member or leader
+  // Determine if the current user is a member or leader
   const fetchMembership = async () => {
     try {
       const response = await api.get("api/communityfollow/followers/");
@@ -293,7 +291,7 @@ const CommunityPage = () => {
     }
   };
 
-  // 5) Fetch users outgoing community requests
+  // Fetch users outgoing community requests
   const fetchUserCommunityRequests = async () => {
     try {
       const response = await api.get("api/communityfollow/follow_requests/");
@@ -708,9 +706,9 @@ const CommunityPage = () => {
       return;
     }
 
-    let formattedTimestamp; // Use a name indicating time is included
+    let formattedTimestamp;
     try {
-      // Use toISOString() to send the full timestamp
+      // Using toISOString() to send the full timestamp
       formattedTimestamp = eventDate.toISOString();
     } catch (dateError) {
       console.error("Invalid date/time selected:", eventDate);
@@ -719,7 +717,7 @@ const CommunityPage = () => {
     }
     const capacityValue = eventCapacity === '' ? null : parseInt(eventCapacity, 10);
 
-    // Basic validation for capacity if needed (e.g., ensure it's a positive number if not null)
+    // Validation for capacity
     if (capacityValue !== null && (isNaN(capacityValue) || capacityValue < 1)) {
          setEventErrorMessage("Capacity must be a positive number if provided.");
          return;
@@ -742,7 +740,7 @@ const CommunityPage = () => {
     } catch (error) {
       console.error("Error creating event:", error);
       let errorMsg = "Failed to create event.";
-      // Your existing error handling...
+      // Error handling
       if (error.response) {
         if (error.response.status === 403) { errorMsg = "Permission Denied."; }
         else if (error.response.data) {
@@ -758,6 +756,7 @@ const CommunityPage = () => {
       setSuccessMessage("");
     }
   };
+
   // Opens the Edit Modal and pre-fills form state
   const handleEditEventClick = (eventToEdit) => {
     if (!eventToEdit) return;
@@ -826,7 +825,7 @@ const CommunityPage = () => {
     };
 
     try {
-      // Use PATCH for partial updates, PUT if replacing the whole resource
+      // Use PATCH for partial updates
       await api.patch(`/api/events/${editingEvent.id}/`, updatedEventData);
       setSuccessMessage("Event updated successfully!");
       handleCloseEditEventModal(); // Close modal on success
@@ -834,7 +833,7 @@ const CommunityPage = () => {
     } catch (error) {
       console.error("Error updating event:", error);
       let errorMsg = "Failed to update event.";
-      // Consistent error handling
+      // Error handling
       if (error.response) {
         if (error.response.status === 403) { errorMsg = "Permission Denied."; }
         else if (error.response.data) {
@@ -874,11 +873,11 @@ const CommunityPage = () => {
       setErrorMessage("");
 
       try {
-          console.log(`Sending RSVP for Event ${eventId} with status: ${status}`); // Debug log
+          console.log(`Sending RSVP for Event ${eventId} with status: ${status}`); // Debug
           // Use POST to the new endpoint
           const response = await api.post(`/api/events/${eventId}/rsvp/`, { status });
 
-          console.log("RSVP Response:", response.data); // Debug log
+          console.log("RSVP Response:", response.data); // Debug
           setSuccessMessage(`Your RSVP has been updated to ${status}.`);
 
           // Refetch events to update the counts and button states
@@ -886,7 +885,7 @@ const CommunityPage = () => {
 
       } catch (error) {
           console.error("Error updating RSVP:", error);
-          // Display specific backend errors if available (like capacity full)
+          // Display specific errors
           setErrorMessage(error.response?.data?.detail || error.response?.data?.error || "Failed to update RSVP.");
           setSuccessMessage(""); // Clear success message on error
       } finally {
@@ -894,9 +893,9 @@ const CommunityPage = () => {
   };
 
   const renderLocationWithLinks = (locationText) => {
-    //Check if the text contains a Zoom link
+    // Check if the text contains a Zoom link
     if (locationText.includes('Zoom Link:')) {
-      //Split the text by 'Zoom Link:' to separate the location from the link
+      // Split the text by 'Zoom Link:' to separate the location from the link
       const [locationPart, linkPart] = locationText.split('Zoom Link:');
       
       return (
@@ -915,7 +914,7 @@ const CommunityPage = () => {
       );
     }
     
-    //If no Zoom link is found just return the text
+    // If no Zoom link is found just return the text
     return locationText;
   };
 
@@ -988,9 +987,9 @@ const CommunityPage = () => {
               <textarea
                   name="keywords" // Matches the key in editData
                   className="form-control"
-                  rows="2" // Adjust rows as needed
+                  rows="2"
                   value={editData.keywords} // Bind to the keywords string in editData state
-                  onChange={handleEditChange} // Use the existing general input handler
+                  onChange={handleEditChange}
                   placeholder="Enter keywords separated by commas (e.g., python, web dev, projects)"
               />
                <small className="text-muted">
@@ -1216,20 +1215,19 @@ const CommunityPage = () => {
               )}
             </div>
           </div>
-          {/* === Community Events Section  === */}
+          {/* Community Events Section */}
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
               <h4 className="mb-0 h5">Community Events</h4>
               {/* Create Event Button (Visible to Leader OR EventManagers) */}
-              {/* Ensure the condition matches how roles are stored on your user object */}
               {(isLeader || isCurrentUserEventManager) && (
                 <Button
-                  variant="light" // Keep light variant for contrast on green
+                  variant="light"
                   size="sm"
                   onClick={openEventModal}
-                  className="d-flex align-items-center" // Use flexbox for icon alignment
+                  className="d-flex align-items-center"
                 >
-                  <PlusCircle size={16} className="me-1" /> {/* Icon added */}
+                  <PlusCircle size={16} className="me-1" />
                   Create Event
                 </Button>
               )}
@@ -1238,11 +1236,10 @@ const CommunityPage = () => {
               {events.length > 0 ? (
                 <ul className="list-group list-group-flush">
                   {events.map((event) => {
-                    // --- ADD: Helper variables for clarity ---
-                    const isEventManagerOrLeader = isLeader || isCurrentUserEventManager; // Combine check
+                    // Using variables for clarity
+                    const isEventManagerOrLeader = isLeader || isCurrentUserEventManager; // Combined check
                     const isEventPast = new Date(event.date) < new Date();
                     const currentUserStatus = event.current_user_rsvp_status;
-                    // --- END ADD ---
 
                     return ( 
                       <li key={event.id} className="list-group-item px-0 py-3">
@@ -1256,14 +1253,14 @@ const CommunityPage = () => {
                            </div>
                            {/* Button Group for Actions */}
                             <div className="d-flex align-items-center flex-shrink-0">
-                               {/* Edit/Delete Buttons (Existing Logic) */}
-                               {isEventManagerOrLeader && !isEventPast && ( // Also hide edit/delete for past events
+                               {/* Edit/Delete Buttons */}
+                               {isEventManagerOrLeader && !isEventPast && ( // Hide edit/delete for past events
                                    <>
                                        <button className="btn btn-outline-primary btn-sm me-2 p-1" onClick={() => handleEditEventClick(event)} title="Edit Event">Edit</button>
                                        <button className="btn btn-outline-danger btn-sm me-2 p-1" onClick={() => handleDeleteEventClick(event.id)} title="Delete Event">Delete</button>
                                    </>
                                )}
-                               {/* Expand/Collapse Button (Existing) */}
+                               {/* Expand/Collapse Button */}
                                <button className="btn btn-link btn-sm p-1 text-secondary" onClick={() => toggleEventDetails(event.id)} aria-expanded={expandedEventId === event.id} aria-controls={`event-details-${event.id}`} title="Toggle Details">
                                    {expandedEventId === event.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                    <span className="visually-hidden">Toggle details</span>
@@ -1284,34 +1281,32 @@ const CommunityPage = () => {
                               )}
                             </p>
 
-                           {/* --- ADDED: Capacity Info --- */}
                            {isEventManagerOrLeader && event.capacity != null && (
                                <p className="mb-1">
                                    <strong>Capacity:</strong> {event.rsvp_accepted_count ?? 0} / {event.capacity} accepted
                                </p>
                            )}
-                           {/* --- END ADDED: Capacity Info --- */}
+
                        </div>
 
-                       {/* --- ADDED: RSVP Section --- */}
                        {/* Only show RSVP section for members and if event is not past */}
-                       {isMember && !isEventPast && ( // Assuming `isMember` checks if the user is part of the *community*
+                       {isMember && !isEventPast && (
                            <div className="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
                                <small className="text-muted me-2 fw-bold">Your RSVP:</small>
                                <div className="btn-group btn-group-sm" role="group" aria-label="RSVP status">
                                    <button type="button"
                                            className={`btn ${currentUserStatus === 'Accepted' ? 'btn-success' : 'btn-outline-success'}`}
-                                           onClick={() => handleRSVPUpdate(event.id, 'Accepted')} /* Add handler later */ >
+                                           onClick={() => handleRSVPUpdate(event.id, 'Accepted')} >
                                        Accept
                                    </button>
                                    <button type="button"
-                                           className={`btn ${currentUserStatus === 'Tentative' ? 'btn-warning text-dark' : 'btn-outline-warning'}`} /* Added text-dark for better contrast */
-                                           onClick={() => handleRSVPUpdate(event.id, 'Tentative')} /* Add handler later */ >
+                                           className={`btn ${currentUserStatus === 'Tentative' ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                                           onClick={() => handleRSVPUpdate(event.id, 'Tentative')} >
                                        Maybe
                                    </button>
                                    <button type="button"
                                            className={`btn ${currentUserStatus === 'Declined' ? 'btn-danger' : 'btn-outline-danger'}`}
-                                           onClick={() => handleRSVPUpdate(event.id, 'Declined')} /* Add handler later */ >
+                                           onClick={() => handleRSVPUpdate(event.id, 'Declined')} >
                                        Decline
                                    </button>
                                </div>
@@ -1330,7 +1325,6 @@ const CommunityPage = () => {
                                )}
                            </div>
                         )}
-                       {/* --- END ADDED: RSVP Section --- */}
                    </li>
                     ); 
                   })}
@@ -1341,7 +1335,6 @@ const CommunityPage = () => {
               )}
             </div>
           </div>
-          {/* === END Community Events Section === */}
         </>
       ) : (
         <div className="alert alert-warning">
@@ -1507,12 +1500,12 @@ const CommunityPage = () => {
               <DatePicker
                 selected={eventDate}
                 onChange={(date) => setEventDate(date)}
-                minDate={new Date()} // Still disable past dates
-                showTimeSelect                // Enable time selection
-                timeInputLabel="Time:"        // Label for time input
+                minDate={new Date()} // Disable past dates
+                showTimeSelect // Enable time selection
+                timeInputLabel="Time:" // Label for time input
                 dateFormat="MMMM d, yyyy h:mm aa" // Display format with time (e.g., March 29, 2025 5:30 PM)
-                timeIntervals={15}           // Set time interval to every 15 mins
-                placeholderText="Select event date and time" // Updated placeholder
+                timeIntervals={15} // Set time interval to every 15 mins
+                placeholderText="Select event date and time"
                 className="form-control"
                 wrapperClassName="d-block"
                 required
@@ -1558,7 +1551,7 @@ const CommunityPage = () => {
                         placeholder="Max attendees (leave blank for unlimited)"
                         value={eventCapacity} // Use state variable 'eventCapacity'
                         onChange={(e) => setEventCapacity(e.target.value)} // Use state setter 'setEventCapacity'
-                        min="1" // Optional: prevent negative numbers or zero
+                        min="1" // Prevent negative numbers or zero
                     />
                     <Form.Text muted>
                         Leave blank if there is no limit on attendees.

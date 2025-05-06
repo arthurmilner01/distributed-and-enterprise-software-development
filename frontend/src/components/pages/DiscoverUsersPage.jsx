@@ -14,11 +14,10 @@ import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 const UserCard = memo(({ userToDisplay, onFollow, onUnfollow, onViewProfile, currentUserId }) => {
     const isCurrentUser = userToDisplay.id === currentUserId;
-    // console.log(`Rendering UserCard for ${userToDisplay.id}`); // Optional: Keep for debugging renders
 
     return (
         <div className="card h-100 shadow-sm">
-             <div className="card-body text-center d-flex flex-column"> {/* Added flex column */}
+             <div className="card-body text-center d-flex flex-column">
                 <img
                     src={userToDisplay.profile_picture_url || default_profile_picture}
                     alt={`${userToDisplay.first_name} ${userToDisplay.last_name}`}
@@ -33,7 +32,6 @@ const UserCard = memo(({ userToDisplay, onFollow, onUnfollow, onViewProfile, cur
                 {userToDisplay.university && (
                     <p className="card-text text-muted small mb-2 text-truncate">
                         <Building size={12} className="me-1" />
-                        {/* Adjust based on actual field name from serializer */}
                         {userToDisplay.university?.university_name || userToDisplay.university?.name}
                     </p>
                 )}
@@ -72,15 +70,14 @@ const UserCard = memo(({ userToDisplay, onFollow, onUnfollow, onViewProfile, cur
         </div>
     );
 });
-// --- END UserCard Definition ---
 
 
 const DiscoverUsersPage = () => {
     const navigate = useNavigate();
-    const { isAuthenticated, user } = useAuth();
+    const { user } = useAuth();
     const api = useApi();
 
-    //Search state (Original)
+    //Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [universityFilter, setUniversityFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("last_name");
@@ -88,28 +85,26 @@ const DiscoverUsersPage = () => {
     // Interest filter state
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [interestOptions, setInterestOptions] = useState([]);
-    //Results state (Original)
+    //Results state
     const [users, setUsers] = useState([]);
     const [universities, setUniversities] = useState([]);
 
-    //UI state (Original)
+    //UI state
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
-    //User Recommendation State <---
+    //User Recommendation State
     const [recommendedUsers, setRecommendedUsers] = useState({ mutuals: [], interest_based: [] });
     const [isUserRecLoading, setIsUserRecLoading] = useState(false);
     const [userRecError, setUserRecError] = useState('');
 
-    //Pagination state (Original)
+    //Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
-    // --- Fetching Functions ---
-
-    //Fetch universities (Original Function)
+    //Fetch universities
     const fetchUniversities = async () => {
         try {
             const response = await api.get("api/universities/list/");
@@ -133,21 +128,20 @@ const DiscoverUsersPage = () => {
         }
     };
 
-     //  Fetch User Recommendations Function <---
+     //  Fetch User Recommendations Function
      const fetchUserRecommendations = useCallback(async () => { // Wrapped in useCallback
         // Prevent fetching if not authenticated or already loading
-        if (!isAuthenticated || !user || isUserRecLoading) return;
+        if (!user || isUserRecLoading) return;
 
         setIsUserRecLoading(true);
         setUserRecError('');
         try {
-            // Use the api instance available in the component scope
             const response = await api.get('/api/recommendations/users/', { params: { limit: 6 } });
             setRecommendedUsers({
                  mutuals: response.data?.mutuals || [],
                  interest_based: response.data?.interest_based || []
              });
-            console.log("Fetched Recommendations:", response.data); // Keep debug log
+            console.log("Fetched Recommendations:", response.data);
         } catch (err) {
             console.error("Error fetching user recommendations:", err);
             setUserRecError('Could not load user recommendations.');
@@ -155,11 +149,11 @@ const DiscoverUsersPage = () => {
         } finally {
             setIsUserRecLoading(false);
         }
-    }, [api, user, isAuthenticated, isUserRecLoading]); 
+    }, [user, isUserRecLoading]); 
    
 
 
-    //Perform the user search API call (Original Function - takes args)
+    //Perform the user search API call
     const performSearch = useCallback(async (query = searchQuery, uni = universityFilter, interests = selectedInterests, sort = sortOrder, page = currentPage) => {
         setIsLoading(true);
         setErrorMessage("");
@@ -169,7 +163,7 @@ const DiscoverUsersPage = () => {
             if (query) params.append("search", query);
             if (uni !== "all") params.append("university", uni);
             
-            // Add interests filter - ensure interests is an array before using map
+            // Add interests filter
             if (interests && Array.isArray(interests) && interests.length > 0) {
                 const interestStrings = interests.map(option => 
                     typeof option === 'string' ? option : option.interest
@@ -185,8 +179,8 @@ const DiscoverUsersPage = () => {
             setUsers(response.data.results || []);
             setTotalItems(response.data.count || 0);
             setTotalPages(response.data.total_pages || 1);
-
-            // Simple page correction if needed
+            
+            // Setting current page
             if (response.data.total_pages > 0 && page > response.data.total_pages) {
                 setCurrentPage(response.data.total_pages);
             }
@@ -206,22 +200,16 @@ const DiscoverUsersPage = () => {
     // Initial data load
     useEffect(() => {
         fetchUniversities();
-        // Initial search on first render
-        if (isAuthenticated) {
-            fetchUserRecommendations();
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated]); // Only depends on authentication status
+        fetchUserRecommendations();
+    }, []);
 
     // Search when filters/page change
     useEffect(() => {
         performSearch(searchQuery, universityFilter, selectedInterests, sortOrder, currentPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [universityFilter, sortOrder, currentPage]); // Add searchQuery to dependencies
 
-
-    // --- Action Handlers (Wrapped in useCallback) ---
-
+    // When user searches or if certain filters are changed
+    // Refresh the results
     const handleSearch = useCallback((e) => {
         if (e) e.preventDefault();
         setCurrentPage(1);
@@ -234,7 +222,6 @@ const DiscoverUsersPage = () => {
 
     const handleFollow = useCallback(async (userIdToFollow) => {
         setSuccessMessage(""); setErrorMessage("");
-        if (!isAuthenticated) { navigate('/login'); return; }
         try {
             await api.post('api/follow/follow/', { user_id: userIdToFollow });
             setSuccessMessage("User followed successfully.");
@@ -244,16 +231,15 @@ const DiscoverUsersPage = () => {
                  mutuals: prevRecs.mutuals.filter(u => u.id !== userIdToFollow),
                  interest_based: prevRecs.interest_based.filter(u => u.id !== userIdToFollow)
              }));
-            // await fetchUserRecommendations(); // Optional: refetch to get new recs
         } catch (error) {
             console.error("Error following user:", error);
             setErrorMessage(error.response?.data?.error || "Failed to follow user.");
         }
-    }, [api, isAuthenticated, navigate]); // Add dependencies
+    }, [api, navigate]);
 
     const handleUnfollow = useCallback(async (userIdToUnfollow) => {
-         setSuccessMessage(""); setErrorMessage("");
-         if (!isAuthenticated) { navigate('/login'); return; }
+        setSuccessMessage(""); 
+        setErrorMessage("");
         try {
             await api.delete(`api/follow/unfollow/?user_id=${userIdToUnfollow}`);
             setSuccessMessage("User unfollowed successfully.");
@@ -264,12 +250,11 @@ const DiscoverUsersPage = () => {
             console.error("Error unfollowing user:", error);
              setErrorMessage(error.response?.data?.error || "Failed to unfollow user.");
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api, isAuthenticated, navigate]); // Add dependencies
+    }, [api, navigate]);
 
     const handleViewProfile = useCallback((userId) => {
         navigate(`/profile/${userId}`);
-    }, [navigate]); // Add dependency
+    }, [navigate]);
 
     // Handler for Typeahead selection change
     const handleInterestSelectionChange = (selected) => {
@@ -278,8 +263,6 @@ const DiscoverUsersPage = () => {
         performSearch(searchQuery, universityFilter, selected, sortOrder, 1);
     };
 
-
-    // --- Render ---
     return (
         <div className="container mt-4 mb-5">
             <h2 className="mb-3">Discover Users</h2>
@@ -357,70 +340,63 @@ const DiscoverUsersPage = () => {
 
 
      
-            {/* User Recommendations Section === */}
-            {isAuthenticated && (
-                <div className="mb-4">
-                    {/* Conditionally show heading */}
-                    {!isUserRecLoading && (recommendedUsers.mutuals?.length > 0 || recommendedUsers.interest_based?.length > 0 || userRecError) && (
-                         <h4 className="mb-3">Suggestions For You</h4>
-                     )}
+            {/* User Recommendations Section */}
 
-                    {isUserRecLoading && <div className="text-center my-4"><div className="spinner-border spinner-border-sm text-info" role="status"><span className="visually-hidden">Loading...</span></div></div>}
-                    {!isUserRecLoading && userRecError && ( <Alert variant="warning" className="py-2">{userRecError}</Alert> )}
+            <div className="mb-4">
+                {/* Conditionally show heading */}
+                {!isUserRecLoading && (recommendedUsers.mutuals?.length > 0 || recommendedUsers.interest_based?.length > 0 || userRecError) && (
+                        <h4 className="mb-3">Suggestions For You</h4>
+                    )}
 
-                    {!isUserRecLoading && !userRecError && (
-                        <>
-                            {/* Mutual Followers Section */}
-                            {recommendedUsers.mutuals?.length > 0 && (
-                                <div className="mb-4">
-                                    {/* Optional: Add sub-heading if showing both types */}
-                                    {/* <h5 className="mb-3 text-muted">People You Might Know</h5> */}
-                                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-                                        {recommendedUsers.mutuals.map(recUser => (
-                                            <div key={`rec-mutual-${recUser.id}`} className="col">
-                                                <UserCard
-                                                    userToDisplay={recUser}
-                                                    onFollow={handleFollow}
-                                                    onUnfollow={handleUnfollow}
-                                                    onViewProfile={handleViewProfile}
-                                                    currentUserId={user?.id}
-                                                />
+                {isUserRecLoading && <div className="text-center my-4"><div className="spinner-border spinner-border-sm text-info" role="status"><span className="visually-hidden">Loading...</span></div></div>}
+                {!isUserRecLoading && userRecError && ( <Alert variant="warning" className="py-2">{userRecError}</Alert> )}
+
+                {!isUserRecLoading && !userRecError && (
+                    <>
+                        {/* Mutual Followers Section */}
+                        {recommendedUsers.mutuals?.length > 0 && (
+                            <div className="mb-4">
+                                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+                                    {recommendedUsers.mutuals.map(recUser => (
+                                        <div key={`rec-mutual-${recUser.id}`} className="col">
+                                            <UserCard
+                                                userToDisplay={recUser}
+                                                onFollow={handleFollow}
+                                                onUnfollow={handleUnfollow}
+                                                onViewProfile={handleViewProfile}
+                                                currentUserId={user?.id}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Interest-Based Section */}
+                        {recommendedUsers.interest_based?.length > 0 && (
+                            <div className="mb-4">
+                                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+                                    {recommendedUsers.interest_based.map(recUser => (
+                                            <div key={`rec-interest-${recUser.id}`} className="col">
+                                            <UserCard
+                                                userToDisplay={recUser}
+                                                onFollow={handleFollow}
+                                                onUnfollow={handleUnfollow}
+                                                onViewProfile={handleViewProfile}
+                                                currentUserId={user?.id}
+                                            />
                                             </div>
-                                        ))}
-                                    </div>
+                                    ))}
                                 </div>
-                            )}
-
-                            {/* Interest-Based Section */}
-                            {recommendedUsers.interest_based?.length > 0 && (
-                                <div className="mb-4">
-                                    {/* Optional: Add sub-heading if showing both types */}
-                                    {/* <h5 className="mb-3 text-muted">Based on Your Interests</h5> */}
-                                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-                                        {recommendedUsers.interest_based.map(recUser => (
-                                             <div key={`rec-interest-${recUser.id}`} className="col">
-                                                <UserCard
-                                                    userToDisplay={recUser}
-                                                    onFollow={handleFollow}
-                                                    onUnfollow={handleUnfollow}
-                                                    onViewProfile={handleViewProfile}
-                                                    currentUserId={user?.id}
-                                                />
-                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                     {/* Message only if not loading, no error, AND both lists are empty */}
-                    {!isUserRecLoading && !userRecError && recommendedUsers.mutuals?.length === 0 && recommendedUsers.interest_based?.length === 0 && (
-                        <p className="text-muted text-center my-4">No user recommendations for you right now.</p>
-                    )}
-                </div>
-            )}
-            {/* === END User Recommendations Section === */}
-
+                            </div>
+                        )}
+                    </>
+                )}
+                    {/* Message only if not loading, no error, AND both lists are empty */}
+                {!isUserRecLoading && !userRecError && recommendedUsers.mutuals?.length === 0 && recommendedUsers.interest_based?.length === 0 && (
+                    <p className="text-muted text-center my-4">No user recommendations for you right now.</p>
+                )}
+            </div>
 
             {/* Main Users Results Card */}
             <div className="card shadow-sm">
@@ -435,11 +411,9 @@ const DiscoverUsersPage = () => {
                         <div className="text-center p-5"> <div className="spinner-border text-info" role="status"> <span className="visually-hidden">Loading...</span> </div> </div>
                     ) : users.length > 0 ? (
                         <>
-                            {/* Use UserCard for main results */}
                             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
                                 {users.map((foundUser) => (
                                     <div key={foundUser.id} className="col">
-                                        {/* Use the memoized UserCard component */}
                                         <UserCard
                                             userToDisplay={foundUser}
                                             onFollow={handleFollow}

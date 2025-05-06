@@ -240,7 +240,8 @@ const ProfilePage = () => {
       setAchievementErrorMessage("Failed to remove achievement. Please try again.");
     }
   }
-    const fetchUserRsvps = async () => {
+
+  const fetchUserRsvps = async () => {
       // Use the isOwner variable defined in the component scope
       if (!isOwner) { // Only fetch if viewing own profile
           setUserRsvps([]);
@@ -259,16 +260,14 @@ const ProfilePage = () => {
           setIsRsvpLoading(false);
       }
   };
+
   useEffect(() => {
     // Fetch RSVPs only when the events tab is active AND it's the owner's profile
     if (currentTab === "events" && isOwner) {
       fetchUserRsvps();
     }
-    // Clear RSVPs if navigating away from the tab or owner's profile (optional)
-    // else {
-    //   setUserRsvps([]);
-    // }
-  }, [currentTab, isOwner]); // Re-run if tab changes or owner status changes (though owner status is unlikely to change here)
+  }, [currentTab, isOwner]);
+
   const upcomingAcceptedRsvps = userRsvps.filter(rsvp => {
     const eventDate = rsvp.event?.date ? new Date(rsvp.event.date) : null;
     const today = new Date();

@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext'; // Adjust path if needed
-import useApi from '../../api'; // Adjust path if needed
-import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
-import { Alert, Button, Spinner } from 'react-bootstrap'; // Using react-bootstrap components explicitly
-// Import icons if desired for buttons/status
-// import { Check, X, HelpCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import useApi from '../../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { Alert, Button, Spinner } from 'react-bootstrap';
 
 const EventDashboardPage = () => {
-    const { isAuthenticated, user } = useAuth();
+    const { user } = useAuth();
     const api = useApi();
     const navigate = useNavigate(); // Initialize navigate
 
@@ -19,7 +17,7 @@ const EventDashboardPage = () => {
 
     const fetchUserRsvps = async () => { // Function defined directly
         // Prevent fetching if not authenticated or user object isn't loaded yet
-        if (!isAuthenticated || !user) {
+        if (!user) {
              setUserRsvps([]); // Clear if not logged in
              setIsLoading(false); // Ensure loading stops
              return;
@@ -38,16 +36,12 @@ const EventDashboardPage = () => {
             setIsLoading(false);
         }
     }; 
-// useEffect to fetch RSVPs when authentication status changes
+
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchUserRsvps(); // Call fetch directly
-        } else {
-            setUserRsvps([]); // Clear RSVPs if logged out
-        }
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isAuthenticated, user?.id]); // Depend ONLY on auth status and user ID
-// Adding api here could still cause loops if useApi isn't stable
+        fetchUserRsvps();
+
+    }, [user?.id]);
+
     // Handler for updating RSVP status
     const handleRSVPUpdate = async (eventId, status) => {
         setUpdatingRsvpId(eventId); // Show loading on the specific button set
@@ -58,7 +52,7 @@ const EventDashboardPage = () => {
             await api.post(`/api/events/${eventId}/rsvp/`, { status });
             setSuccessMessage(`RSVP updated to ${status}.`);
             // Refetch the entire list to get updated data from backend
-            // This ensures counts and statuses are accurate across the board
+            // This ensures counts and statuses are accurate
             await fetchUserRsvps(); // Wait for refetch to complete
 
         } catch (error) {
@@ -71,8 +65,6 @@ const EventDashboardPage = () => {
         }
     };
 
-    // --- Render Helper for RSVP Buttons ---
-    // This function remains inside the component as it depends on state/handlers
     const renderRsvpControls = (rsvp) => {
         const event = rsvp.event;
         if (!event) return null;
@@ -128,10 +120,7 @@ const EventDashboardPage = () => {
             </div>
         );
     };
-    // --- End Render Helper ---
 
-
-    // --- Main Render ---
     return (
         <div className="container mt-4 mb-5">
             <h2 className="mb-3">My Event RSVPs</h2>
@@ -184,7 +173,7 @@ const EventDashboardPage = () => {
                         ))}
                     </div>
                 ) : (
-                    // No RSVPs Message - shown only if not loading and no errors
+                    // No RSVPs Message shown only if not loading and no errors
                     <div className="text-center p-5 border rounded bg-light">
                         <p>You haven't RSVP'd to any events yet.</p>
                         <Link to="/discover/communities" className="btn btn-info text-white">

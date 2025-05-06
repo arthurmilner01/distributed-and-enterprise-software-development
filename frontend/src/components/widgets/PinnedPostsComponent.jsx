@@ -26,7 +26,8 @@ const PinnedPostsComponent = ({ pinnedPosts, isLeader, onUnpin, onReorder, commu
   };
 
    // Ensure posts are sorted by the 'order' field before rendering
-   // memoize  sorted list to avoid potentially unnecessary sorting on every render, ensuring we only re-sort when the actual pinned posts data changes.
+   // memoize sorted list to avoid potentially unnecessary sorting on every render
+   // ensuring we only re-sort when the actual pinned posts data changes.
   const sortedPinnedPosts = useMemo(() => {
     if (!pinnedPosts) return [];
     // Create a copy before sorting to avoid mutating props
@@ -65,8 +66,6 @@ const PinnedPostsComponent = ({ pinnedPosts, isLeader, onUnpin, onReorder, commu
     } catch (err) {
       setError(err.response?.data?.error || "Failed to reorder posts.");
       console.error("Reorder error:", err);
-      // Optionally, you might want to revert the visual state here if the API fails,
-      // but simply refreshing (via onReorder) is often sufficient.
     } finally {
       setIsLoading(false);
     }

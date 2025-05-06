@@ -1152,7 +1152,7 @@ class PinnedPostViewSet(viewsets.ModelViewSet):
         for index, pinned_post_id in enumerate(ordered_pinned_post_ids):
             PinnedPost.objects.filter(id=pinned_post_id, community=community).update(order=index) # Start order from 0
 
-        # Fetch the updated list to return (optional, but good practice)
+        # Fetch the updated list to return
         updated_pinned_posts = PinnedPost.objects.filter(community=community).order_by('order')
         serializer = self.get_serializer(updated_pinned_posts, many=True)
 

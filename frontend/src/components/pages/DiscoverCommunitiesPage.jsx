@@ -1,18 +1,15 @@
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react";
-// Import necessary icons from lucide-react
 import { Lock, UserPlus, Search } from "lucide-react";
 import useApi from "../../api";
 import { useNavigate } from "react-router-dom";
 import { PaginationComponent } from "../widgets/PaginationComponent";
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
-import { Alert } from 'react-bootstrap'; 
 
-// --- Other imports if needed ---
 const DiscoverCommunitiesPage = () => {
     const navigate = useNavigate();
-    const { isAuthenticated, user } = useAuth();
+    const { user } = useAuth();
     const api = useApi();
 
     //User community membership state
@@ -32,7 +29,7 @@ const DiscoverCommunitiesPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
-    // --->Recommendation State <---
+    // Recommendation states
     const [recommendedCommunities, setRecommendedCommunities] = useState([]);
     const [isRecLoading, setIsRecLoading] = useState(false); // Separate loading for recommendations
     const [recError, setRecError] = useState(''); // Separate error for recommendations
@@ -44,12 +41,6 @@ const DiscoverCommunitiesPage = () => {
 
     //Fetch users joined and requested communities to check membership status
     const fetchUserMembershipData = async () => {
-        // Added safety check
-        if (!isAuthenticated) {
-             setUserCommunities([]);
-             setUserRequestCommunities([]);
-             return;
-        }
         try {
             // Original Promise.all kept
             const [membershipsResponse, requestsResponse] = await Promise.all([
@@ -62,11 +53,10 @@ const DiscoverCommunitiesPage = () => {
             setUserRequestCommunities(requestsResponse.data.map(req => ({ id: req.community })) || []);
         } catch (error) {
             console.error("Error fetching user community data:", error);
-            // Original had no error setting here, keeping it that way
         }
     };
     const fetchRecommendations = async () => {
-        if (!isAuthenticated || !user || isRecLoading) return; // Check conditions
+        if (!user || isRecLoading) return; // Check conditions
 
         setIsRecLoading(true);
         setRecError('');
@@ -82,64 +72,58 @@ const DiscoverCommunitiesPage = () => {
         }
     };
 
-    //On first render (Original Hook)
+    //On first render
     useEffect(() => {
-        // Fetch membership data only if authenticated
-        if (isAuthenticated) {
-            fetchUserMembershipData();
-        }
+        fetchUserMembershipData();
         performSearch(selectedKeywords, 1); // Fetch initial search results on page 1
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated]); // Fetch membership when auth status changes, run initial search once
+    }, []);
 
 
-    //Update search when filter values change (Original Hook - modified dependencies slightly)
+    // Update search when filter values change
     useEffect(() => {
          if (currentPage > 0) { 
              performSearch(selectedKeywords, currentPage);
          }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [privacyFilter, sortOrder, currentPage]); // Run search when these change
+
     useEffect(() => {
         fetchRecommendations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated]); // Keep dependency minimal
+    }, []);
 
 
-    //Check if user is a member of a community (Original Function)
+    // Check if user is a member of a community
     const isMemberOf = (communityId) => {
-        // Added safety check for array
         return Array.isArray(userCommunities) && userCommunities.some(c => c.id === communityId);
     };
 
-    //Check if user has requested to join a community (Original Function - corrected check based on fetch)
+    // Check if user has requested to join a community
     const hasRequestedToJoin = (communityId) => {
         // Check the ID from the mapped structure in fetchUserMembershipData
         return Array.isArray(userRequestCommunities) && userRequestCommunities.some(c => c.id === communityId);
     };
 
 
-    //Get membership status for a community (Original Function)
+    // Get membership status for a community
     const getMembershipStatus = (communityId) => {
         if (isMemberOf(communityId)) return "member";
         if (hasRequestedToJoin(communityId)) return "requested";
         return "none";
     };
 
-    // Handle search form submission (Original Function - ensure page 1 search)
+    // Handle search form submission
     const handleSearch = (e) => {
         if (e) e.preventDefault();
         setCurrentPage(1); // Reset to first page
         performSearch(selectedKeywords, 1); // Pass current keywords and page 1 explicitly
     };
 
-    // Handle pagination change (Original Function)
+    // Handle pagination change
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage); // State change triggers the search useEffect
     };
 
 
-    // Fetch Keyword Suggestions (Original Function)
+    // Fetch Keyword Suggestions
     const fetchKeywordSuggestions = async (inputValue) => {
         if (!inputValue) return; // Keep this guard
 
@@ -153,7 +137,7 @@ const DiscoverCommunitiesPage = () => {
         }
     };
 
-    //Perform the search API call (Original Function - adapted slightly)
+    //Perform the search API call
     const performSearch = async (keywords = selectedKeywords, page = currentPage) => { // Accept keywords and page as args
         setIsLoading(true);
         setErrorMessage("");
@@ -213,10 +197,8 @@ const DiscoverCommunitiesPage = () => {
 
 
 
-    //Join a community (Original Function)
+    //Join a community
     const handleJoinCommunity = async (communityId) => {
-         // Added auth check
-         if (!isAuthenticated) { navigate('/login'); return; }
         try {
             await api.post(`api/communityfollow/follow/`, { community_id: communityId });
             setSuccessMessage("Successfully joined the community.");
@@ -229,10 +211,8 @@ const DiscoverCommunitiesPage = () => {
         }
     };
 
-    //Request to join a private community (Original Function)
+    //Request to join a private community
     const handleRequestToJoin = async (communityId) => {
-         // Added auth check
-         if (!isAuthenticated) { navigate('/login'); return; }
         try {
             await api.post(`api/communityfollow/request_follow/`, { community_id: communityId });
             setSuccessMessage("Request to join the community sent.");
@@ -245,7 +225,7 @@ const DiscoverCommunitiesPage = () => {
         }
     };
 
-    //Navigate to a community page (Original Function)
+    //Navigate to a community page
     const handleViewCommunity = (communityId) => {
         navigate(`/communities/${communityId}`);
     };
@@ -336,116 +316,110 @@ const DiscoverCommunitiesPage = () => {
 
                     </form>
                 </div>
-             {/* --- End Search Panel Card Div --- */}
             </div>
 
 
-            {/* ===  Recommendations Section === */}
+            {/*  Recommendations Section */}
           
-            {isAuthenticated && ( // Only show section if logged in
-                 <div className="mb-4"> {/* Margin below recommendations */}
-                     {/* Show heading only if not loading AND (there are items OR there was an error) */}
-                     {!isRecLoading && (recommendedCommunities.length > 0 || recError) && (
-                         <h4 className="mb-3">Recommended For You</h4>
-                     )}
+            <div className="mb-4"> {/* Margin below recommendations */}
+                {/* Show heading only if not loading AND there are items OR there was an error */}
+                {!isRecLoading && (recommendedCommunities.length > 0 || recError) && (
+                    <h4 className="mb-3">Recommended For You</h4>
+                )}
 
-                     {/* Loading Indicator */}
-                     {isRecLoading && (
-                        <div className="text-center my-4"><div className="spinner-border spinner-border-sm text-primary" role="status"><span className="visually-hidden">Loading Recommendations...</span></div></div>
-                     )}
+                {/* Loading Indicator */}
+                {isRecLoading && (
+                <div className="text-center my-4"><div className="spinner-border spinner-border-sm text-primary" role="status"><span className="visually-hidden">Loading Recommendations...</span></div></div>
+                )}
 
-                     {/* Error Message - Using standard div, replace with Alert if you prefer */}
-                     {!isRecLoading && recError && <div className="alert alert-warning py-2">{recError}</div>}
+                {/* Error Message - Using standard div */}
+                {!isRecLoading && recError && <div className="alert alert-warning py-2">{recError}</div>}
 
-                     {/* Recommendations Grid */}
-                     {!isRecLoading && !recError && recommendedCommunities.length > 0 && (
-                         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {/* Grid layout */}
-                             {recommendedCommunities.map(community => {
-                                  // Logic to determine status for this specific card
-                                  const membershipStatus = getMembershipStatus(community.id);
-                                  // Get keywords (handle if field name is different, e.g., 'keywords' vs 'keyword_list')
-                                  const keywords = community.keywords || community.keyword_list || [];
+                {/* Recommendations Grid */}
+                {!isRecLoading && !recError && recommendedCommunities.length > 0 && (
+                    <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {/* Grid layout */}
+                        {recommendedCommunities.map(community => {
+                            // Logic to determine status for this specific card
+                            const membershipStatus = getMembershipStatus(community.id);
+                            // Get keywords
+                            const keywords = community.keywords || community.keyword_list || [];
 
-                                  return (
-                                     <div key={`rec-${community.id}`} className="col"> {/* Unique key */}
-                                         {/* Reusing same card structure as below for consistency */}
-                                         <div className="card h-100 shadow-sm">
-                                             <div className="card-header d-flex justify-content-between align-items-center">
-                                                 <h5 className="mb-0 text-truncate" title={community.community_name}>
-                                                     {community.community_name}
-                                                 </h5>
-                                                 <span className={`badge ${community.privacy === 'public' ? 'bg-success' : 'bg-warning text-dark'}`}>
-                                                     {community.privacy}
-                                                     {community.privacy === "private" && (<Lock size={14} className="ms-1" />)}
-                                                 </span>
-                                             </div>
-                                             <div className="card-body">
-                                                 <p className="card-text">
-                                                     {community.description && community.description.length > 100
-                                                         ? `${community.description.substring(0, 100)}...`
-                                                         : community.description || "No description provided."}
-                                                 </p>
-                                                 <p className="card-text">
-                                                     <small className="text-muted">
-                                                         <strong>Members:</strong> {community.member_count || 0}
-                                                     </small>
-                                                 </p>
-                                                 {keywords.length > 0 && (
-                                                     <div className="mb-2">
-                                                         <strong>Keywords:</strong>
-                                                         <div className="d-flex flex-wrap gap-1 mt-1">
-                                                             {keywords.map((keyword, index) => (
-                                                                 <span key={index} className="badge bg-secondary">{keyword}</span>
-                                                             ))}
-                                                         </div>
-                                                     </div>
-                                                 )}
-                                             </div>
-                                             <div className="card-footer bg-white">
-                                                  {/* Reusing button logic from your existing results */}
-                                                 <div className="d-flex gap-2">
-                                                     <button
-                                                         className="btn btn-info text-white flex-grow-1"
-                                                         onClick={() => handleViewCommunity(community.id)}
-                                                     >
-                                                         View Community
-                                                     </button>
-                                                     {membershipStatus === "none" && (
-                                                         community.privacy === "private" ? (
-                                                             <button
-                                                                 className="btn btn-outline-info"
-                                                                 onClick={() => handleRequestToJoin(community.id)}
-                                                             >
-                                                                 Request <Lock size={14} className="ms-1" />
-                                                             </button>
-                                                         ) : (
-                                                             <button
-                                                                 className="btn btn-outline-success"
-                                                                 onClick={() => handleJoinCommunity(community.id)}
-                                                             >
-                                                                 Join <UserPlus size={14} className="ms-1" />
-                                                             </button>
-                                                         )
-                                                     )}
-                                                     {membershipStatus === "requested" && ( <button className="btn btn-outline-secondary" disabled> Requested </button> )}
-                                                     {membershipStatus === "member" && ( <button className="btn btn-outline-success" disabled> Member </button> )}
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                  );
-                             })}
-                         </div>
-                     )}
-                                         {!isRecLoading && !recError && recommendedCommunities.length === 0 && (
-                        <p className="text-muted text-center my-4">No community recommendations for you right now.</p>
-                    )}
-                 </div>
+                            return (
+                                <div key={`rec-${community.id}`} className="col"> {/* Unique key */}
+                                    <div className="card h-100 shadow-sm">
+                                        <div className="card-header d-flex justify-content-between align-items-center">
+                                            <h5 className="mb-0 text-truncate" title={community.community_name}>
+                                                {community.community_name}
+                                            </h5>
+                                            <span className={`badge ${community.privacy === 'public' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                                                {community.privacy}
+                                                {community.privacy === "private" && (<Lock size={14} className="ms-1" />)}
+                                            </span>
+                                        </div>
+                                        <div className="card-body">
+                                            <p className="card-text">
+                                                {community.description && community.description.length > 100
+                                                    ? `${community.description.substring(0, 100)}...`
+                                                    : community.description || "No description provided."}
+                                            </p>
+                                            <p className="card-text">
+                                                <small className="text-muted">
+                                                    <strong>Members:</strong> {community.member_count || 0}
+                                                </small>
+                                            </p>
+                                            {keywords.length > 0 && (
+                                                <div className="mb-2">
+                                                    <strong>Keywords:</strong>
+                                                    <div className="d-flex flex-wrap gap-1 mt-1">
+                                                        {keywords.map((keyword, index) => (
+                                                            <span key={index} className="badge bg-secondary">{keyword}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="card-footer bg-white">
+                                            <div className="d-flex gap-2">
+                                                <button
+                                                    className="btn btn-info text-white flex-grow-1"
+                                                    onClick={() => handleViewCommunity(community.id)}
+                                                >
+                                                    View Community
+                                                </button>
+                                                {membershipStatus === "none" && (
+                                                    community.privacy === "private" ? (
+                                                        <button
+                                                            className="btn btn-outline-info"
+                                                            onClick={() => handleRequestToJoin(community.id)}
+                                                        >
+                                                            Request <Lock size={14} className="ms-1" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            className="btn btn-outline-success"
+                                                            onClick={() => handleJoinCommunity(community.id)}
+                                                        >
+                                                            Join <UserPlus size={14} className="ms-1" />
+                                                        </button>
+                                                    )
+                                                )}
+                                                {membershipStatus === "requested" && ( <button className="btn btn-outline-secondary" disabled> Requested </button> )}
+                                                {membershipStatus === "member" && ( <button className="btn btn-outline-success" disabled> Member </button> )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+                                    {!isRecLoading && !recError && recommendedCommunities.length === 0 && (
+                <p className="text-muted text-center my-4">No community recommendations for you right now.</p>
             )}
-            {/* === END Recommendations Section === */}
+            </div>
 
 
-            {/* Results Card (Original Structure) */}
+            {/* Results Card */}
             <div className="card shadow-sm">
                 <div className="card-header bg-light">
                     <div className="d-flex justify-content-between align-items-center">
@@ -464,7 +438,7 @@ const DiscoverCommunitiesPage = () => {
                         </div>
                     ) : communities.length > 0 ? (
                         <>
-                            <div className="row"> {/* Original row structure */}
+                            <div className="row">
                                 {communities.map((community) => {
                                     const membershipStatus = getMembershipStatus(community.id);
                                     // Ensure keyword access matches serializer output
@@ -472,7 +446,6 @@ const DiscoverCommunitiesPage = () => {
 
                                     return (
                                         <div key={community.id} className="col-md-6 col-lg-4 mb-4">
-                                            {/* Original Card Structure */}
                                             <div className="card h-100 shadow-sm">
                                                 <div className="card-header d-flex justify-content-between align-items-center">
                                                     <h5 className="mb-0 text-truncate" title={community.community_name}>
@@ -520,7 +493,6 @@ const DiscoverCommunitiesPage = () => {
                                                             View Community
                                                         </button>
 
-                                                        {/* Original Buttons */}
                                                         {membershipStatus === "none" && (
                                                             community.privacy === "private" ? (
                                                                 <button
@@ -564,7 +536,7 @@ const DiscoverCommunitiesPage = () => {
                                 })}
                             </div>
 
-                            {/*Pagination Component (Original placement) */}
+                            {/* Pagination Component */}
                             {totalPages > 1 && ( // Only show if more than one page
                                 <div className="d-flex justify-content-center mt-4">
                                     <PaginationComponent
@@ -576,7 +548,7 @@ const DiscoverCommunitiesPage = () => {
                             )}
                         </>
                     ) : (
-                        // No results message (Original Structure)
+                        // No results message
                         <div className="text-center p-5">
                             <p>No communities found matching your search criteria.</p>
                             <p>Try adjusting your search terms or filters.</p>

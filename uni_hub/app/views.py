@@ -29,6 +29,7 @@ from django.core.files.base import ContentFile
 from django.db.models import Q
 from .recommendations import *
 from .email_templates import RSVPNotificationEmail
+
 # Custom /auth/customjwt/create to store the refresh token as a cookie
 # Using customized Djoser TokenObtainPairView
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -185,10 +186,10 @@ class KeywordSuggestionsView(APIView):
         if not query or len(query) < 2:
             return Response([], status=status.HTTP_200_OK)
         
-        #Find keywords that start with or contain the query 
+        # Find keywords that start with or contain the query 
         keywords = Keyword.objects.filter(
             Q(keyword__istartswith=query) | Q(keyword__icontains=query)
-        ).distinct().values_list('keyword', flat=True)[:10] #Limit 10 suggestions 
+        ).distinct().values_list('keyword', flat=True)[:10] # Limit 10 suggestions 
         
         return Response(list(keywords), status=status.HTTP_200_OK)
 
@@ -261,9 +262,9 @@ class ProfileBadgesView(APIView):
     # Returns the colour to use for the badge
     def get_badge_level(self, count):
         # Return badge level based on count
-        if count < 25:
+        if count < 5:
             return "muted"
-        elif 25 <= count <= 50:
+        elif 5 <= count <= 15:
             return "success"
         else:
             return "info"
@@ -272,10 +273,10 @@ class ProfileBadgesView(APIView):
     def get_badge_title(self, badge_title, count):
         # Return badge title
         
-        # Append "Beginner", "Intermediate", or "Advanced" based on the count
-        if count < 25:
+        # Appends "Beginner", "Intermediate", or "Advanced" based on the count
+        if count < 5:
             return "Beginner " + badge_title
-        elif 25 <= count <= 50:
+        elif 5 <= count <= 15:
             return "Intermediate " + badge_title
         else:
             return "Advanced " + badge_title
@@ -325,7 +326,7 @@ class RecommendedCommunitiesView(generics.ListAPIView):
         # This function now returns a QuerySet, so ListAPIView handles it directly
         return get_community_recommendations_by_joined_keywords(user, limit=limit)
 
-class RecommendedUsersView(APIView): # Changed from ListAPIView
+class RecommendedUsersView(APIView):
     """
     API endpoint to get user recommendations based on mutuals and interests.
     Returns data in format: {"mutuals": [...], "interest_based": [...]}
@@ -335,16 +336,13 @@ class RecommendedUsersView(APIView): # Changed from ListAPIView
     def get(self, request, *args, **kwargs):
         user = request.user
         limit = int(request.query_params.get('limit', 6)) # Combined limit
-        mutual_limit = limit // 2 + (limit % 2) # Give slightly more to mutuals potentially
+        mutual_limit = limit // 2 + (limit % 2) # Give slightly more mutual recommendations
         interest_limit = limit // 2
 
-        # Get mutual recommendations (returns QuerySet or list)
+        # Get mutual recommendations
         mutual_recs_qs = get_user_recommendations_mutuals(user, limit=mutual_limit)
-
-        # --- Get interest-based recommendations (Placeholder - implement this logic) ---
-        # interest_recs_qs = get_user_recommendations_interest(user, limit=interest_limit, exclude_ids=set(mutual_recs_qs.values_list('id', flat=True))) # Example: Exclude mutuals
-        interest_recs_qs = User.objects.none() # Replace with actual call when ready
-        # --- End Placeholder ---
+        # Get interest recommendations
+        interest_recs_qs = User.objects.none()
 
 
         # Serialize the results
@@ -368,7 +366,7 @@ class RSVPUpdateView(generics.GenericAPIView):
     serializer_class = RSVPSerializer
     permission_classes = [permissions.IsAuthenticated, IsCommunityMemberForEvent]
     queryset = Event.objects.all() # Needed for get_object/permission check
-    lookup_url_kwarg = 'event_pk' # Specify the URL keyword for the event ID
+    lookup_url_kwarg = 'event_pk' # Get event ID
 
     # Define get_object to fetch the Event for permission checks
     def get_object(self):
@@ -387,7 +385,7 @@ class RSVPUpdateView(generics.GenericAPIView):
         if status_to_set not in dict(RSVP.RSVP_STATUS_CHOICES):
             return Response({'detail': 'Invalid RSVP status provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # --- Capacity Check ---
+        # Capacity Check
         if status_to_set == 'Accepted' and event.capacity is not None:
             accepted_count = RSVP.objects.filter(event=event, status='Accepted').count()
             existing_rsvp = RSVP.objects.filter(user=user, event=event).first()
@@ -396,7 +394,6 @@ class RSVPUpdateView(generics.GenericAPIView):
             # Block only if full AND user isn't already accepted
             if accepted_count >= event.capacity and not is_currently_accepted:
                  return Response({'detail': 'Event has reached maximum capacity.'}, status=status.HTTP_400_BAD_REQUEST)
-        # --- End Capacity Check ---
 
         # Create or update the RSVP entry
         rsvp, created = RSVP.objects.update_or_create(
@@ -410,7 +407,7 @@ class RSVPUpdateView(generics.GenericAPIView):
             user=user,
             rsvp_status=status_to_set
         )
-        serializer = self.get_serializer(rsvp) # Serialize the created/updated RSVP
+        serializer = self.get_serializer(rsvp)
         resp_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=resp_status)
 
