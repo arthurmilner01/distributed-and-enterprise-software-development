@@ -915,7 +915,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 import logging
-from datetime import timezone
+from datetime import timezone as dtTimezone
 
 logger = logging.getLogger(__name__)
 from .zoom_utils import create_zoom_meeting
@@ -944,7 +944,7 @@ class EventViewSet(viewsets.ModelViewSet):
         print(f"[DEBUG] Validated data: {validated}")
 
         if event_type in ['meeting', 'webinar'] and start_time:
-            start_time_iso = start_time.astimezone(timezone.utc).isoformat()
+            start_time_iso = start_time.astimezone(dtTimezone.utc).isoformat()
             zoom_data = create_zoom_meeting(title, start_time_iso)
             join_url = zoom_data.get("join_url")
             if join_url:
@@ -1228,3 +1228,110 @@ class UserSearchViewSet(viewsets.ModelViewSet):
 
 
 
+from django.utils import timezone
+import datetime
+
+class EventSearchViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet dedicated to searching events with filtering options.
+    This is a read-only viewset as it's only used for searching events.
+    """
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+    def get_queryset(self):
+        """
+        Filter events based on search query, event type, date filters, and apply ordering.
+        Only shows events from public communities or private communities the user is a member of.
+        """
+        user = self.request.user
+        
+        #Get communities the user is a member of
+        user_community_ids = list(UserCommunity.objects.filter(user=user).values_list('community_id', flat=True))
+        
+        queryset = Event.objects.all().select_related('community')
+        
+        #Privacy filter
+        privacy_filter = Q(community__privacy='public') | Q(community_id__in=user_community_ids)
+        queryset = queryset.filter(privacy_filter)
+        
+
+        # Apply search filter
+        search_query = self.request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(event_name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(location__icontains=search_query)
+            )
+        
+        # Apply event type filter
+        event_type = self.request.query_params.get('event_type', None)
+        if event_type and event_type != 'all':
+            queryset = queryset.filter(event_type=event_type)
+        
+        # Apply date filter
+        date_filter = self.request.query_params.get('date_filter', None)
+        now = timezone.now()
+        
+        if date_filter:
+            if date_filter == 'upcoming':
+                queryset = queryset.filter(date__gte=now)
+            elif date_filter == 'past':
+                queryset = queryset.filter(date__lt=now)
+            elif date_filter == 'today':
+                today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                today_end = today_start + datetime.timedelta(days=1)
+                queryset = queryset.filter(date__gte=today_start, date__lt=today_end)
+            elif date_filter == 'this_week':
+                week_start = now - datetime.timedelta(days=now.weekday())
+                week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                week_end = week_start + datetime.timedelta(days=7)
+                queryset = queryset.filter(date__gte=week_start, date__lt=week_end)
+            elif date_filter == 'next_week':
+                week_start = now - datetime.timedelta(days=now.weekday())
+                week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                next_week_start = week_start + datetime.timedelta(days=7)
+                next_week_end = next_week_start + datetime.timedelta(days=7)
+                queryset = queryset.filter(date__gte=next_week_start, date__lt=next_week_end)
+            elif date_filter == 'this_month':
+                month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                next_month = month_start.month + 1
+                year = month_start.year
+                if next_month > 12:
+                    next_month = 1
+                    year += 1
+                month_end = month_start.replace(year=year, month=next_month, day=1)
+                queryset = queryset.filter(date__gte=month_start, date__lt=month_end)
+            elif date_filter == 'custom':
+                start_date = self.request.query_params.get('start_date', None)
+                end_date = self.request.query_params.get('end_date', None)
+                
+                if start_date:
+                    try:
+                        queryset = queryset.filter(date__gte=start_date)
+                    except (TypeError, ValueError):
+                        pass
+                
+                if end_date:
+                    try:
+                        queryset = queryset.filter(date__lte=end_date)
+                    except (TypeError, ValueError):
+                        pass
+        
+        # Apply ordering
+        ordering = self.request.query_params.get('ordering', 'date')
+        if ordering == 'date':
+            queryset = queryset.order_by('date')
+        elif ordering == '-date':
+            queryset = queryset.order_by('-date')
+        elif ordering in ['event_name', '-event_name']:
+            queryset = queryset.order_by(ordering)
+        
+        return queryset

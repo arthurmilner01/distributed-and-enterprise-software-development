@@ -565,11 +565,13 @@ class EventSerializer(serializers.ModelSerializer):
     capacity = serializers.IntegerField(required=False, allow_null=True) # Add capacity field
     rsvp_accepted_count = serializers.SerializerMethodField(read_only=True)
     current_user_rsvp_status = serializers.SerializerMethodField(read_only=True)
+    community_name = serializers.CharField(source='community.community_name', read_only=True)
+    
     class Meta:
         model = Event
         # Add the new fields to the list
         fields = [
-            'id', 'event_name', 'community', 'date', 'location',
+            'id', 'event_name', 'community', 'community_name', 'date', 'location',
             'description', 'event_type',
             'capacity', 'rsvp_accepted_count', 'current_user_rsvp_status'
         ]

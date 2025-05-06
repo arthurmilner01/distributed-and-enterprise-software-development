@@ -12,6 +12,7 @@ router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 router.register(r'achievements', AchievementViewSet, basename='achievements')
 router.register(r'pinnedposts', PinnedPostViewSet, basename='pinnedposts')
 router.register(r'events', EventViewSet, basename='events')
+router.register(r'event-search', EventSearchViewSet, basename='event-search')
 router.register(r'users', UserSearchViewSet, basename='user-search')
 router.register(r'posts', PostViewSet, basename='posts')
 
