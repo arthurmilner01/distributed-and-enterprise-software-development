@@ -36,7 +36,7 @@ const HashtagPage = () => {
 
   useEffect(() => {
     fetchHashtagPosts(hashtagText);
-  }, []);
+  }, [navigate]);
   
 
   // Handles submitting likes on a specific post
