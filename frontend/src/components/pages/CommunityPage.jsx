@@ -6,13 +6,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams, useNavigate } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
-<<<<<<< HEAD
-import { Button, Modal } from "react-bootstrap";
-import { Form, Alert } from "react-bootstrap";
 
-=======
 import { Button, Modal, Form, Alert } from "react-bootstrap";
->>>>>>> 5db7a78ac13b9845952b52b4973babcdd7d47c93
 import { Link } from "react-router-dom";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
