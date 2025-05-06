@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "react-bootstrap-typeahead": "^6.4.1",
     "react-datepicker": "^8.2.1"
   }
 }

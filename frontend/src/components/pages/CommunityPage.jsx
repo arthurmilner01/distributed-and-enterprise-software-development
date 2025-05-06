@@ -8,6 +8,7 @@ import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal } from "react-bootstrap";
 import { Form, Alert } from "react-bootstrap";
+
 import { Link } from "react-router-dom";
 import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
@@ -36,7 +37,9 @@ const CommunityPage = () => {
     description: "",
     rules: "",
     privacy: "public",
+    keywords: "",
   });
+  
 
   // Announcements state
   const [announcements, setAnnouncements] = useState([]);
@@ -215,20 +218,34 @@ const CommunityPage = () => {
   const fetchCommunity = async () => {
     try {
       const response = await api.get(`api/communities/${communityId}/`);
-      setCommunity(response.data);
+      const communityData = response.data; // Defined within try block
+
+      if (!communityData) {
+          throw new Error("Received invalid community data from API.");
+      }
+
+      setCommunity(communityData);
+
       setEditData({
-        community_name: response.data.community_name || "",
-        description: response.data.description || "",
-        rules: response.data.rules || "",
-        privacy: response.data.privacy || "public",
+        community_name: communityData.community_name || "",
+        description: communityData.description || "",
+        rules: communityData.rules || "",
+        privacy: communityData.privacy || "public",
+        keywords: (communityData.keyword_list || []).join(', '),
       });
-      console.log("Community Response:", response.data);
+
+      // --- CORRECTED LOG: Use communityData here ---
+      console.log("Community Response:", communityData);
+      setErrorMessage(""); // Clear error on success
+
     } catch (error) {
+      // --- CORRECTED LOG: Log the actual error object ---
       console.error("Error fetching community:", error);
+      // --- END CORRECTION ---
       setErrorMessage("Failed to load community details.");
+      setCommunity(null); // Explicitly set community to null on error
     }
   };
-
   // 2) Fetch announcements
   const fetchAnnouncements = async () => {
     try {
@@ -350,15 +367,23 @@ const CommunityPage = () => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
 
+
   // When saving community edits/creation
   const handleSaveCommunity = async () => {
     setErrorMessage("");
+    const keywordsArray = (editData.keywords || "") 
+    .split(',')
+    .map(kw => kw.trim())
+    .filter(kw => kw !== '');
+
     try {
       await api.patch(`api/communities/${communityId}/`, {
         community_name: editData.community_name,
         description: editData.description,
         rules: editData.rules,
         privacy: editData.privacy,
+        keywords: keywordsArray,
+
       });
       setIsEditing(false);
       fetchCommunity();
@@ -933,6 +958,23 @@ const CommunityPage = () => {
                   <option value="private">Private</option>
                 </select>
               </div>
+              <div className="mb-3">
+              <label className="form-label">Keywords (Comma-separated)</label>
+              <textarea
+                  name="keywords" // Matches the key in editData
+                  className="form-control"
+                  rows="2" // Adjust rows as needed
+                  value={editData.keywords} // Bind to the keywords string in editData state
+                  onChange={handleEditChange} // Use the existing general input handler
+                  placeholder="Enter keywords separated by commas (e.g., python, web dev, projects)"
+              />
+               <small className="text-muted">
+                  Separate each keyword or phrase with a comma.
+              </small>
+          </div>
+              
+              
+              
               <button className="btn btn-success me-2" onClick={handleSaveCommunity}>
                 Save Changes
               </button>
@@ -940,6 +982,7 @@ const CommunityPage = () => {
                 Cancel
               </button>
             </div>
+
           ) : (
             <>
               <h2 className="card-title">{community.community_name}</h2>
@@ -953,6 +996,19 @@ const CommunityPage = () => {
               <p className="card-text">
                 <strong>Privacy:</strong> {community.privacy}
               </p>
+              <div className="mb-3">
+              <strong>Keywords:</strong>
+              {community.keyword_list && community.keyword_list.length > 0 ? (
+                  <div className="d-flex flex-wrap gap-1 mt-1">
+                      {community.keyword_list.map((keyword, index) => (
+                          <span key={index} className="badge bg-secondary">{keyword}</span>
+                      ))}
+                  </div>
+              ) : (
+                  <span className="text-muted ms-2">No keywords added.</span>
+              )}
+          </div>
+              
               {isLeader && (
                 <p className="text-primary" style={{ cursor: "pointer", textDecoration: "none" }} onClick={openFollowRequestsModal}>
                   Approve/deny join requests ({followRequests.length})

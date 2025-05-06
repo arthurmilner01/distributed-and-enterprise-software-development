@@ -374,68 +374,69 @@ class UserFollowingSerializer(serializers.ModelSerializer):
         return ""
 
 User = get_user_model()
-class CommunitySerializer(serializers.ModelSerializer):
-    # For input: Accept a list of strings
-    # For output: Provide a read-only array of strings
-    keywords = serializers.ListField(
-        child=serializers.CharField(),
-        write_only=True,
-        required=False
-    )
-    # Add a separate read-only field for output
-    keyword_list = serializers.SerializerMethodField(read_only=True)
 
-    # Return the user ID of the leader
-    is_community_owner = serializers.PrimaryKeyRelatedField(
-        read_only=True
+class CommunitySerializer(serializers.ModelSerializer):
+    keywords = serializers.ListField(
+        child=serializers.CharField(max_length=50), # Added max_length validation
+        write_only=True,
+        required=False,
+        help_text="List of keyword strings to set for the community on create/update."
     )
-    
+    keyword_list = serializers.SerializerMethodField(read_only=True)
+    is_community_owner = serializers.PrimaryKeyRelatedField(read_only=True)
     member_count = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Community
         fields = [
-            "id",
-            "community_name",
-            "description",
-            "rules",
-            "privacy",
-            "keywords",       # used for input
-            "keyword_list",   # used for output
-            "is_community_owner",  # the leader's user ID
-            "member_count", 
+            "id", "community_name", "description", "rules", "privacy",
+            "keywords",       # write-only field for input
+            "keyword_list",   # read-only field for output
+            "is_community_owner", "member_count",
         ]
-
-    def create(self, validated_data):
-        keywords_data = validated_data.pop("keywords", [])
-        user = self.context["request"].user
-
-        # Create the community
-        community = Community.objects.create(
-            is_community_owner=user,
-            **validated_data
-        )
-
-        # Also create the user->community relationship
-        UserCommunity.objects.create(
-            user=user,
-            community=community,
-            role="Leader"
-        )
-
-        # Now handle the incoming keywords
-        for kw in keywords_data:
-            kw = kw.strip()
-            if kw:
-                keyword_obj, created = Keyword.objects.get_or_create(keyword=kw)
-                community.keywords.add(keyword_obj)
-
-        return community
 
     def get_keyword_list(self, obj):
         """Return an array of keyword strings for output."""
         return [k.keyword for k in obj.keywords.all()]
 
+    # --- Keep your existing create method (or update as shown previously for consistency) ---
+    def create(self, validated_data):
+        keywords_data = validated_data.pop("keywords", [])
+        user = self.context["request"].user
+        community = Community.objects.create(is_community_owner=user, **validated_data)
+        UserCommunity.objects.create(user=user, community=community, role="Leader")
+
+        # Create through table entries explicitly
+        for kw_name in keywords_data:
+            kw_name = kw_name.strip()
+            if kw_name:
+                keyword_obj, created = Keyword.objects.get_or_create(keyword=kw_name)
+                # Use CommunityKeyword to create the link
+                CommunityKeyword.objects.create(community=community, keyword=keyword_obj)
+        return community
+
+    def update(self, instance, validated_data):
+        # Pop the keywords list if it was sent in the PATCH/PUT request
+        keywords_data = validated_data.pop('keywords', None)
+
+        # Update other simple fields first using default logic
+        instance = super().update(instance, validated_data)
+
+        # Handle keywords update only if data was provided
+        if keywords_data is not None:
+            # Clear existing keyword relationships for this community
+            CommunityKeyword.objects.filter(community=instance).delete()
+
+            # Create new relationships for the provided keywords
+            for kw_name in keywords_data:
+                kw_name = kw_name.strip()
+                if kw_name:
+                    # Find or create the Keyword object
+                    keyword_obj, created = Keyword.objects.get_or_create(keyword=kw_name)
+                    # Create the link in the through table
+                    CommunityKeyword.objects.create(community=instance, keyword=keyword_obj)
+
+        return instance
 # For member relationships in UserCommunity table
 class UserCommunitySerializer(serializers.ModelSerializer):
     community_id = serializers.IntegerField(source="community.id", read_only=True)
