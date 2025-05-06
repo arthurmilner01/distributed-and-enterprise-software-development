@@ -6,17 +6,21 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams, useNavigate } from "react-router-dom";
 import useApi from "../../api";
 import { useAuth } from "../../context/AuthContext";
+<<<<<<< HEAD
 import { Button, Modal } from "react-bootstrap";
 import { Form, Alert } from "react-bootstrap";
 
+=======
+import { Button, Modal, Form, Alert } from "react-bootstrap";
+>>>>>>> 5db7a78ac13b9845952b52b4973babcdd7d47c93
 import { Link } from "react-router-dom";
-import axios from "axios";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
 import PinnedPostsComponent from "../widgets/PinnedPostsComponent";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // Standard Datepicker CSS
 import Post from "../widgets/Post";
 import PaginationComponent from "../widgets/PaginationComponent";
+import CreatePost from "../widgets/CreatePost";
 
 
 const CommunityPage = () => {
@@ -49,9 +53,11 @@ const CommunityPage = () => {
 
   // Posts state
   const [posts, setPosts] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState("");
   const [newComment, setNewComment] = useState({});
+  const [newPostImage, setNewPostImage] = useState(null);
+
+
   // For pagination of posts
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -415,20 +421,44 @@ const CommunityPage = () => {
   // Create new post
   const handlePostSubmit = async (event) => {
     event.preventDefault();
+  
+    // Prevent empty posts
+    if (!newPost.trim() && !newPostImage) {
+      setErrorMessage("Please add text, an image, or a video before posting.");
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append("post_text", newPost);
+  
+    if (newPostImage) {
+      formData.append("image", newPostImage);
+    }
+  
+    if (communityId) {
+      formData.append("community", parseInt(communityId));
+    }
+  
+    formData.append("is_members_only", isMembersOnly);
+  
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/posts/",
-        { post_text: newPost, community: parseInt(communityId), is_members_only: isMembersOnly },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      const response = await api.post("api/posts/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      // Update posts visually and set states to null
       setPosts((prev) => [response.data, ...prev]);
       setNewPost("");
-      setIsModalOpen(false);
+      setNewPostImage(null);
       setIsMembersOnly(false);
     } catch (error) {
       console.error("Failed to create post:", error);
+      setErrorMessage("Failed to create post.");
     }
   };
+  
 
   // Leave community
   const handleLeaveCommunity = async (communityId) => {
@@ -1148,16 +1178,19 @@ const CommunityPage = () => {
 
           {/* Posts Section */}
           <div className="card shadow-sm mb-4">
-            <div className="card-header bg-secondary text-white">
-              <h4 className="mb-0">Community Posts</h4>
+            <div className="card-header bg-light-subtle text-white">
+              <h4 className="mb-3 text-primary">Community Posts</h4>
+              <CreatePost
+                newPost={newPost}
+                setNewPost={setNewPost}
+                newPostImage={newPostImage}
+                setNewPostImage={setNewPostImage}
+                handlePostSubmit={handlePostSubmit}
+                isMembersOnly={isMembersOnly}
+                setIsMembersOnly={setIsMembersOnly}
+              />
             </div>
             <div className="card-body">
-              <button
-                className="btn btn-primary mb-3"
-                onClick={() => setIsModalOpen(true)}
-              >
-                Create Post
-              </button>
               {posts.length > 0 ? (
                 posts.map((post) => (
                   <Post
@@ -1321,114 +1354,6 @@ const CommunityPage = () => {
         </div>
       )}
 
-      {/* Modal for creating a new post */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0, 0, 0, 0.75)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1050,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              width: "400px",
-              maxWidth: "90%",
-              borderRadius: "8px",
-              border: "2px solid #ccc",
-              boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
-              color: "#333",
-            }}
-          >
-            <h4
-              style={{
-                marginBottom: "15px",
-                fontSize: "1.3rem",
-                fontWeight: "bold",
-              }}
-            >
-              Create a New Post
-            </h4>
-            <textarea
-              style={{
-                width: "100%",
-                fontSize: "14px",
-                padding: "10px",
-                border: "1px solid #ccc",
-                borderRadius: "5px",
-                resize: "none",
-                height: "80px",
-                marginBottom: "10px",
-              }}
-              placeholder="What's on your mind?"
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              rows="3"
-              required
-            />
-            <div className="form-check" style={{ marginBottom: "15px", textAlign: "left" }}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="membersOnlyCheck"
-                checked={isMembersOnly}
-                onChange={(e) => setIsMembersOnly(e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor="membersOnlyCheck">
-                Members-only post (visible only to community members)
-              </label>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "10px",
-              }}
-            >
-              <button
-                style={{
-                  minWidth: "80px",
-                  padding: "8px 20px",
-                  fontSize: "14px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  border: "none",
-                  backgroundColor: "#e0e0e0",
-                  color: "#333",
-                }}
-                onClick={() => setIsModalOpen(false)}
-              >
-                Close
-              </button>
-              <button
-                style={{
-                  minWidth: "80px",
-                  padding: "8px 20px",
-                  fontSize: "14px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  border: "none",
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                }}
-                onClick={handlePostSubmit}
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Transfer Ownership</Modal.Title>

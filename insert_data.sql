@@ -1,5 +1,3 @@
--- Active: 1738950369406@@127.0.0.1@3006@uni_hub_db
-
 USE uni_hub_db;
 
 -- Inserts university data to auto-assign university at login
@@ -72,6 +70,112 @@ NULL, 0, 'Harold', 'Jones', 0, CURRENT_TIMESTAMP, 1, 'haroldjones@uwe.ac.uk', '2
 NULL, 0, 'Emma', 'Davis', 0, CURRENT_TIMESTAMP, 1, 'emmadavis@uwe.ac.uk', '1994-08-09', 
 '707 Example Avenue', 'BS9 1JB', 'Passionate about snowboarding, and interested in technology and creative expression.', 
 'Snowboarding, Guitar', 'Creative Arts', 2, 'S', NULL, 5);
+
+INSERT INTO app_interest (interest) VALUES
+('Robotics'),
+('Sports'),
+('Swimming'),
+('Diving'),
+('Running'),
+('Programming'),
+('Engineering'),
+('Gaming'),
+('Hockey'),
+('Snowboarding'),
+('Guitar');
+
+-- Create UserInterest junction records based on user interests
+-- John Smith: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'johnsmith@cam.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Jane Doe: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- James Wilson: Swimming
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'jameswilson@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Swimming');
+
+-- Felicity Herd: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'felicityherd@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Bowen Higgins: Diving, Running
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Diving')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Running');
+
+-- Leighton Kramer: Programming, Engineering
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Programming')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'leightonkramer@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Engineering');
+
+-- Amelie Griffith: Robotics, Sports
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Robotics')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'ameliegriffith@ucl.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Sports');
+
+-- Adan Khan: Gaming
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'adankhan@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Gaming');
+
+-- Harold Jones: Hockey
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Hockey');
+
+-- Emma Davis: Snowboarding, Guitar
+INSERT INTO app_userinterest (user_id, interest_id)
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Snowboarding')
+UNION
+SELECT 
+    (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_interest WHERE interest = 'Guitar');
+
+
+
+
 
 -- Inserting random follower/following relationships
 INSERT INTO app_follow (followed_at, followed_user_id, following_user_id) VALUES
@@ -268,7 +372,14 @@ INSERT INTO app_community (
 INSERT INTO app_keyword (keyword)
 VALUES 
 ('Chess'), 
-('Games');
+('Games'),
+('Programming'),
+('Coding'),
+('Bowling'),
+('Movies'),
+('Social'),
+('Mathematics'),
+('Drawing');
 
 -- Attach the keywords to communities
 INSERT INTO app_communitykeyword (community_id, keyword_id)
@@ -280,6 +391,38 @@ VALUES
 (
     (SELECT id FROM app_community WHERE community_name = 'UWE Games Society'),
     (SELECT id FROM app_keyword WHERE keyword = 'Games')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Python Lovers'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Programming')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Python Lovers'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Coding')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Bowling Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Bowling')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Bowling Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Games')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Film Club'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Movies')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Film Club'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Social')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Engineering Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Mathematics')
+),
+(
+    (SELECT id FROM app_community WHERE community_name = 'Art Society'),
+    (SELECT id FROM app_keyword WHERE keyword = 'Drawing')
 );
 
 
@@ -552,6 +695,18 @@ INSERT INTO app_comment (
     
     ('Would love to!.', NOW(),
     (SELECT id FROM app_user WHERE email = 'emmadavis@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Time and a place, I will be there.', NOW(),
+    (SELECT id FROM app_user WHERE email = 'haroldjones@uwe.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Yes, yes, yes!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'bowenhiggins@imperial.ac.uk'),
+    (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
+
+    ('Study group, population me!', NOW(),
+    (SELECT id FROM app_user WHERE email = 'janedoe@ox.ac.uk'),
     (SELECT id FROM app_post WHERE post_text LIKE '%Anyone up for a virtual study group%')),
     
     ('AQA might have some?', NOW(),

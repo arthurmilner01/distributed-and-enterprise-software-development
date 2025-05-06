@@ -4,11 +4,13 @@ import React, { useState, useEffect, memo, useCallback } from "react";
 
 import { Alert } from 'react-bootstrap';
 // Import necessary icons from lucide-react
-import { Search, UserPlus, UserX, Building } from "lucide-react";
+import { Search, UserPlus, UserX, Building  } from "lucide-react";
 import useApi from "../../api";
 import { useNavigate } from "react-router-dom";
 import { PaginationComponent } from "../widgets/PaginationComponent";
 import default_profile_picture from "../../assets/images/default_profile_picture.jpg";
+import { Typeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 const UserCard = memo(({ userToDisplay, onFollow, onUnfollow, onViewProfile, currentUserId }) => {
     const isCurrentUser = userToDisplay.id === currentUserId;
@@ -41,6 +43,21 @@ const UserCard = memo(({ userToDisplay, onFollow, onUnfollow, onViewProfile, cur
                         {userToDisplay.bio.substring(0, 50)}{userToDisplay.bio.length > 50 ? '...' : ''}
                      </p>
                 )}
+                {/* Display Interests if available */}
+                {userToDisplay.interests_list && userToDisplay.interests_list.length > 0 && (
+                    <div className="mt-1 mb-2">
+                        <div className="d-flex flex-wrap justify-content-center gap-1 mt-1">
+                            {userToDisplay.interests_list.slice(0, 3).map((interest, index) => (
+                                <span key={index} className="badge bg-secondary">
+                                    {interest.interest}
+                                </span>
+                            ))}
+                            {userToDisplay.interests_list.length > 3 && (
+                                <span className="badge bg-light text-secondary">+{userToDisplay.interests_list.length - 3}</span>
+                            )}
+                        </div>
+                    </div>
+                )}
                 <div className="mt-auto d-flex justify-content-around pt-2"> {/* Buttons at bottom */}
                     <button className="btn btn-sm btn-outline-secondary" onClick={() => onViewProfile(userToDisplay.id)}>Profile</button>
                     {!isCurrentUser && ( // Don't show follow button for self
@@ -68,6 +85,9 @@ const DiscoverUsersPage = () => {
     const [universityFilter, setUniversityFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("last_name");
 
+    // Interest filter state
+    const [selectedInterests, setSelectedInterests] = useState([]);
+    const [interestOptions, setInterestOptions] = useState([]);
     //Results state (Original)
     const [users, setUsers] = useState([]);
     const [universities, setUniversities] = useState([]);
@@ -100,6 +120,19 @@ const DiscoverUsersPage = () => {
         }
     };
 
+    // Fetch Interest Suggestions
+    const fetchInterestSuggestions = async (inputValue) => {
+        if (!inputValue) return;
+
+        try {
+            const response = await api.get(`/api/interests/suggestions/?query=${encodeURIComponent(inputValue)}`);
+            setInterestOptions(response.data || []);
+        } catch (error) {
+            console.error("Error fetching interest suggestions:", error);
+            setInterestOptions([]);
+        }
+    };
+
      //  Fetch User Recommendations Function <---
      const fetchUserRecommendations = useCallback(async () => { // Wrapped in useCallback
         // Prevent fetching if not authenticated or already loading
@@ -127,7 +160,7 @@ const DiscoverUsersPage = () => {
 
 
     //Perform the user search API call (Original Function - takes args)
-    const performSearch = useCallback(async (query = searchQuery, uni = universityFilter, sort = sortOrder, page = currentPage) => {
+    const performSearch = useCallback(async (query = searchQuery, uni = universityFilter, interests = selectedInterests, sort = sortOrder, page = currentPage) => {
         setIsLoading(true);
         setErrorMessage("");
 
@@ -135,6 +168,15 @@ const DiscoverUsersPage = () => {
             let params = new URLSearchParams();
             if (query) params.append("search", query);
             if (uni !== "all") params.append("university", uni);
+            
+            // Add interests filter - ensure interests is an array before using map
+            if (interests && Array.isArray(interests) && interests.length > 0) {
+                const interestStrings = interests.map(option => 
+                    typeof option === 'string' ? option : option.interest
+                );
+                params.append("interests", interestStrings.join(','));
+            }
+            
             params.append("ordering", sort);
             params.append("page", page.toString());
 
@@ -157,7 +199,7 @@ const DiscoverUsersPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [api]); // Only depend on the API object
+    }, [api]);
 
 
 
@@ -173,17 +215,18 @@ const DiscoverUsersPage = () => {
 
     // Search when filters/page change
     useEffect(() => {
-        performSearch(searchQuery, universityFilter, sortOrder, currentPage);
+        performSearch(searchQuery, universityFilter, selectedInterests, sortOrder, currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [universityFilter, sortOrder, currentPage, searchQuery]); // Add searchQuery to dependencies
+    }, [universityFilter, sortOrder, currentPage]); // Add searchQuery to dependencies
 
 
     // --- Action Handlers (Wrapped in useCallback) ---
 
     const handleSearch = useCallback((e) => {
         if (e) e.preventDefault();
-        setCurrentPage(1); // This will trigger the useEffect above
-    }, []);
+        setCurrentPage(1);
+        performSearch(searchQuery, universityFilter, selectedInterests, sortOrder, 1);
+    }, [searchQuery, universityFilter, selectedInterests, sortOrder, performSearch]);
 
     const handlePageChange = useCallback((newPage) => {
         setCurrentPage(newPage);
@@ -228,6 +271,13 @@ const DiscoverUsersPage = () => {
         navigate(`/profile/${userId}`);
     }, [navigate]); // Add dependency
 
+    // Handler for Typeahead selection change
+    const handleInterestSelectionChange = (selected) => {
+        setSelectedInterests(selected);
+        setCurrentPage(1);
+        performSearch(searchQuery, universityFilter, selected, sortOrder, 1);
+    };
+
 
     // --- Render ---
     return (
@@ -267,8 +317,25 @@ const DiscoverUsersPage = () => {
                                 </select>
                             </div>
                         </div>
+                        {/* Interest Filter */}
                         <div className="row mb-3">
-                            <div className="col-md-4 offset-md-8">
+                            <div className="col-md-8">
+                                <div className="input-group">
+                                    <Typeahead
+                                        id="interest-typeahead"
+                                        multiple
+                                        onInputChange={fetchInterestSuggestions}
+                                        onChange={handleInterestSelectionChange}
+                                        options={interestOptions}
+                                        selected={selectedInterests}
+                                        placeholder="Add interest filter..."
+                                        labelKey="interest"
+                                        allowNew={false}
+                                    />
+                                </div>
+                                <small className="text-muted">Type an interest and select one from the dropdown</small>
+                            </div>
+                            <div className="col-md-4">
                                 <select 
                                     className="form-select" 
                                     value={sortOrder} 

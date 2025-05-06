@@ -41,6 +41,13 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
+
+class Interest(models.Model):
+    interest = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.interest
+
 #Custom user
 class User(AbstractUser):
     is_active = models.BooleanField(default=False)  #Require activation for new user
@@ -57,6 +64,8 @@ class User(AbstractUser):
     profile_picture = models.ImageField(upload_to="profile_pics/", max_length = 200, null=True, blank=True)
     university = models.ForeignKey(University, on_delete=models.CASCADE)
 
+    interests_relation = models.ManyToManyField(Interest, through="UserInterest", related_name="users")
+
     USERNAME_FIELD = "email"  #Use email for login
     REQUIRED_FIELDS = []
 
@@ -67,6 +76,16 @@ class User(AbstractUser):
             return self.profile_picture.url
         return ""
     
+
+class UserInterest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_interests")
+    interest = models.ForeignKey("Interest", on_delete=models.CASCADE, related_name="user_interests")
+
+    class Meta:
+        unique_together = ('user', 'interest')  # To prevent duplicates
+
+    def __str__(self):
+        return f"{self.user.email} - {self.interest.interest}"
 
 #Keyword
 class Keyword(models.Model):
